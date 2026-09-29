@@ -24,15 +24,12 @@ export default function Navbar() {
       <NavLink to="/patrimonios" className={linkClass} onClick={fechar}>
         Patrimônios
       </NavLink>
-      <a href="/#roteiros" onClick={fechar}>
-        Roteiros
-      </a>
       <NavLink to="/conheca-mais" className={linkClass} onClick={fechar}>
         Conheça mais
       </NavLink>
-      <a href="/#contato" onClick={fechar}>
+      <NavLink to="/contato" className={linkClass} onClick={fechar}>
         Contato
-      </a>
+      </NavLink>
     </>
   );
 

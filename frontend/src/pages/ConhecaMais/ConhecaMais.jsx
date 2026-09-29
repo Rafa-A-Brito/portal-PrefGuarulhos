@@ -7,50 +7,89 @@ import {
   Squares2X2Icon,
   MegaphoneIcon,
   PaintBrushIcon,
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 
 /**
- * NOVIDADES DA PREFEITURA
+ * NOVIDADES
  * -------------------------------------------------------------------------
- * Mock de conteúdo editorial. Em produção isso deve vir de uma rota real
- * (ex.: GET /novidades, alimentada pela Secretaria de Cultura) em vez de
- * ficar hardcoded aqui — deixei como array estático só para o protótipo
- * ter algo real para renderizar.
+ * Mock de conteúdo editorial, transcrito da tela de referência. Em produção
+ * isso deve vir de uma rota real (ex.: GET /novidades) em vez de ficar
+ * hardcoded aqui.
  *
- * "url" aponta para o portal oficial da Prefeitura porque ainda não existe
- * uma página de notícia própria dentro deste app (ver App.jsx: não há rota
- * "/novidades/:id"). Assim o CTA "Saiba mais" já funciona de verdade hoje,
- * em vez de linkar para uma rota inexistente.
+ * A ORDEM DO ARRAY define o layout:
+ *   [0]      -> destaque grande
+ *   [1]      -> segundo destaque (ao lado do grande)
+ *   [2..4]   -> linha de três cards
+ *   todos    -> lista "Últimas notícias" na lateral
+ *
+ * "data" usa formato ISO (AAAA-MM-DD) e é formatada na tela.
+ * "url" aponta para o portal oficial porque ainda não existe uma rota
+ * "/novidades/:id" neste app.
+ * "imagem" segue o padrão do projeto (/src/assets/...); os arquivos ainda
+ * precisam ser adicionados. Sem o arquivo, o espaço da imagem fica vazio.
  */
 const PORTAL_PREFEITURA = "https://www.guarulhos.sp.gov.br";
 
 const novidades = [
   {
-    id: "fomento-pontos-cultura",
-    tag: "Edital",
-    data: "Fomento aos Pontos de Cultura",
-    titulo: "Programa Municipal de Fomento aos Pontos de Cultura",
-    resumo:
-      "Instituído pela Lei nº 8.113/2023, o programa reconhece coletivos e núcleos culturais de Guarulhos como Pontos de Cultura, com apoio financeiro via seleção pública.",
+    id: "casarao-monteiro-lobato",
+    tag: "Patrimônio histórico",
+    data: "2025-05-16",
+    titulo:
+      "Conselho do Patrimônio Histórico obtém vitória contra demolição de casarão da Avenida Monteiro Lobato",
+    resumo: [
+      "Após análise técnica e histórica, o Conselho Municipal de Preservação do Patrimônio Histórico, Cultural, Artístico, Paisagístico e Ambiental da Cidade de Guarulhos impediu a demolição do casarão localizado na Avenida Monteiro Lobato, 787, no Macedo.",
+      "A decisão reforça o compromisso do município com a preservação da memória urbana e da identidade cultural da cidade.",
+    ],
+    imagem: "/src/assets/novidades/casarao_monteiro_lobato.jpg",
     url: PORTAL_PREFEITURA,
   },
   {
-    id: "restauro-paco",
-    tag: "Patrimônio",
-    data: "Restauro em andamento",
-    titulo: "Restauro da Antiga Sede da Prefeitura e da Câmara",
-    resumo:
-      "O prédio histórico do antigo Paço Municipal segue em processo de restauração, acompanhado pelo Conselho de Patrimônio Histórico, Artístico e Ambiental (CPHAA).",
+    id: "evannir-penna-casarao",
+    tag: "Exposição em destaque",
+    data: "2025-05-10",
+    titulo: "Evannir Penna em exposição no Casarão da Nossa Senhora do Rosário",
+    resumo: [
+      "O artista guarulhense Evannir Penna apresenta suas obras no Casarão da Nossa Senhora do Rosário, em uma mostra que celebra a arte, a fé e a ancestralidade.",
+      "A exposição reúne pinturas, esculturas e instalações inspiradas na religiosidade popular e na cultura afro-brasileira.",
+      "Visite e conheça essa experiência única!",
+    ],
+    imagem: "/src/assets/novidades/evannir_penna.jpg",
     url: PORTAL_PREFEITURA,
   },
   {
-    id: "plano-municipal-cultura",
-    tag: "Política pública",
-    data: "Plano Municipal de Cultura 2020–2029",
-    titulo: "Plano Municipal de Cultura orienta a próxima década",
-    resumo:
-      "Instituído pela Lei nº 7.834/2020, o PMC é o documento que planeja a política cultural do município para os dez anos seguintes.",
+    id: "teatro-padre-bento",
+    tag: "Cultura",
+    data: "2025-04-30",
+    titulo: "Teatro Padre Bento recebe programação especial em maio",
+    resumo: [
+      "Espetáculos gratuitos celebram a história e a produção cultural de Guarulhos.",
+    ],
+    imagem: "/src/assets/novidades/teatro_padre_bento.jpg",
+    url: PORTAL_PREFEITURA,
+  },
+  {
+    id: "antigo-forum",
+    tag: "Preservação",
+    data: "2025-04-22",
+    titulo: "Restauro do Prédio do Antigo Fórum avança",
+    resumo: [
+      "Obra de restauração segue em andamento para devolver ao prédio sua importância histórica.",
+    ],
+    imagem: "/src/assets/novidades/antigo_forum.jpg",
+    url: PORTAL_PREFEITURA,
+  },
+  {
+    id: "bosque-maia",
+    tag: "Memória",
+    data: "2025-04-15",
+    titulo: "Bosque Maia completa 44 anos",
+    resumo: [
+      "Símbolo de lazer e preservação ambiental em Guarulhos, o Bosque Maia celebra mais um aniversário.",
+    ],
+    imagem: "/src/assets/novidades/bosque_maia.jpg",
     url: PORTAL_PREFEITURA,
   },
 ];
@@ -58,16 +97,8 @@ const novidades = [
 /**
  * EXPOSIÇÕES E ARTISTAS EM DESTAQUE
  * -------------------------------------------------------------------------
- * Conteúdo de exemplo/placeholder — inclusive a entrada do artista citado
- * (Roberto Faria). Não encontrei uma biografia oficial verificável para
- * usar aqui, então deixei os campos de texto genéricos de propósito
- * (sem inventar datas, obras ou citações). Antes de publicar, troque
- * "bio" e "imagem" pelo material real fornecido pela Secretaria de
- * Cultura/pelo próprio artista.
- *
- * "imagem" segue o mesmo padrão do restante do projeto (caminho em
- * /src/assets/..., como em patrimonios em db.json) — os arquivos ainda
- * precisam ser adicionados por vocês.
+ * Conteúdo de exemplo/placeholder (mantido como estava). Antes de publicar,
+ * troque "bio" e "imagem" pelo material real da Secretaria de Cultura.
  */
 const exposicoes = [
   {
@@ -93,16 +124,67 @@ const exposicoes = [
 ];
 
 /**
- * E-mail de contato do CTA "Quero expor meu trabalho". Assim como o
- * placeholder já usado em LoginAdmin ("servidor@guarulhos.sp.gov.br"),
- * este endereço é ilustrativo — troque pelo canal real da Secretaria
- * de Cultura antes de publicar.
+ * E-mail de contato do CTA "Quero expor meu trabalho". Endereço ilustrativo:
+ * troque pelo canal real da Secretaria de Cultura antes de publicar.
  */
 const EMAIL_CULTURA = "cultura@guarulhos.sp.gov.br";
+
+// "2025-05-16" -> "16 de maio de 2025". O "T12:00:00" evita que o fuso
+// horário empurre a data para o dia anterior.
+function formatarData(iso) {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// Se o arquivo de imagem ainda não existe, esconde o ícone de imagem quebrada.
+function esconderImagemQuebrada(e) {
+  e.currentTarget.style.visibility = "hidden";
+}
+
+function NoticiaImagem({ noticia }) {
+  return (
+    <figure className="noticia-figure">
+      <img
+        src={noticia.imagem}
+        alt=""
+        loading="lazy"
+        onError={esconderImagemQuebrada}
+      />
+    </figure>
+  );
+}
+
+function NoticiaTag({ children }) {
+  return (
+    <span className="novidade-tag">
+      <MegaphoneIcon width={12} height={12} />
+      {children}
+    </span>
+  );
+}
+
+function NoticiaLink({ noticia }) {
+  return (
+    <a
+      className="verlink noticia-link"
+      href={noticia.url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Leia mais
+      <ArrowRightIcon width={12} height={12} />
+    </a>
+  );
+}
 
 export default function ConhecaMais() {
   const navigate = useNavigate();
   const { estatisticas, carregando } = usePatrimoniosContext();
+
+  const [destaque, segundo, ...demais] = novidades;
 
   return (
     <div>
@@ -153,39 +235,112 @@ export default function ConhecaMais() {
         </div>
       </section>
 
-      {/* ===== Novidades da Prefeitura ===== */}
+      {/* ===== Novidades ===== */}
       <section className="sobre">
         <div className="sobre-inner">
           <div className="section-head">
             <div>
-              <h2>Novidades da Prefeitura</h2>
+              <h2>Novidades</h2>
               <p className="sub">
-                Editais, restauros e políticas públicas de cultura em andamento
-                no município.
+                Acompanhe as últimas notícias sobre o patrimônio histórico e
+                cultural de Guarulhos.
               </p>
             </div>
           </div>
 
-          <div className="novidades-grid">
-            {novidades.map((n) => (
-              <article key={n.id} className="novidade-card">
-                <span className="novidade-tag">
-                  <MegaphoneIcon width={12} height={12} />
-                  {n.tag}
-                </span>
-                <span className="data">{n.data}</span>
-                <h3>{n.titulo}</h3>
-                <p>{n.resumo}</p>
-                <a
-                  className="verlink"
-                  href={n.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Saiba mais →
-                </a>
-              </article>
-            ))}
+          <div className="noticias">
+            <div className="noticias-main">
+              <div className="noticias-top">
+                <article className="noticia-card noticia-card--destaque">
+                  <NoticiaImagem noticia={destaque} />
+                  <div className="noticia-body">
+                    <NoticiaTag>{destaque.tag}</NoticiaTag>
+                    <time className="noticia-data" dateTime={destaque.data}>
+                      {formatarData(destaque.data)}
+                    </time>
+                    <h3>{destaque.titulo}</h3>
+                    {destaque.resumo.map((p) => (
+                      <p key={p}>{p}</p>
+                    ))}
+                    <NoticiaLink noticia={destaque} />
+                  </div>
+                </article>
+
+                <article className="noticia-card noticia-card--destaque">
+                  <NoticiaImagem noticia={segundo} />
+                  <div className="noticia-body">
+                    <NoticiaTag>{segundo.tag}</NoticiaTag>
+                    <time className="noticia-data" dateTime={segundo.data}>
+                      {formatarData(segundo.data)}
+                    </time>
+                    <h3>{segundo.titulo}</h3>
+                    {segundo.resumo.map((p) => (
+                      <p key={p}>{p}</p>
+                    ))}
+                    <NoticiaLink noticia={segundo} />
+                  </div>
+                </article>
+              </div>
+
+              <div className="noticias-row">
+                {demais.map((n) => (
+                  <article key={n.id} className="noticia-card">
+                    <NoticiaImagem noticia={n} />
+                    <div className="noticia-body">
+                      <div className="noticia-meta">
+                        <NoticiaTag>{n.tag}</NoticiaTag>
+                        <time className="noticia-data" dateTime={n.data}>
+                          {formatarData(n.data)}
+                        </time>
+                      </div>
+                      <h3>{n.titulo}</h3>
+                      <p>{n.resumo[0]}</p>
+                      <NoticiaLink noticia={n} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <aside className="noticias-side" aria-label="Últimas notícias">
+              <h3>Últimas notícias</h3>
+              <ul>
+                {novidades.map((n) => (
+                  <li key={n.id}>
+                    <a
+                      href={n.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ultima"
+                    >
+                      <figure className="ultima-thumb">
+                        <img
+                          src={n.imagem}
+                          alt=""
+                          loading="lazy"
+                          onError={esconderImagemQuebrada}
+                        />
+                      </figure>
+                      <div>
+                        <time className="noticia-data" dateTime={n.data}>
+                          {formatarData(n.data)}
+                        </time>
+                        <span className="ultima-titulo">{n.titulo}</span>
+                      </div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a
+                className="noticias-todas"
+                href={PORTAL_PREFEITURA}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ver todas as notícias
+                <ArrowRightIcon width={14} height={14} />
+              </a>
+            </aside>
           </div>
         </div>
       </section>
