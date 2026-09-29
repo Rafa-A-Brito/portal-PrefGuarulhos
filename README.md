@@ -1,4 +1,5 @@
-# 🏛️ Portal Cultural - Patrimônio Histórico de Guarulhos 
+# 🏛️ Portal Cultural - Patrimônio Histórico de Guarulhos
+
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=white)
 ![Google Maps API](https://img.shields.io/badge/Google%20Maps%20API-3.64-4285F4?style=flat&logo=googlemaps&logoColor=red)
 ![CSS3](https://img.shields.io/badge/CSS-3-1572B6?style=flat&logo=css3&logoColor=white)
@@ -37,6 +38,9 @@ Aplicação web interativa para o mapeamento, consulta e preservação da memór
 </a>
 <a href="https://github.com/vpredeus">
   <img src="https://github.com/vpredeus.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/>
+</a>
+<a href="https://github.com/vitinnsz">
+  <img src="https://github.com/vitinnsz.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/>
 </a>
 
 ### Motivação
@@ -85,13 +89,13 @@ Ao reunir esse conteúdo em uma plataforma digital única, o projeto contribui p
 
 ### Bibliotecas e Dependências
 
-| Biblioteca | Finalidade |
-|---|---|
-| `@react-google-maps/api` | Integração do Google Maps SDK no React (marcadores, janelas de informação e rotas) |
-| `axios` | Cliente HTTP para consumo das rotas REST da API backend |
-| `recharts` (ou `chart.js` + `react-chartjs-2`) | Visualização de dados estatísticos através de gráficos dinâmicos |
-| `react-icons` | Biblioteca de ícones vetoriais leves |
-| `react-router-dom` | Gerenciamento de rotas e navegação de páginas (Home, Detalhes do Patrimônio, Dashboard Estatístico) |
+| Biblioteca                                     | Finalidade                                                                                          |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `@react-google-maps/api`                       | Integração do Google Maps SDK no React (marcadores, janelas de informação e rotas)                  |
+| `axios`                                        | Cliente HTTP para consumo das rotas REST da API backend                                             |
+| `recharts` (ou `chart.js` + `react-chartjs-2`) | Visualização de dados estatísticos através de gráficos dinâmicos                                    |
+| `react-icons`                                  | Biblioteca de ícones vetoriais leves                                                                |
+| `react-router-dom`                             | Gerenciamento de rotas e navegação de páginas (Home, Detalhes do Patrimônio, Dashboard Estatístico) |
 
 ### Backend & API
 
@@ -143,10 +147,10 @@ Pronto, abra **http://localhost:8090** e o front já está no ar. Isso sobe trê
 
 Login de teste no painel admin (`/admin/login`), que hoje permite criar, editar e apagar usuários e patrimônios (mais detalhes na seção "Painel Administrativo" logo abaixo):
 
-| E-mail                                | Senha        | Perfil  |
-| -------------------------------------- | ------------ | ------- |
-| `admin@guarulhos.sp.gov.servidor.br`   | `admin123`   | admin   |
-| `tecnico@guarulhos.sp.gov.br`          | `tecnico123` | tecnico |
+| E-mail                               | Senha        | Perfil  |
+| ------------------------------------ | ------------ | ------- |
+| `admin@guarulhos.sp.gov.servidor.br` | `admin123`   | admin   |
+| `tecnico@guarulhos.sp.gov.br`        | `tecnico123` | tecnico |
 
 Para customizar portas ou senhas, copie `.env.example` para `.env` na raiz antes do `docker compose up` (veja as variáveis disponíveis no próprio arquivo). Para derrubar tudo: `docker compose down` (adicione `-v` para apagar também os dados do MySQL).
 
@@ -159,7 +163,41 @@ Para customizar portas ou senhas, copie `.env.example` para `.env` na raiz antes
 - Chave de API do [Google Maps Platform](https://developers.google.com/maps) _(opcional, sem ela o mapa cai automaticamente em modo mockup)_
 - MySQL rodando localmente (ou use só `docker compose up mysql` para subir apenas o banco)
 
-#### Instalação
+### 🐳 Com Docker (recomendado, um comando só)
+
+Não precisa instalar Node, MySQL nem nada localmente. Só o [Docker](https://www.docker.com/) e o Docker Compose.
+
+```bash
+git clone https://github.com/<usuario>/<repositorio>.git
+cd <repositorio>
+docker compose up --build
+```
+
+Pronto, abra **http://localhost:8090** e o front já está no ar. Isso sobe três containers:
+
+- **`mysql`**, banco MySQL já criado e semeado (tabelas `usuarios` e `patrimonios`), a partir de `db/init.sql`.
+- **`backend`**, API Express que fala com o MySQL, código em `backend/src`.
+- **`frontend`**, o React já buildado, servido por Nginx na porta 80 do container (mapeada para `8090` na sua máquina), com `/api` já configurado pra apontar pro backend, sem CORS, sem nada a mais pra configurar.
+
+Login de teste no painel admin (`/admin/login`), que hoje permite criar, editar e apagar usuários e patrimônios (mais detalhes na seção "Painel Administrativo" logo abaixo):
+
+| E-mail                               | Senha        | Perfil  |
+| ------------------------------------ | ------------ | ------- |
+| `admin@guarulhos.sp.gov.servidor.br` | `admin123`   | admin   |
+| `tecnico@guarulhos.sp.gov.br`        | `tecnico123` | tecnico |
+
+Para customizar portas ou senhas, copie `.env.example` para `.env` na raiz antes do `docker compose up` (veja as variáveis disponíveis no próprio arquivo). Para derrubar tudo: `docker compose down` (adicione `-v` para apagar também os dados do MySQL).
+
+### Rodando sem Docker (manual)
+
+#### Pré-requisitos
+
+- [Node.js](https://nodejs.org/) 24.x (LTS) ou superior
+- Gerenciador de pacotes `npm` ou `yarn`
+- Chave de API do [Google Maps Platform](https://developers.google.com/maps) _(opcional, sem ela o mapa cai automaticamente em modo mockup)_
+- MySQL rodando localmente (ou use só `docker compose up mysql` para subir apenas o banco)
+
+### Instalação
 
 ```bash
 # Clone o repositório
