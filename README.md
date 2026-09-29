@@ -93,12 +93,12 @@ Ao reunir esse conteúdo em uma plataforma digital única, o projeto contribui p
 | `react-icons` | Biblioteca de ícones vetoriais leves |
 | `react-router-dom` | Gerenciamento de rotas e navegação de páginas (Home, Detalhes do Patrimônio, Dashboard Estatístico) |
 
-### Backend & API _(Arquitetura Integrada)_
+### Backend & API
 
-- **API RESTful:** Node.js / Express (ou NestJS)
-- **Banco de Dados:** PostgreSQL / MongoDB / Prisma ORM
+- **API RESTful:** Node.js com Express (código em `backend/src`).
+- **Banco de Dados:** MySQL, com queries feitas direto pelo pacote `mysql2` (sem ORM).
 
-> 💡 **Nota:** as escolhas entre alternativas (ex.: `recharts` vs. `chart.js`, Express vs. NestJS, PostgreSQL vs. MongoDB) devem ser fixadas conforme o contexto de produção e refletidas aqui assim que definidas.
+> 💡 **Nota:** as bibliotecas de gráficos (`recharts` ou `chart.js`) ainda não foram adotadas, o dashboard estatístico da home usa só os dados que já vêm da API.
 
 ---
 
@@ -125,7 +125,7 @@ Ao reunir esse conteúdo em uma plataforma digital única, o projeto contribui p
 
 ## 🚀 Como Executar o Projeto
 
-### 🐳 Com Docker (recomendado — um comando só)
+### 🐳 Com Docker (recomendado, um comando só)
 
 Não precisa instalar Node, MySQL nem nada localmente. Só o [Docker](https://www.docker.com/) e o Docker Compose.
 
@@ -135,20 +135,20 @@ cd <repositorio>
 docker compose up --build
 ```
 
-Pronto — abra **http://localhost:8090** e o front já está no ar. Isso sobe três containers:
+Pronto, abra **http://localhost:8090** e o front já está no ar. Isso sobe três containers:
 
-- **`mysql`** — banco MySQL já criado e semeado (tabelas `usuarios` e `patrimonios`), dados em `db/init.sql`;
-- **`backend`** — API Express que fala com o MySQL (`backend/src`);
-- **`frontend`** — o React buildado, servido por Nginx na porta `8080`, com `/api` já apontando pro backend (sem CORS, sem configuração extra).
+- **`mysql`**, banco MySQL já criado e semeado (tabelas `usuarios` e `patrimonios`), a partir de `db/init.sql`.
+- **`backend`**, API Express que fala com o MySQL, código em `backend/src`.
+- **`frontend`**, o React já buildado, servido por Nginx na porta 80 do container (mapeada para `8090` na sua máquina), com `/api` já configurado pra apontar pro backend, sem CORS, sem nada a mais pra configurar.
 
-Login de teste no painel admin (`/admin/login`):
+Login de teste no painel admin (`/admin/login`), que hoje permite criar, editar e apagar usuários e patrimônios (mais detalhes na seção "Painel Administrativo" logo abaixo):
 
-| E-mail                                  | Senha        | Perfil |
-| ---------------------------------------- | ------------ | ------ |
-| `admin@guarulhos.sp.gov.servidor.br`     | `admin123`   | admin  |
-| `tecnico@guarulhos.sp.gov.br`            | `tecnico123` | tecnico |
+| E-mail                                | Senha        | Perfil  |
+| -------------------------------------- | ------------ | ------- |
+| `admin@guarulhos.sp.gov.servidor.br`   | `admin123`   | admin   |
+| `tecnico@guarulhos.sp.gov.br`          | `tecnico123` | tecnico |
 
-Para customizar portas/senhas, copie `.env.example` para `.env` na raiz antes do `docker compose up` (veja as variáveis disponíveis no próprio arquivo). Para derrubar tudo: `docker compose down` (adicione `-v` para apagar também os dados do MySQL).
+Para customizar portas ou senhas, copie `.env.example` para `.env` na raiz antes do `docker compose up` (veja as variáveis disponíveis no próprio arquivo). Para derrubar tudo: `docker compose down` (adicione `-v` para apagar também os dados do MySQL).
 
 ### Rodando sem Docker (manual)
 
@@ -156,7 +156,7 @@ Para customizar portas/senhas, copie `.env.example` para `.env` na raiz antes do
 
 - [Node.js](https://nodejs.org/) 24.x (LTS) ou superior
 - Gerenciador de pacotes `npm` ou `yarn`
-- Chave de API do [Google Maps Platform](https://developers.google.com/maps) _(opcional — sem ela o mapa cai automaticamente em modo mockup)_
+- Chave de API do [Google Maps Platform](https://developers.google.com/maps) _(opcional, sem ela o mapa cai automaticamente em modo mockup)_
 - MySQL rodando localmente (ou use só `docker compose up mysql` para subir apenas o banco)
 
 #### Instalação
@@ -177,69 +177,104 @@ npm install
 
 ### Variáveis de Ambiente
 
-Crie um arquivo `.env` em cada pacote (`frontend` e `backend`) com base no `.env.example`:
+Cada pacote tem seu próprio `.env.example`. Nenhuma variável é obrigatória
+para rodar localmente (os padrões já funcionam), mas copiar o arquivo deixa
+claro o que dá pra configurar:
 
-```env
-# frontend/.env
-REACT_APP_GOOGLE_MAPS_API_KEY=sua_chave_aqui
-REACT_APP_API_BASE_URL=http://localhost:3333
-
-# backend/.env
-DATABASE_URL=postgresql://usuario:senha@localhost:5432/patrimonio_guarulhos
-PORT=3333
+```bash
+cp frontend/.env.example frontend/.env.local
+cp backend/.env.example backend/.env
 ```
+
+- `frontend/.env.example`: chave do Google Maps (opcional) e a URL do
+  backend, que o Vite exige vir prefixada com `VITE_`.
+- `backend/.env.example`: porta do servidor e credenciais do MySQL.
 
 ### Executando em desenvolvimento
 
 ```bash
-# Backend
+# Banco de dados (só precisa disso se não tiver um MySQL local)
+docker compose up mysql
+
+# Backend, em um terminal
 cd backend
 npm run dev
 
-# Frontend (em outro terminal)
+# Frontend, em outro terminal
 cd frontend
-npm start
+npm run dev
 ```
 
-A aplicação estará disponível em `http://localhost:3000`, consumindo a API em `http://localhost:3333`.
+O frontend sobe com o Vite, então o terminal mostra o endereço exato (por padrão é `http://localhost:5173`), consumindo a API em `http://localhost:4000`.
+
+---
+
+## 🔐 Painel Administrativo
+
+Existe uma área administrativa em `/admin`, protegida por login, onde é
+possível gerenciar os usuários que têm acesso ao painel e o catálogo de
+patrimônios que aparece no site público. Ela usa exatamente os mesmos
+dados do MySQL que o site público lê, então criar ou editar um patrimônio
+por lá reflete na hora nas páginas de Patrimônios, Mapa e na Home.
+
+Por enquanto existe só um perfil com acesso de verdade ao painel, o
+`admin`. Já existe um segundo perfil, `tecnico`, cadastrado no banco desde
+já (pensando num controle de permissões maior mais pra frente), mas ele
+ainda não tem nenhuma tela liberada, só consegue fazer login.
+
+**Onde encontrar cada parte, se for mexer nisso:**
+
+- `backend/src/middlewares/authMiddleware.js`: quem decide se uma
+  requisição pode ou não chegar numa rota de admin.
+- `backend/src/routes/adminUsuarioRoutes.js` e `adminPatrimonioRoutes.js`:
+  as rotas protegidas em si.
+- `frontend/src/features/admin/`: todo o painel do lado do front, desde a
+  tela de login até as páginas de gerenciamento.
+- `frontend/src/context/AuthContext.jsx`: tem uma explicação bem detalhada
+  de como o login funciona hoje (é um mock) e o que precisa mudar quando
+  virar autenticação de verdade.
 
 ---
 
 ## 📂 Estrutura do Projeto
 
 ```text
-patrimonio-guarulhos/
-├── patrimonio-guarulhos/
-└── frontend/
+portal-PrefGuaurlhos/
+├── docker-compose.yml       # Sobe mysql + backend + frontend com um comando
+├── db/
+│   └── init.sql             # Schema e dados de teste do MySQL
+├── frontend/
+│   └── src/
+│       ├── assets/          # Imagens, ícones e vetores usados nos componentes
+│       ├── components/      # Componentes globais (ex.: Navbar, Footer)
+│       ├── context/         # AuthContext e PatrimoniosContext (estado global)
+│       ├── features/
+│       │   ├── admin/       # Painel administrativo: login, layout, páginas de
+│       │   │   │           # gerenciamento de usuários e patrimônios
+│       │   │   ├── components/
+│       │   │   └── pages/
+│       │   └── mapa/        # Mapa interativo (filtros, cards, integração com o Google Maps)
+│       ├── pages/           # Páginas públicas do site (Inicio, Mapa, Patrimonios, ...)
+│       ├── services/        # api.js (axios), fakeApi.js e adminApi.js
+│       └── styles/          # CSS global e variáveis compartilhadas
+└── backend/
     └── src/
-        ├── assets/                 # Guarda mídias estáticas como imagens, ícones e vetores.
-        ├── components/             # Componentes globais e reutilizáveis por toda a aplicação (ex: Navbar).
-        ├── features/               # Módulos principais isolados por regra de negócio e domínio.
-        │   └── mapa/               # Funcionalidade do Mapa Interativo de Patrimônios.
-        │       ├── components/     # Componentes de interface exclusivos do mapa (Filtros, Cards, etc.).
-        │       ├── mocks/          # Dados simulados e arquivos JSON locais para testes do mapa.
-        │       └── styles/         # Arquivos de estilo CSS específicos das telas do mapa.
-        ├── pages/                  # Views principais associadas às rotas do sistema (ex: Inicio, Mapa).
-        │   ├── Inicio/             # Página inicial da aplicação.
-        │   └── Mapa/               # Página contêiner que carrega a feature de mapa.
-        ├── services/               # Configurações de comunicação com APIs externas e Axios.
-        └── styles/                 # Estilos globais, resets e variáveis de CSS compartilhadas.
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── models/         # ou prisma/schema.prisma
-│   │   └── server.js
-│   └── package.json
-└── README.md
+        ├── config/          # Conexão com o MySQL
+        ├── controllers/     # Recebem a requisição e chamam o service certo
+        ├── services/        # Regras de negócio e queries no banco
+        ├── routes/          # Endpoints da API, públicos e de admin
+        ├── middlewares/     # Como o exigirAdmin, que protege as rotas de admin
+        └── server.js
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Cadastro e edição de patrimônios via painel administrativo
-- [ ] Upload de imagens e documentos históricos
+- [x] Cadastro e edição de patrimônios via painel administrativo
+- [ ] Upload de imagens (hoje o admin informa uma URL de imagem, não faz upload de arquivo)
+- [ ] Autenticação de verdade (sessão por cookie, senha com hash), veja o aviso em `frontend/src/context/AuthContext.jsx`
+- [ ] Segundo nível de permissão (`tecnico`) com acesso a algumas telas do admin
 - [ ] Filtros avançados por bairro, época e categoria
 - [ ] Dashboard estatístico com exportação de relatórios
 - [ ] Versão mobile-first / PWA

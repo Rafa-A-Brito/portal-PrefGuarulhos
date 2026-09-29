@@ -9,13 +9,17 @@ import Mapa from "./pages/Mapa/Mapa";
 import Patrimonios from "./pages/Patrimonios/Patrimonios";
 import ConhecaMais from "./pages/ConhecaMais/ConhecaMais";
 import PatrimonioDetalhe from "./pages/PatrimonioDetalhe/PatrimonioDetalhe";
+import Contato from "./pages/Contato/Contato";
 
 import { PatrimoniosProvider } from "./context/PatrimoniosContext";
 import { AuthProvider } from "./context/AuthContext";
 
 import RotaProtegida from "./features/admin/components/RotaProtegida";
+import AdminLayout from "./features/admin/components/AdminLayout";
 import LoginAdmin from "./features/admin/pages/LoginAdmin";
-import Contato from "./pages/Contato/Contato";
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
+import AdminUsuarios from "./features/admin/pages/AdminUsuarios";
+import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
 
 function AdminLoading() {
   const [etapa, setEtapa] = useState("carregando");
@@ -77,6 +81,7 @@ function AppRoutes() {
 
   useEffect(() => {
     if (location.pathname === "/admin") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCarregandoAdmin(true);
 
       const timer = setTimeout(() => {
@@ -126,34 +131,21 @@ function AppRoutes() {
         }
       />
 
-      {/* ===== Área administrativa ===== */}
+      {/* ===== Área administrativa =====
+         Por enquanto só existe o perfil "admin" com acesso a este painel
+         (o perfil "tecnico" já existe no banco, pensando num RBAC maior
+         mais pra frente, mas ainda não tem nenhuma tela liberada pra ele).
+         Todas as rotas dentro do RotaProtegida com permissoes={["admin"]}
+         só renderizam se a pessoa logada tiver esse perfil. */}
 
       <Route path="/admin/login" element={<LoginAdmin />} />
 
-      <Route element={<RotaProtegida />}>
-        <Route
-          path="/admin"
-          element={
-            <div className="page-hero">
-              <h1>Dashboard administrativo</h1>
-              <p>Em construção.</p>
-            </div>
-          }
-        />
-
-        {/* Próximas rotas:
-        
-        <Route
-          path="/admin/patrimonios"
-          element={<PatrimoniosAdmin />}
-        />
-
-        <Route
-          path="/admin/usuarios"
-          element={<UsuariosAdmin />}
-        />
-
-        */}
+      <Route element={<RotaProtegida permissoes={["admin"]} />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+          <Route path="/admin/patrimonios" element={<AdminPatrimonios />} />
+        </Route>
       </Route>
     </Routes>
   );
