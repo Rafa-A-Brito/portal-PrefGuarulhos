@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   AcademicCapIcon,
   SparklesIcon,
@@ -10,89 +10,22 @@ import {
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
+import {
+  noticiasSetembro,
+  eventosOutubro,
+} from "../../features/mocks/novidadesMock";
 
 /**
- * NOVIDADES
+ * NOVIDADES E AGENDA
  * -------------------------------------------------------------------------
- * Mock de conteúdo editorial, transcrito da tela de referência. Em produção
- * isso deve vir de uma rota real (ex.: GET /novidades) em vez de ficar
- * hardcoded aqui.
- *
- * A ORDEM DO ARRAY define o layout:
- *   [0]      -> destaque grande
- *   [1]      -> segundo destaque (ao lado do grande)
- *   [2..4]   -> linha de três cards
- *   todos    -> lista "Últimas notícias" na lateral
- *
- * "data" usa formato ISO (AAAA-MM-DD) e é formatada na tela.
- * "url" aponta para o portal oficial porque ainda não existe uma rota
- * "/novidades/:id" neste app.
- * "imagem" segue o padrão do projeto (/src/assets/...); os arquivos ainda
- * precisam ser adicionados. Sem o arquivo, o espaço da imagem fica vazio.
+ * Os dados ficam em mocks/novidadesMock.js e são compartilhados com a página
+ * ConhecaMaisDetalhes. Aqui só se decide o que aparece em cada posição:
+ *   [0] destaque grande | [1] segundo destaque | [2..] linha de cards
+ *   lateral: agenda de outubro
+ * "Leia mais" abre a página de detalhes já rolando até o item (#id).
  */
 const PORTAL_PREFEITURA = "https://www.guarulhos.sp.gov.br";
-
-const novidades = [
-  {
-    id: "casarao-monteiro-lobato",
-    tag: "Patrimônio histórico",
-    data: "2025-05-16",
-    titulo:
-      "Conselho do Patrimônio Histórico obtém vitória contra demolição de casarão da Avenida Monteiro Lobato",
-    resumo: [
-      "Após análise técnica e histórica, o Conselho Municipal de Preservação do Patrimônio Histórico, Cultural, Artístico, Paisagístico e Ambiental da Cidade de Guarulhos impediu a demolição do casarão localizado na Avenida Monteiro Lobato, 787, no Macedo.",
-      "A decisão reforça o compromisso do município com a preservação da memória urbana e da identidade cultural da cidade.",
-    ],
-    imagem: "/src/assets/novidades/casarao_monteiro_lobato.jpg",
-    url: PORTAL_PREFEITURA,
-  },
-  {
-    id: "evannir-penna-casarao",
-    tag: "Exposição em destaque",
-    data: "2025-05-10",
-    titulo: "Evannir Penna em exposição no Casarão da Nossa Senhora do Rosário",
-    resumo: [
-      "O artista guarulhense Evannir Penna apresenta suas obras no Casarão da Nossa Senhora do Rosário, em uma mostra que celebra a arte, a fé e a ancestralidade.",
-      "A exposição reúne pinturas, esculturas e instalações inspiradas na religiosidade popular e na cultura afro-brasileira.",
-      "Visite e conheça essa experiência única!",
-    ],
-    imagem: "/src/assets/novidades/evannir_penna.jpg",
-    url: PORTAL_PREFEITURA,
-  },
-  {
-    id: "teatro-padre-bento",
-    tag: "Cultura",
-    data: "2025-04-30",
-    titulo: "Teatro Padre Bento recebe programação especial em maio",
-    resumo: [
-      "Espetáculos gratuitos celebram a história e a produção cultural de Guarulhos.",
-    ],
-    imagem: "/src/assets/novidades/teatro_padre_bento.jpg",
-    url: PORTAL_PREFEITURA,
-  },
-  {
-    id: "antigo-forum",
-    tag: "Preservação",
-    data: "2025-04-22",
-    titulo: "Restauro do Prédio do Antigo Fórum avança",
-    resumo: [
-      "Obra de restauração segue em andamento para devolver ao prédio sua importância histórica.",
-    ],
-    imagem: "/src/assets/novidades/antigo_forum.jpg",
-    url: PORTAL_PREFEITURA,
-  },
-  {
-    id: "bosque-maia",
-    tag: "Memória",
-    data: "2025-04-15",
-    titulo: "Bosque Maia completa 44 anos",
-    resumo: [
-      "Símbolo de lazer e preservação ambiental em Guarulhos, o Bosque Maia celebra mais um aniversário.",
-    ],
-    imagem: "/src/assets/novidades/bosque_maia.jpg",
-    url: PORTAL_PREFEITURA,
-  },
-];
+const ROTA_DETALHES = "/conheca-mais/detalhes";
 
 /**
  * EXPOSIÇÕES E ARTISTAS EM DESTAQUE
@@ -168,15 +101,13 @@ function NoticiaTag({ children }) {
 
 function NoticiaLink({ noticia }) {
   return (
-    <a
+    <Link
       className="verlink noticia-link"
-      href={noticia.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      to={`${ROTA_DETALHES}#${noticia.id}`}
     >
       Leia mais
       <ArrowRightIcon width={12} height={12} />
-    </a>
+    </Link>
   );
 }
 
@@ -184,7 +115,7 @@ export default function ConhecaMais() {
   const navigate = useNavigate();
   const { estatisticas, carregando } = usePatrimoniosContext();
 
-  const [destaque, segundo, ...demais] = novidades;
+  const [destaque, segundo, ...demais] = noticiasSetembro;
 
   return (
     <div>
@@ -242,8 +173,8 @@ export default function ConhecaMais() {
             <div>
               <h2>Novidades</h2>
               <p className="sub">
-                Acompanhe as últimas notícias sobre o patrimônio histórico e
-                cultural de Guarulhos.
+                Notícias recentes e a agenda de eventos nos patrimônios e nas
+                comunidades de Guarulhos.
               </p>
             </div>
           </div>
@@ -251,35 +182,23 @@ export default function ConhecaMais() {
           <div className="noticias">
             <div className="noticias-main">
               <div className="noticias-top">
-                <article className="noticia-card noticia-card--destaque">
-                  <NoticiaImagem noticia={destaque} />
-                  <div className="noticia-body">
-                    <NoticiaTag>{destaque.tag}</NoticiaTag>
-                    <time className="noticia-data" dateTime={destaque.data}>
-                      {formatarData(destaque.data)}
-                    </time>
-                    <h3>{destaque.titulo}</h3>
-                    {destaque.resumo.map((p) => (
-                      <p key={p}>{p}</p>
-                    ))}
-                    <NoticiaLink noticia={destaque} />
-                  </div>
-                </article>
-
-                <article className="noticia-card noticia-card--destaque">
-                  <NoticiaImagem noticia={segundo} />
-                  <div className="noticia-body">
-                    <NoticiaTag>{segundo.tag}</NoticiaTag>
-                    <time className="noticia-data" dateTime={segundo.data}>
-                      {formatarData(segundo.data)}
-                    </time>
-                    <h3>{segundo.titulo}</h3>
-                    {segundo.resumo.map((p) => (
-                      <p key={p}>{p}</p>
-                    ))}
-                    <NoticiaLink noticia={segundo} />
-                  </div>
-                </article>
+                {[destaque, segundo].map((n) => (
+                  <article
+                    key={n.id}
+                    className="noticia-card noticia-card--destaque"
+                  >
+                    <NoticiaImagem noticia={n} />
+                    <div className="noticia-body">
+                      <NoticiaTag>{n.tag}</NoticiaTag>
+                      <time className="noticia-data" dateTime={n.data}>
+                        {formatarData(n.data)}
+                      </time>
+                      <h3>{n.titulo}</h3>
+                      <p>{n.resumo}</p>
+                      <NoticiaLink noticia={n} />
+                    </div>
+                  </article>
+                ))}
               </div>
 
               <div className="noticias-row">
@@ -294,7 +213,7 @@ export default function ConhecaMais() {
                         </time>
                       </div>
                       <h3>{n.titulo}</h3>
-                      <p>{n.resumo[0]}</p>
+                      <p>{n.resumo}</p>
                       <NoticiaLink noticia={n} />
                     </div>
                   </article>
@@ -302,45 +221,35 @@ export default function ConhecaMais() {
               </div>
             </div>
 
-            <aside className="noticias-side" aria-label="Últimas notícias">
-              <h3>Últimas notícias</h3>
+            <aside className="noticias-side" aria-label="Agenda de outubro">
+              <h3>Agenda de outubro</h3>
               <ul>
-                {novidades.map((n) => (
-                  <li key={n.id}>
-                    <a
-                      href={n.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ultima"
-                    >
-                      <figure className="ultima-thumb">
-                        <img
-                          src={n.imagem}
-                          alt=""
-                          loading="lazy"
-                          onError={esconderImagemQuebrada}
-                        />
-                      </figure>
+                {eventosOutubro.map((e) => (
+                  <li key={e.id}>
+                    <Link to={`${ROTA_DETALHES}#${e.id}`} className="ultima">
+                      <span className="ultima-data">
+                        <strong>{e.bloco.dia}</strong>
+                        <span>{e.bloco.mes}</span>
+                      </span>
                       <div>
-                        <time className="noticia-data" dateTime={n.data}>
-                          {formatarData(n.data)}
-                        </time>
-                        <span className="ultima-titulo">{n.titulo}</span>
+                        <span className="ultima-titulo">{e.titulo}</span>
+                        <span className="noticia-data">{e.tag}</span>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
-              <a
-                className="noticias-todas"
-                href={PORTAL_PREFEITURA}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Ver todas as notícias
+              <Link className="noticias-todas" to={`${ROTA_DETALHES}#outubro`}>
+                Ver agenda completa
                 <ArrowRightIcon width={14} height={14} />
-              </a>
+              </Link>
             </aside>
+          </div>
+
+          <div className="noticias-cta">
+            <Link className="btn-solid" to={ROTA_DETALHES}>
+              Ver todas as notícias e fontes
+            </Link>
           </div>
         </div>
       </section>

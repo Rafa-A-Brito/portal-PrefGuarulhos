@@ -21,12 +21,25 @@ const URL_FALA_BR = "https://falabr.cgu.gov.br";
 const URL_OUVIDORIA = PORTAL_PREFEITURA;
 const EMAIL_PATRIMONIO = "patrimonio.cultural@guarulhos.sp.gov.br";
 
+/**
+ * Assuntos específicos do Patrimônio Cultural. Assuntos genéricos da
+ * Prefeitura (impostos, poda de árvore, elogio/reclamação etc.) já têm
+ * canal próprio na seção "Outras formas de contato" logo abaixo — por
+ * isso não entram nesta lista.
+ */
 const motivos = [
   { value: "duvida", label: "Dúvida sobre um patrimônio" },
   { value: "contribuicao", label: "Envio de informações ou fotos" },
-  { value: "denuncia", label: "Relatar dano ou preservação" },
+  { value: "sugestao", label: "Sugestão de bem para catalogar" },
+  { value: "correcao", label: "Correção de informação no site" },
+  { value: "denuncia", label: "Relatar dano ou risco ao patrimônio" },
+  { value: "visita", label: "Visita, uso do espaço ou evento" },
+  { value: "imprensa", label: "Imprensa ou parceria" },
   { value: "outro", label: "Outro assunto" },
 ];
+
+const CAMPO_MAX = 60;
+const MENSAGEM_MAX = 600;
 
 const FORM_INICIAL = { nome: "", email: "", motivo: "duvida", mensagem: "" };
 
@@ -66,6 +79,9 @@ export default function Contato() {
     )}&body=${encodeURIComponent(corpo)}`;
   }
 
+  const mensagemRestante = MENSAGEM_MAX - form.mensagem.length;
+  const pertoDoLimite = mensagemRestante <= 40;
+
   return (
     <div>
       <div className="page-hero">
@@ -76,15 +92,108 @@ export default function Contato() {
         </p>
       </div>
 
-      {/* ===== Canais de atendimento ===== */}
+      {/* ===== Formulário — canal prioritário ===== */}
       <section className="sobre" style={{ marginTop: 0 }}>
         <div className="sobre-inner">
           <div className="section-head">
             <div>
-              <h2>Quando usar cada canal</h2>
+              <h2>Envie sua mensagem</h2>
               <p className="sub">
-                A Prefeitura atende por dois canais principais. Veja qual deles
-                resolve o seu caso.
+                Dúvidas sobre um bem tombado, sugestões de catalogação, fotos,
+                relatos de dano ou pedidos de visita — fale direto com a equipe
+                de Patrimônio Cultural.
+              </p>
+            </div>
+          </div>
+
+          <form className="contato-form" onSubmit={handleSubmit}>
+            <div className="contato-field">
+              <label htmlFor="nome">Nome completo</label>
+              <input
+                id="nome"
+                name="nome"
+                type="text"
+                placeholder="Digite seu nome"
+                value={form.nome}
+                onChange={handleChange}
+                maxLength={CAMPO_MAX}
+                required
+              />
+            </div>
+
+            <div className="contato-field">
+              <label htmlFor="email">E-mail</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="seu.email@exemplo.com"
+                value={form.email}
+                onChange={handleChange}
+                maxLength={CAMPO_MAX}
+                required
+              />
+            </div>
+
+            <div className="contato-field">
+              <label htmlFor="motivo">Assunto</label>
+              <select
+                id="motivo"
+                name="motivo"
+                value={form.motivo}
+                onChange={handleChange}
+              >
+                {motivos.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="contato-field">
+              <div className="contato-field-header">
+                <label htmlFor="mensagem">Mensagem</label>
+                <span
+                  className={`contato-contador${
+                    pertoDoLimite ? " perto-limite" : ""
+                  }`}
+                >
+                  {form.mensagem.length}/{MENSAGEM_MAX}
+                </span>
+              </div>
+              <textarea
+                id="mensagem"
+                name="mensagem"
+                placeholder="Escreva sua mensagem aqui..."
+                value={form.mensagem}
+                onChange={handleChange}
+                maxLength={MENSAGEM_MAX}
+                required
+              />
+            </div>
+
+            <button type="submit" className="contato-submit">
+              <PaperAirplaneIcon width={16} height={16} />
+              Enviar mensagem
+            </button>
+            <p className="contato-nota">
+              Ao enviar, abriremos o seu aplicativo de e-mail com a mensagem já
+              preenchida.
+            </p>
+          </form>
+        </div>
+      </section>
+
+      {/* ===== Outras formas de contato ===== */}
+      <section className="sobre">
+        <div className="sobre-inner">
+          <div className="section-head">
+            <div>
+              <h2>Outras formas de contato</h2>
+              <p className="sub">
+                Se o seu assunto não for sobre um patrimônio específico, a
+                Prefeitura atende por dois canais oficiais:
               </p>
             </div>
           </div>
@@ -161,86 +270,6 @@ export default function Contato() {
         </div>
       </section>
 
-      {/* ===== Formulário ===== */}
-      <section className="sobre">
-        <div className="sobre-inner">
-          <div className="section-head">
-            <div>
-              <h2>Fale com o Patrimônio Cultural</h2>
-              <p className="sub">
-                Dúvidas sobre um bem tombado, sugestões de conteúdo, fotos e
-                relatos de danos ao patrimônio.
-              </p>
-            </div>
-          </div>
-
-          <form className="contato-form" onSubmit={handleSubmit}>
-            <div className="contato-field">
-              <label htmlFor="nome">Nome completo</label>
-              <input
-                id="nome"
-                name="nome"
-                type="text"
-                placeholder="Digite seu nome"
-                value={form.nome}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="contato-field">
-              <label htmlFor="email">E-mail</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="seu.email@exemplo.com"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="contato-field">
-              <label htmlFor="motivo">Assunto</label>
-              <select
-                id="motivo"
-                name="motivo"
-                value={form.motivo}
-                onChange={handleChange}
-              >
-                {motivos.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="contato-field">
-              <label htmlFor="mensagem">Mensagem</label>
-              <textarea
-                id="mensagem"
-                name="mensagem"
-                placeholder="Escreva sua mensagem aqui..."
-                value={form.mensagem}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <button type="submit" className="contato-submit">
-              <PaperAirplaneIcon width={16} height={16} />
-              Enviar mensagem
-            </button>
-            <p className="contato-nota">
-              Ao enviar, abriremos o seu aplicativo de e-mail com a mensagem já
-              preenchida.
-            </p>
-          </form>
-        </div>
-      </section>
-
       {/* ===== Informações institucionais (card flutuante) ===== */}
       {infoAberta && (
         <aside
@@ -265,9 +294,7 @@ export default function Contato() {
               <MapPinIcon width={20} height={20} />
               <div>
                 <strong>Endereço</strong>
-                <span>
-                  Av. Paulo Faccini, nº 629 - Centro, Guarulhos - SP, 07097-000
-                </span>
+                <span>Av. Bom Clima, nº 91, Guarulhos - SP, 07196-220</span>
               </div>
             </li>
             <li>

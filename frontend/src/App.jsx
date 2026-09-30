@@ -20,6 +20,7 @@ import LoginAdmin from "./features/admin/pages/LoginAdmin";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import AdminUsuarios from "./features/admin/pages/AdminUsuarios";
 import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
+import ConhecaMaisDetalhes from "./pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
 
 function AdminLoading() {
   const [etapa, setEtapa] = useState("carregando");
@@ -121,6 +122,10 @@ function AppRoutes() {
                   />
 
                   <Route path="/conheca-mais" element={<ConhecaMais />} />
+                  <Route
+                    path="/conheca-mais/detalhes"
+                    element={<ConhecaMaisDetalhes />}
+                  />
                   <Route path="/contato" element={<Contato />} />
                 </Routes>
               </div>
