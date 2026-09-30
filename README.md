@@ -129,6 +129,7 @@ Ao reunir esse conteúdo em uma plataforma digital única, o projeto contribui p
 
 ## 🚀 Como Executar o Projeto
 
+<<<<<<< HEAD
 ### 🐳 Com Docker (recomendado, um comando só)
 
 Não precisa instalar Node, MySQL nem nada localmente. Só o [Docker](https://www.docker.com/) e o Docker Compose.
@@ -163,6 +164,8 @@ Para customizar portas ou senhas, copie `.env.example` para `.env` na raiz antes
 - Chave de API do [Google Maps Platform](https://developers.google.com/maps) _(opcional, sem ela o mapa cai automaticamente em modo mockup)_
 - MySQL rodando localmente (ou use só `docker compose up mysql` para subir apenas o banco)
 
+=======
+>>>>>>> ee28479 (fix: Ajustes no projeto e remoção de credenciais)
 ### 🐳 Com Docker (recomendado, um comando só)
 
 Não precisa instalar Node, MySQL nem nada localmente. Só o [Docker](https://www.docker.com/) e o Docker Compose.
@@ -197,7 +200,7 @@ Para customizar portas ou senhas, copie `.env.example` para `.env` na raiz antes
 - Chave de API do [Google Maps Platform](https://developers.google.com/maps) _(opcional, sem ela o mapa cai automaticamente em modo mockup)_
 - MySQL rodando localmente (ou use só `docker compose up mysql` para subir apenas o banco)
 
-### Instalação
+#### Instalação
 
 ```bash
 # Clone o repositório
