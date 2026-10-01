@@ -141,8 +141,4 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
-<<<<<<< HEAD
-=======
-
->>>>>>> ee28479 (fix: Ajustes no projeto e remoção de credenciais)
 tools/

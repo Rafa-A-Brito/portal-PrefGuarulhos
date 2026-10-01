@@ -27,7 +27,7 @@
  * se abre a matéria certa antes de publicar.
  */
 
-export const ATUALIZADO_EM = "29 de setembro de 2026";
+export const ATUALIZADO_EM = "30 de setembro de 2026";
 
 /* ---------------------------------------------------------------- FONTES */
 // Cada fonte é declarada uma vez e reaproveitada pelos itens que a citam.
@@ -104,6 +104,46 @@ const F = {
     veiculo: "Guarulhos Digital",
     assunto: "Semana do Conhecimento 2026 / 13ª FECEG",
     url: "https://www.guarulhosdigital.com.br/noticia/guarulhos/paco-municipal-recebe-lancamento-da-semana-do-conhecimento-2026",
+  }, // NOVAS FONTES — NOVEMBRO & DEZEMBRO 2026
+  gcMostraCinema: {
+    veiculo: "Guarulhos Cultural",
+    assunto: "12ª Mostra Guarulhense de Cinema",
+    url: "https://guarulhoscultural.com.br/cineclube-incinerante-abre-inscricoes-para-a-12a-mostra-guarulhense-de-cinema/",
+  },
+  jgMostraCinema: {
+    veiculo: "Jornal de Guarulhos",
+    assunto: "Edital Mostra Guarulhense de Cinema",
+    url: "https://www.jornaldeguarulhos.com.br/materia/mostra-guarulhense-de-cinema-abre-edital",
+  },
+  jgLagoFestivais: {
+    veiculo: "Jornal de Guarulhos",
+    assunto: "Festivais no Lago dos Patos",
+    url: "https://www.jornaldeguarulhos.com.br/materia/lago-dos-patos-recebe-quatro-festivais-culturais-gratuitos-em-guarulhos",
+  },
+  gtdConexaoLago: {
+    veiculo: "Guarulhos Todo Dia",
+    assunto: "Programação Conexão Lago 2026",
+    url: "https://guarulhostododia.com.br/noticia/festival-da-gastronomia-e-cultura-coreana-abre-programacao-tematica-no-lago-dos-patos",
+  },
+  symplaHallyuween: {
+    veiculo: "Sympla",
+    assunto: "HALLYUWEEN no Adamastor",
+    url: "https://www.sympla.com.br/evento/lgc/3587943",
+  },
+  symplaAbtEscola: {
+    veiculo: "Sympla",
+    assunto: "Festival de Espetáculos ABT Escola",
+    url: "https://www.sympla.com.br/evento/lgc/3567014",
+  },
+  balloonParadeOficial: {
+    veiculo: "Balloon Parade 2026",
+    assunto: "Site oficial do evento",
+    url: "https://balloon-parade.cenariobaloes.com.br/",
+  },
+  naCorridaMetropolitana: {
+    veiculo: "NaCorrida",
+    assunto: "21ª Corrida Folha Metropolitana",
+    url: "https://nacorrida.com/metropolitana",
   },
 };
 
@@ -123,7 +163,7 @@ export const noticiasSetembro = [
     texto:
       "O Centro Municipal de Educação Casarão da Nossa História já ultrapassou 25 mil visitas desde a inauguração, em julho de 2025. Segundo as reportagens, foram cerca de 10,2 mil acessos em 2025 e mais de 15,4 mil somente nos primeiros oito meses de 2026. O local reúne exposições, atividades pedagógicas, cursos, saraus e encontros culturais. O número ajuda a entender como um patrimônio restaurado pode continuar fazendo parte da rotina da cidade, recebendo estudantes, famílias e pessoas interessadas na memória de Guarulhos.",
     local: "Centro Municipal de Educação Casarão da Nossa História",
-    imagem: "/src/assets/novidades/casarao_nossa_historia.jpg",
+    imagem: "/src/assets/novidades/visita_casarao_nossa_historia.jpeg",
     cta: { rotulo: "Ler a matéria", url: F.ghCasarao.url },
     fontes: [F.ghCasarao, F.nossaGuarulhos],
   },
@@ -142,7 +182,7 @@ export const noticiasSetembro = [
     quando: "Evento em 26 de setembro de 2026",
     local:
       "Centro de Cultura Popular Carpição, Praça Nossa Senhora do Bonsucesso",
-    imagem: "/src/assets/novidades/bonsucesso_cultura_tradicao.jpg",
+    imagem: "/src/assets/novidades/projeto_bonsucesso_cultura_e_tradicao.jpeg",
     cta: { rotulo: "Ler a matéria", url: F.ghBonsucesso.url },
     fontes: [F.ghBonsucesso, F.agoraGuarulhos],
   },
@@ -158,7 +198,7 @@ export const noticiasSetembro = [
     texto:
       "O programa Conexão Lago 2026 foi divulgado com quatro festivais gratuitos no entorno do Lago dos Patos. A proposta mistura música, dança, oficinas, artes visuais, cultura popular, artesanato e economia criativa. A primeira edição aconteceu em setembro e a segunda está marcada para outubro, com o Arraiá Vixi Maria nos dias 17 e 18. Como o Lago dos Patos é um dos patrimônios paisagísticos da cidade, a programação mostra uma ligação entre a preservação do espaço, a convivência comunitária e a produção cultural atual.",
     local: "Lago dos Patos",
-    imagem: "/src/assets/novidades/conexao_lago.jpg",
+    imagem: "/src/assets/novidades/lago_dos_patos.jpg",
     cta: { rotulo: "Ver a programação", url: F.clickLago.url },
     fontes: [F.clickLago, F.diarioLago],
   },
@@ -175,7 +215,7 @@ export const noticiasSetembro = [
     texto:
       "Em setembro foram divulgados dados sobre a 285ª Festa de Nossa Senhora de Bonsucesso. A edição reuniu mais de 18 mil pessoas durante dois dias, com celebrações religiosas, manifestações culturais, cortejos e apresentações musicais. Embora a festa tenha acontecido no fim de agosto, a notícia mostra a continuidade de uma tradição classificada como patrimônio imaterial de Guarulhos. A grande participação do público indica como uma prática histórica continua presente na vida cultural do município.",
     quando: "Edição realizada no fim de agosto de 2026",
-    imagem: "/src/assets/novidades/festa_bonsucesso.jpg",
+    imagem: "/src/assets/novidades/285_festa_bonsucesso.jpg",
     cta: { rotulo: "Ler a matéria", url: F.gdFesta.url },
     fontes: [F.gdFesta, F.gpFesta],
   },
@@ -251,6 +291,105 @@ export const eventosOutubro = [
   },
 ];
 
+/* -------------------------------------------------- NOVEMBRO: AGENDA */
+export const eventosNovembro = [
+  {
+    id: "mostra-guarulhense-de-cinema",
+    tipo: "evento",
+    tag: "Cinema",
+    bloco: { dia: "7–8", mes: "NOV", legenda: "2026" },
+    titulo: "12ª Mostra Guarulhense de Cinema",
+    texto:
+      "A 12ª Mostra Guarulhense de Cinema será realizada nos dias 7 e 8 de novembro pelo Cineclube Incinerante. O evento é voltado para filmes de curta-metragem produzidos em Guarulhos e tem como objetivo dar espaço para os artistas e produtores da própria cidade. A mostra valoriza a produção cultural local, aproximando os moradores dos trabalhos feitos por pessoas que vivem e atuam no município.",
+    quando: "7 e 8 de novembro de 2026",
+    local: "Local a divulgar (Guarulhos)",
+    cta: { rotulo: "Saiba mais", url: F.gcMostraCinema.url },
+    fontes: [F.gcMostraCinema, F.jgMostraCinema],
+  },
+  {
+    id: "mangiare-italiafest",
+    tipo: "evento",
+    tag: "Gastronomia e Cultura",
+    bloco: { dia: "7–8", mes: "NOV", legenda: "11h às 22h" },
+    titulo: "Mangiare ItaliaFest no Lago dos Patos",
+    texto:
+      "O Lago dos Patos terá mais uma etapa do programa Conexão Lago 2026 com o Mangiare ItaliaFest. O evento será dedicado à cultura italiana, com gastronomia, música, apresentações, oficinas, artesanato e outras atividades culturais. O evento evidencia como um local ligado à história e à paisagem da cidade continua sendo utilizado para reunir a população em atividades culturais.",
+    quando: "7 e 8 de novembro de 2026, das 11h às 22h",
+    local: "Lago dos Patos, Vila Galvão",
+    cta: { rotulo: "Ver detalhes", url: F.jgLagoFestivais.url },
+    fontes: [F.jgLagoFestivais, F.gtdConexaoLago],
+  },
+  {
+    id: "hallyuween-adamastor",
+    tipo: "evento",
+    tag: "Cultura Pop",
+    bloco: { dia: "8", mes: "NOV", legenda: "16h às 19h" },
+    titulo: "HALLYUWEEN no CME Adamastor",
+    texto:
+      "O Centro Municipal de Educação Adamastor recebe o evento HALLYUWEEN, organizado pela Hallyuland Eventos. A programação é voltada para a cultura coreana com temática de Halloween no Auditório 6. O evento chama atenção para o reuso do antigo espaço industrial da Fábrica Adamastor, atual equipamento cultural e educacional da cidade.",
+    quando: "8 de novembro de 2026, das 16h às 19h",
+    local: "CME Adamastor (Auditório 6)",
+    cta: { rotulo: "Ver ingressos no Sympla", url: F.symplaHallyuween.url },
+    fontes: [F.symplaHallyuween],
+  },
+  {
+    id: "balloon-parade-2026",
+    tipo: "evento",
+    tag: "Desfile / Arte",
+    bloco: { dia: "22", mes: "NOV", legenda: "a partir das 10h" },
+    titulo: "Balloon Parade 2026 no Bosque Maia",
+    texto:
+      "A Avenida Paulo Faccini, em frente ao Bosque Maia, receberá a Balloon Parade 2026 com o tema “Dinossauros”. O desfile contará com carros alegóricos, esculturas gigantes e estruturas produzidas com balões. Entrada gratuita com incentivo à doação de 1 kg de alimento não perecível. Utiliza uma das áreas públicas e paisagísticas mais conhecidas da cidade para uma grande manifestação artística.",
+    quando: "22 de novembro de 2026, a partir das 10h",
+    local: "Av. Paulo Faccini (em frente ao Bosque Maia)",
+    cta: { rotulo: "Site oficial do evento", url: F.balloonParadeOficial.url },
+    fontes: [F.balloonParadeOficial],
+  },
+  {
+    id: "abt-escola-teatro-padre-bento",
+    tipo: "evento",
+    tag: "Teatro",
+    bloco: { dia: "29", mes: "NOV", legenda: "2026" },
+    titulo: "Festival de Espetáculos ABT Escola no Teatro Padre Bento",
+    texto:
+      "O Teatro Padre Bento terá apresentações do Festival de Espetáculos ABT Escola. O projeto reúne estudantes de diferentes instituições de ensino que participam de atividades teatrais durante o ano para apresentar seus trabalhos ao público. Exemplo do uso contínuo de um espaço histórico do Complexo Sanatório Padre Bento para atividades artísticas.",
+    quando: "29 de novembro de 2026",
+    local: "Teatro Padre Bento (Complexo Sanatório Padre Bento)",
+    cta: { rotulo: "Ver ingressos no Sympla", url: F.symplaAbtEscola.url },
+    fontes: [F.symplaAbtEscola],
+  },
+];
+
+/* -------------------------------------------------- DEZEMBRO: AGENDA */
+export const eventosDezembro = [
+  {
+    id: "corrida-folha-metropolitana",
+    tipo: "evento",
+    tag: "Esporte / Convivência",
+    bloco: { dia: "6", mes: "DEZ", legenda: "a partir das 7h" },
+    titulo: "21ª Corrida Folha Metropolitana no Bosque Maia",
+    texto:
+      "O Bosque Maia receberá a 21ª Corrida Folha Metropolitana, com provas de 5 km, 10 km e caminhada de 3 km. A concentração acontece na área do parque e a largada na Avenida Paulo Faccini. Demonstra como o espaço ambiental urbano é utilizado para atividades esportivas e convivência comunitária.",
+    quando: "6 de dezembro de 2026, a partir das 7h",
+    local: "Bosque Maia e Av. Paulo Faccini",
+    cta: { rotulo: "Inscrições e detalhes", url: F.naCorridaMetropolitana.url },
+    fontes: [F.naCorridaMetropolitana],
+  },
+  {
+    id: "burguerland-festival",
+    tipo: "evento",
+    tag: "Gastronomia e Cultura",
+    bloco: { dia: "12–13", mes: "DEZ", legenda: "11h às 22h" },
+    titulo: "Burguerland Festival no Lago dos Patos",
+    texto:
+      "Encerramento do programa Conexão Lago 2026 com o Burguerland Festival. Voltado para a cultura urbana contemporânea, reunindo gastronomia, música, artesanato, atividades culturais e economia criativa no espaço de convivência do Lago dos Patos.",
+    quando: "12 e 13 de dezembro de 2026, das 11h às 22h",
+    local: "Lago dos Patos, Vila Galvão",
+    cta: { rotulo: "Ver matérias", url: F.jgLagoFestivais.url },
+    fontes: [F.jgLagoFestivais, F.gtdConexaoLago],
+  },
+];
+
 /* ------------------------------------------------ REFERÊNCIAS GERAIS */
 // Fontes de pesquisa sobre os patrimônios (não são notícias). Só há URL
 // onde ela foi informada; nenhum link foi inventado.
@@ -287,10 +426,15 @@ export const referenciasGerais = [
 // Junta as fontes de todos os itens, sem repetir a mesma URL.
 export function listarFontes() {
   const vistas = new Set();
-  return [...noticiasSetembro, ...eventosOutubro]
+  return [
+    ...noticiasSetembro,
+    ...eventosOutubro,
+    ...eventosNovembro,
+    ...eventosDezembro,
+  ]
     .flatMap((item) => item.fontes)
     .filter((f) => {
-      if (vistas.has(f.url)) return false;
+      if (!f.url || vistas.has(f.url)) return false;
       vistas.add(f.url);
       return true;
     });

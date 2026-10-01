@@ -3,6 +3,7 @@ import {
   SparklesIcon,
   GlobeAltIcon,
   DocumentTextIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 
 /**
@@ -28,6 +29,10 @@ export const CATEGORIA_META = {
     label: "Documental",
     Icon: DocumentTextIcon,
   },
+  demolido: {
+    label: "Demolido",
+    Icon: ExclamationTriangleIcon,
+  },
 };
 
 /**
@@ -39,4 +44,5 @@ export const CATEGORIAS_ORDEM = [
   "imaterial",
   "natural",
   "documental",
+  "demolido",
 ];

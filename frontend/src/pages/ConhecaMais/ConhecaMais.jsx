@@ -129,38 +129,60 @@ export default function ConhecaMais() {
 
       <section className="sobre" style={{ marginTop: 0 }}>
         <div className="sobre-inner">
-          <div className="section-head">
-            <div>
+          <div className="sobre-layout">
+            <div className="sobre-intro">
               <h2>Nossa missão</h2>
-              <p className="sub">
-                Três frentes guiam o que essa plataforma se propõe a fazer.
+              <p>
+                Cada praça, igreja e casarão de Guarulhos guarda uma história.
+                Este portal existe para que ela seja conhecida, cuidada e
+                passada adiante.
               </p>
             </div>
-          </div>
-          <div className="sobre-grid">
-            <div className="sobre-card">
-              <AcademicCapIcon width={24} height={24} />
-              <h3>Educar</h3>
-              <p>
-                Aproximar estudantes e o público jovem da história e da memória
-                artística de Guarulhos.
-              </p>
-            </div>
-            <div className="sobre-card">
-              <SparklesIcon width={24} height={24} />
-              <h3>Preservar</h3>
-              <p>
-                Centralizar documentos, imagens e curiosidades sobre cada bem
-                tombado num só lugar.
-              </p>
-            </div>
-            <div className="sobre-card">
-              <UsersIcon width={24} height={24} />
-              <h3>Conectar</h3>
-              <p>
-                Incentivar o turismo cultural e aproximar moradores e visitantes
-                da própria história.
-              </p>
+
+            <div className="sobre-missoes">
+              <div className="missao-item">
+                <div className="missao-icon">
+                  <AcademicCapIcon width={24} height={24} />
+                </div>
+
+                <div className="missao-content">
+                  <h3>Educar</h3>
+                  <p>
+                    Transformar a história da cidade em algo que dá vontade de
+                    aprender, para estudantes, professores e qualquer pessoa
+                    curiosa.
+                  </p>
+                </div>
+              </div>
+
+              <div className="missao-item">
+                <div className="missao-icon">
+                  <SparklesIcon width={24} height={24} />
+                </div>
+
+                <div className="missao-content">
+                  <h3>Preservar</h3>
+                  <p>
+                    Reunir fotos, documentos e curiosidades de cada bem tombado
+                    num só lugar, para que nada se perca com o tempo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="missao-item">
+                <div className="missao-icon">
+                  <UsersIcon width={24} height={24} />
+                </div>
+
+                <div className="missao-content">
+                  <h3>Conectar</h3>
+                  <p>
+                    Aproximar moradores e visitantes dos lugares que fazem
+                    Guarulhos ser Guarulhos, e dar um bom motivo para
+                    conhecê-los de perto.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -313,31 +335,25 @@ export default function ConhecaMais() {
       <section className="destaques">
         <div className="section-head">
           <div>
-            <h2>Como usar a plataforma</h2>
+            <h2>Por onde começar</h2>
             <p className="sub">
-              Hoje o acervo reúne{" "}
-              {carregando ? "vários" : (estatisticas?.totalBens ?? 0)} bens
-              catalogados em{" "}
+              Já são {carregando ? "vários" : (estatisticas?.totalBens ?? 0)}{" "}
+              bens catalogados, em{" "}
               {carregando ? "algumas" : (estatisticas?.totalCategorias ?? 0)}{" "}
-              categorias diferentes.
+              categorias. Escolha o jeito que preferir de explorar.
             </p>
           </div>
         </div>
         <div className="sobre-grid">
           <div className="sobre-card">
             <Squares2X2Icon width={24} height={24} />
-            <h3>Navegue pelo acervo</h3>
+            <h3>Folheie o acervo</h3>
             <p>
-              Filtre por categoria e leia o resumo histórico de cada patrimônio
-              catalogado.
+              Filtre por categoria e descubra a história por trás de cada
+              patrimônio, em resumos curtos e fáceis de ler.
             </p>
             <button
               className="map-cta-btn"
-              style={{
-                marginTop: 12,
-                color: "#fff",
-                background: "var(--blue)",
-              }}
               onClick={() => navigate("/patrimonios")}
             >
               Ver patrimônios
@@ -345,20 +361,12 @@ export default function ConhecaMais() {
           </div>
           <div className="sobre-card">
             <MapIcon width={24} height={24} />
-            <h3>Explore no mapa</h3>
+            <h3>Passeie pelo mapa</h3>
             <p>
-              Veja onde cada bem está localizado na cidade e compare distâncias
-              entre eles.
+              Veja onde cada bem fica na cidade e compare a distância entre eles
+              antes de sair de casa.
             </p>
-            <button
-              className="map-cta-btn"
-              style={{
-                marginTop: 12,
-                color: "#fff",
-                background: "var(--blue)",
-              }}
-              onClick={() => navigate("/mapa")}
-            >
+            <button className="map-cta-btn" onClick={() => navigate("/mapa")}>
               Abrir o mapa
             </button>
           </div>

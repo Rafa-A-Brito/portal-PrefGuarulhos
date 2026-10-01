@@ -13,7 +13,7 @@ export default function Footer() {
         <div className="footer-col footer-brand">
           <div className="footer-brand-row">
             <img
-              src="/logo_guarulhos_2.png"
+              src="/logo_guarulhos_4.png"
               alt="Prefeitura de Guarulhos"
               className="footer-logo"
             />

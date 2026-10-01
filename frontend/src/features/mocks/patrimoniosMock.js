@@ -372,7 +372,7 @@ export const patrimoniosMock = [
   {
     id: "28",
     nome: "Casarão Saraceni (Demolido em 2010)",
-    categoria: "arquitetonico",
+    categoria: "demolido",
     bairro: "Itapegica",
     endereco: "Antiga Chácara Saraceni (Anexo ao Internacional Shopping)",
     cep: "07042-040",
@@ -396,7 +396,7 @@ export const patrimoniosMock = [
   {
     id: "30",
     nome: "Casarão da Família Albertis (Demolido em 2023)",
-    categoria: "arquitetonico",
+    categoria: "demolido",
     bairro: "Gopouva",
     endereco: "Rua Zumbi dos Palmares, s/n",
     cep: "07090-000",

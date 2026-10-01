@@ -173,7 +173,7 @@ input:focus-visible {
   min-width: 0;
 }
 .brand-logo {
-  height: 34px;
+  height: 40px;
   width: auto;
   flex: none;
   display: block;
@@ -489,53 +489,206 @@ input:focus-visible {
 /* =========================================================
    SOBRE O PROJETO
    ========================================================= */
+
 .sobre {
   background: #fff;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  margin-top: 52px;
 }
+
 .sobre-inner {
   max-width: var(--container);
   margin: 0 auto;
-  padding: 52px clamp(16px, 4vw, 32px);
+  padding: 72px clamp(16px, 4vw, 32px);
 }
-.sobre-grid {
+
+.sobre-layout {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.4fr);
+  gap: clamp(48px, 8vw, 120px);
+  align-items: start;
 }
+
+/* LADO ESQUERDO */
+
+.sobre-intro {
+  position: sticky;
+  top: 100px;
+}
+
+.sobre-intro h2 {
+  font-size: 30px;
+  line-height: 1.15;
+  margin-bottom: 14px;
+  color: var(--ink);
+}
+
+.sobre-intro p {
+  max-width: 360px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+/* LADO DIREITO */
+
+.sobre-missoes {
+  display: flex;
+  flex-direction: column;
+}
+
+/* O layout é o antigo (texto alinhado à coluna, 26px de respiro, primeiro
+   item sem padding em cima e último sem padding embaixo). A "pintura" do
+   hover é uma camada atrás do item que vaza para os lados (--missao-sangria)
+   e, no primeiro/último item, também para cima/baixo, assim o texto nunca
+   fica colado na borda da cor e o espaçamento do layout não muda. */
+
+.missao-item {
+  --missao-cor: var(--blue);
+  --missao-sangria: 20px;
+
+  position: relative;
+  isolation: isolate;
+
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 18px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.missao-item:nth-child(2) {
+  --missao-cor: var(--green);
+}
+
+.missao-item:nth-child(3) {
+  --missao-cor: var(--orange);
+}
+
+.missao-item:first-child {
+  padding-top: 0;
+}
+
+.missao-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Pintura da esquerda para a direita */
+
+.missao-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(var(--missao-sangria) * -1);
+  z-index: -1;
+
+  border-radius: 6px;
+  background: var(--missao-cor);
+
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.missao-item:first-child::before {
+  top: -26px;
+}
+
+.missao-item:last-child::before {
+  bottom: -26px;
+}
+
+.missao-item:hover::before {
+  transform: scaleX(1);
+}
+
+/* Ícone */
+
+.missao-icon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 2px;
+}
+
+.missao-icon svg {
+  color: var(--missao-cor);
+  transition:
+    color 0.25s ease,
+    transform 0.3s ease;
+}
+
+.missao-item:hover .missao-icon svg {
+  color: #fff;
+  transform: translateX(3px);
+}
+
+/* Conteúdo */
+
+.missao-content h3 {
+  font-size: 18px;
+  line-height: 1.3;
+  margin-bottom: 7px;
+  color: var(--ink);
+  transition: color 0.25s ease;
+}
+
+.missao-content p {
+  max-width: 560px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  font-weight: 400;
+  transition: color 0.25s ease;
+}
+
+.missao-item:hover .missao-content h3 {
+  color: #fff;
+}
+
+.missao-item:hover .missao-content p {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* RESPONSIVO */
+
 @media (max-width: 780px) {
-  .sobre-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .sobre-inner {
+    padding: 52px clamp(16px, 4vw, 32px);
+  }
+
+  .sobre-layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .sobre-intro {
+    position: static;
+  }
+
+  .sobre-intro h2 {
+    font-size: 26px;
+  }
+
+  .sobre-intro p {
+    max-width: 520px;
+  }
+
+  /* o padding lateral da página é de no mínimo 16px: a sangria precisa
+     ser menor que isso para a cor não gerar rolagem horizontal */
+  .missao-item {
+    --missao-sangria: 12px;
   }
 }
-.sobre-card {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  padding: 22px 20px;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-}
-.sobre-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-plaque);
-}
-.sobre-card svg {
-  color: var(--blue);
-  margin-bottom: 10px;
-}
-.sobre-card h3 {
-  font-size: 16px;
-  margin-bottom: 6px;
-}
-.sobre-card p {
-  font-size: 13px;
-  color: var(--ink-soft);
-  line-height: 1.55;
-  font-weight: 400;
+
+@media (prefers-reduced-motion: reduce) {
+  .missao-item::before,
+  .missao-content h3,
+  .missao-content p,
+  .missao-icon svg {
+    transition: none;
+  }
 }
 
 /* =========================================================
@@ -1551,7 +1704,7 @@ input:focus-visible {
 
 .footer-logo {
   width: auto;
-  height: 34px;
+  height: 38px;
   flex: none;
 }
 
@@ -1957,9 +2110,84 @@ input:focus-visible {
   color: #fff;
 }
 
-/* variação clara do map-cta-btn, usada dentro dos cards da página Conheça+ */
+/* =========================================================
+   COMO USAR A PLATAFORMA (cards da página Conheça mais)
+   ========================================================= */
+.sobre-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.sobre-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-plaque);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.sobre-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--blue);
+}
+
+/* Ícone dentro de um quadradinho, no mesmo padrão do .admin-login-icon-badge */
+.sobre-card > svg {
+  box-sizing: content-box;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--blue);
+}
+
+.sobre-card:nth-child(2) > svg {
+  color: var(--green);
+}
+
+.sobre-card h3 {
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.sobre-card p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+/* Botão azul dentro do card; margin-top:auto empurra os dois botões para a
+   mesma linha, mesmo que um texto tenha mais linhas que o outro. */
 .sobre-card .map-cta-btn {
   display: inline-flex;
+  margin-top: auto;
+  background: var(--blue);
+  color: #fff;
+}
+
+.sobre-card .map-cta-btn:hover {
+  background: var(--indigo);
+}
+
+@media (max-width: 680px) {
+  .sobre-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sobre-card {
+    padding: 22px;
+  }
 }
 
 /* =========================================================
@@ -2171,16 +2399,19 @@ input:focus-visible {
   flex: none;
 }
 .legenda-dot.cat-arquitetonico {
-  background: #1d6e96;
+  background: #424039;
 }
 .legenda-dot.cat-imaterial {
-  background: #92590a;
+  background: #c6780c;
 }
 .legenda-dot.cat-natural {
-  background: #146a2e;
+  background: #32e313;
 }
 .legenda-dot.cat-documental {
-  background: #56661f;
+  background: #4cc4b0;
+}
+.legenda-dot.cat-demolido {
+  background: #ff0202;
 }
 
 /* ---- Painel de detalhe (sobe ao selecionar) ---- */
@@ -2463,68 +2694,147 @@ input:focus-visible {
   background: var(--indigo);
 }
 
-/* =========================================================
-   ADMIN — tela de login, visualmente distinta do site público
-   ========================================================= */
+/* ---------- Login Admin ---------- */
 
 .admin-login-shell {
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* ---------- Painel visual (esquerda) ---------- */
+
+.admin-login-visual {
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: clamp(32px, 6vw, 56px);
+}
+
+/* Área da colagem — proporção baseada no Exemplo.png. As três imagens
+   ficam em posição absoluta, medidas em % do container, então tudo
+   escala junto. Larguras definidas, altura automática: nenhuma imagem
+   é cortada ou esticada. */
+.admin-login-collage {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 270 / 335;
+}
+
+/* Inferior esquerdo — textura geométrica, inclinada ~-21° */
+.admin-login-collage-textura {
+  position: absolute;
+  width: 66%;
+  left: 22%;
+  top: 58%;
+  transform: rotate(-21deg);
+  filter: invert(1);
+  opacity: 0.28;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Superior esquerdo — imagem secundária, inclinada ~-24° */
+.admin-login-collage-secundaria {
+  position: absolute;
+  width: 66%;
+  left: 11%;
+  top: 13%;
+  transform: rotate(-24deg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-plaque);
+  opacity: 0.9;
+  z-index: 2;
+}
+
+/* Centro — imagem principal, reta e na frente */
+.admin-login-collage-principal {
+  position: absolute;
+  width: 68%;
+  left: 54%;
+  top: 28%;
+  border-radius: var(--radius-card);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  z-index: 3;
+}
+
+/* ---------- Painel do formulário (direita) ---------- */
+
+.admin-login-panel {
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--navy);
-  padding: 20px;
+  padding: clamp(24px, 6vw, 72px);
+}
+
+.admin-login-panel-inner {
+  width: 100%;
+  max-width: 360px;
+}
+
+.admin-login-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-decoration: none;
+  margin-bottom: 28px;
+}
+
+.admin-login-back:hover {
+  color: var(--navy);
 }
 
 .admin-login-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 40px 36px;
   width: 100%;
-  max-width: 380px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
-  text-align: center;
+  text-align: left;
+}
+
+.admin-login-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
 }
 
 /* Cabeçalho */
 
 .admin-login-header {
-  margin-bottom: 24px;
-}
-
-.admin-login-icon-wrap {
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: var(--paper);
-}
-
-.admin-login-icon {
-  color: var(--navy);
+  margin-bottom: 28px;
 }
 
 .admin-login-overline {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: var(--ink-soft);
-  margin-bottom: 5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
 }
 
 .admin-login-card h1 {
-  font-size: 20px;
-  margin: 0 0 5px;
+  font-size: clamp(22px, 2.6vw, 26px);
+  margin: 0 0 6px;
   color: var(--ink);
 }
 
 .admin-login-header p {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--ink-soft);
   margin: 0;
 }
@@ -2534,7 +2844,7 @@ input:focus-visible {
 .admin-login-fields {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .admin-login-field {
@@ -2551,7 +2861,7 @@ input:focus-visible {
 
 .admin-login-card input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   font-size: 13.5px;
@@ -2564,11 +2874,26 @@ input:focus-visible {
   border-color: var(--blue);
 }
 
-/* Senha */
+/* Ícone à esquerda dos campos (e-mail e senha) */
 
-.admin-login-senha-wrap {
+.admin-login-input-wrap {
   position: relative;
 }
+
+.admin-login-input-wrap input {
+  padding-left: 38px;
+}
+
+.admin-login-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+/* Senha: ícone à esquerda + botão de mostrar/ocultar à direita */
 
 .admin-login-senha-wrap input {
   padding-right: 40px;
@@ -2606,7 +2931,7 @@ input:focus-visible {
 
 .admin-login-submit {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 22px;
   padding: 12px;
   font-size: 14px;
 }
@@ -2618,6 +2943,22 @@ input:focus-visible {
   color: var(--ink-soft);
   margin: 20px 0 0;
   line-height: 1.5;
+}
+
+/* ---------- Mobile: painel visual sai, forma centraliza ---------- */
+
+@media (max-width: 900px) {
+  .admin-login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-login-visual {
+    display: none;
+  }
+
+  .admin-login-panel {
+    min-height: 100vh;
+  }
 }
 /* =========================================================
    PAGINAÇÃO — Acervo de Patrimônios
