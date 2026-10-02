@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { ArrowPathIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 
 import Navbar from "./components/Navbar/NavBar";
 import Footer from "./components/Footer/Footer";
+import ErrorBoundary from "./components/ErroModal/ErroBoundary";
 
 import Inicio from "./pages/Inicio/Inicio";
 import Mapa from "./pages/Mapa/Mapa";
@@ -13,6 +15,8 @@ import Contato from "./pages/Contato/Contato";
 
 import { PatrimoniosProvider } from "./context/PatrimoniosContext";
 import { AuthProvider } from "./context/AuthContext";
+import { ErroModalProvider } from "./context/ErroModalContext";
+import { useAuth } from "./hooks/useAuth";
 
 import RotaProtegida from "./features/admin/components/RotaProtegida";
 import AdminLayout from "./features/admin/components/AdminLayout";
@@ -22,50 +26,73 @@ import AdminUsuarios from "./features/admin/pages/AdminUsuarios";
 import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
 import ConhecaMaisDetalhes from "./pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
 
-function AdminLoading() {
-  const [etapa, setEtapa] = useState("carregando");
+// Tempo mínimo de cada etapa da transição, só para a tela não "piscar" quando
+// a verificação termina rápido demais. O spinner NÃO depende de tempo fixo:
+// ele gira até a verificação de verdade (AuthContext) terminar.
+const TEMPO_MINIMO_CARREGANDO_MS = 900;
+const TEMPO_VERIFICADO_MS = 1100;
+
+/**
+ * Tela de transição ao abrir o painel (/admin).
+ *
+ * - "pronto" vem da verificação real da sessão (AuthContext.carregando).
+ *   Enquanto ela não termina, o ícone de carregamento continua girando.
+ * - Quando a verificação termina (e o tempo mínimo passou), o ícone vira um
+ *   "check" verde, a tela mostra o nome da pessoa e depois chama onConcluir.
+ */
+function AdminLoading({ pronto, nome, onConcluir }) {
+  const [minimoPassou, setMinimoPassou] = useState(false);
 
   useEffect(() => {
-    const verificando = setTimeout(() => {
-      setEtapa("verificado");
-    }, 1200);
-
-    const concluindo = setTimeout(() => {
-      setEtapa("concluido");
-    }, 2200);
-
-    return () => {
-      clearTimeout(verificando);
-      clearTimeout(concluindo);
-    };
+    const timer = setTimeout(
+      () => setMinimoPassou(true),
+      TEMPO_MINIMO_CARREGANDO_MS,
+    );
+    return () => clearTimeout(timer);
   }, []);
 
+  const verificado = pronto && minimoPassou;
+
+  useEffect(() => {
+    if (!verificado) return undefined;
+
+    const timer = setTimeout(onConcluir, TEMPO_VERIFICADO_MS);
+    return () => clearTimeout(timer);
+  }, [verificado, onConcluir]);
+
+  const primeiroNome = nome?.split(" ")[0];
+
   return (
-    <div className="admin-loading">
-      <div className="admin-loading-content">
-        {etapa === "carregando" && (
-          <>
-            <div className="admin-loading-spinner" />
+    <div className="admin-transicao" role="status" aria-live="polite">
+      <div className="admin-transicao-card">
+        <img
+          className="admin-transicao-logo"
+          src="/logo_guarulhos.png"
+          alt="Prefeitura de Guarulhos"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
 
-            <p>Carregando a página</p>
-          </>
-        )}
+        <span className={`admin-transicao-icone${verificado ? " is-ok" : ""}`}>
+          {verificado ? (
+            <CheckCircleIcon width={36} height={36} />
+          ) : (
+            <ArrowPathIcon width={34} height={34} className="icon-spin" />
+          )}
+        </span>
 
-        {etapa === "verificado" && (
-          <>
-            <div className="admin-loading-check">✓</div>
+        <h2>{verificado ? "Acesso verificado" : "Verificando seu acesso"}</h2>
 
-            <p>Acesso verificado</p>
-          </>
-        )}
+        <p>
+          {verificado
+            ? `Olá${primeiroNome ? `, ${primeiroNome}` : ""}. Abrindo o painel…`
+            : "Confirmando sua sessão no painel administrativo."}
+        </p>
 
-        {etapa === "concluido" && (
-          <>
-            <div className="admin-loading-check">✓</div>
-
-            <p>Admin - logado</p>
-          </>
-        )}
+        <div className={`admin-transicao-barra${verificado ? " is-ok" : ""}`}>
+          <span />
+        </div>
       </div>
     </div>
   );
@@ -73,28 +100,36 @@ function AdminLoading() {
 
 function AppRoutes() {
   const location = useLocation();
+  const { carregando: verificandoSessao, autenticado, usuario } = useAuth();
 
-  const [carregandoAdmin, setCarregandoAdmin] = useState(false);
+  // A transição aparece uma vez a cada vez que se navega para /admin. Em vez
+  // de ligar/desligar com um efeito (que deixaria o painel "piscar" por um
+  // quadro antes da transição), guardamos a chave da navegação que já foi
+  // concluída: location.key muda a cada navegação.
+  const [chaveConcluida, setChaveConcluida] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (location.pathname === "/admin") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCarregandoAdmin(true);
+  const concluirTransicao = useCallback(
+    () => setChaveConcluida(location.key),
+    [location.key],
+  );
 
-      const timer = setTimeout(() => {
-        setCarregandoAdmin(false);
-      }, 2800);
+  const emTransicao =
+    location.pathname === "/admin" && chaveConcluida !== location.key;
 
-      return () => clearTimeout(timer);
-    }
-  }, [location.pathname]);
-
-  if (carregandoAdmin) {
-    return <AdminLoading />;
+  // Sem sessão (e já verificado), não há o que "validar": deixa a
+  // RotaProtegida mandar a pessoa para o login em vez de mostrar a transição.
+  if (emTransicao && (verificandoSessao || autenticado)) {
+    return (
+      <AdminLoading
+        pronto={!verificandoSessao && autenticado}
+        nome={usuario?.nome}
+        onConcluir={concluirTransicao}
+      />
+    );
   }
 
   return (
@@ -158,12 +193,16 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <PatrimoniosProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </PatrimoniosProvider>
-    </AuthProvider>
+    <ErroModalProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <PatrimoniosProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </PatrimoniosProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ErroModalProvider>
   );
 }

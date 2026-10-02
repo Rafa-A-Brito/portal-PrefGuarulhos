@@ -4,9 +4,13 @@ import {
   AcademicCapIcon,
   ArrowLeftIcon,
   BuildingLibraryIcon,
+  CakeIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
+  FaceSmileIcon,
+  FilmIcon,
   FireIcon,
+  FlagIcon,
   ListBulletIcon,
   MapPinIcon,
   MegaphoneIcon,
@@ -16,12 +20,15 @@ import {
   StarIcon,
   SunIcon,
   TicketIcon,
+  TrophyIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import {
   ATUALIZADO_EM,
   noticiasSetembro,
   eventosOutubro,
+  eventosNovembro,
+  eventosDezembro,
   referenciasGerais,
   listarFontes,
 } from "../../features/mocks/novidadesMock";
@@ -57,6 +64,15 @@ const ICONES = {
   "arraia-vixi-maria": FireIcon,
   "festival-criart": StarIcon,
   "semana-do-conhecimento-2026": AcademicCapIcon,
+  // --- novembro ---
+  "mostra-guarulhense-de-cinema": FilmIcon,
+  "mangiare-italiafest": CakeIcon,
+  "hallyuween-adamastor": FaceSmileIcon,
+  "balloon-parade-2026": FlagIcon,
+  "abt-escola-teatro-padre-bento": TicketIcon,
+  // --- dezembro ---
+  "corrida-folha-metropolitana": TrophyIcon,
+  "burguerland-festival": CakeIcon,
   fontes: DocumentTextIcon,
 };
 
@@ -85,6 +101,26 @@ const GRUPOS = [
       id: i.id,
       titulo: i.rotulo,
       data: dataCurta(i, "Out"),
+    })),
+  },
+  {
+    id: "novembro",
+    titulo: "Novembro",
+    sigla: "NOV",
+    itens: eventosNovembro.map((i) => ({
+      id: i.id,
+      titulo: i.rotulo,
+      data: dataCurta(i, "Nov"),
+    })),
+  },
+  {
+    id: "dezembro",
+    titulo: "Dezembro",
+    sigla: "DEZ",
+    itens: eventosDezembro.map((i) => ({
+      id: i.id,
+      titulo: i.rotulo,
+      data: dataCurta(i, "Dez"),
     })),
   },
   {
@@ -366,6 +402,40 @@ export default function ConhecaMaisDetalhes() {
               </p>
               <div className="detalhes-lista">
                 {eventosOutubro.map((e) => (
+                  <ItemLinha key={e.id} item={e} />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ===== Novembro ===== */}
+          <section id="novembro" className="detalhes-secao">
+            <div>
+              <div className="section-head">
+                <div>
+                  <h2>Novembro de 2026</h2>
+                  <p className="sub">Programação já divulgada.</p>
+                </div>
+              </div>
+              <div className="detalhes-lista">
+                {eventosNovembro.map((e) => (
+                  <ItemLinha key={e.id} item={e} />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ===== Dezembro ===== */}
+          <section id="dezembro" className="detalhes-secao">
+            <div>
+              <div className="section-head">
+                <div>
+                  <h2>Dezembro de 2026</h2>
+                  <p className="sub">Programação já divulgada.</p>
+                </div>
+              </div>
+              <div className="detalhes-lista">
+                {eventosDezembro.map((e) => (
                   <ItemLinha key={e.id} item={e} />
                 ))}
               </div>

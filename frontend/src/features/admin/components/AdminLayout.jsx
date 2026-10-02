@@ -7,6 +7,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
 import "../admin.css";
+import "../admin-extras.css";
+// Acréscimos visuais do painel (hover da lateral, cores dos ícones, selos de
+// perfil e de categoria, upload). Vem DEPOIS do admin.css de propósito: em
+// regras de mesma força, a última declarada vence.
 
 /**
  * Layout que toda página do painel admin usa por baixo: uma barra lateral

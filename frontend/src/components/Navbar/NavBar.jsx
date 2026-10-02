@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Bars3Icon,
   XMarkIcon,
@@ -8,10 +8,30 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [termoBusca, setTermoBusca] = useState("");
 
   const linkClass = ({ isActive }) => (isActive ? "active" : "");
   const fechar = () => setMenuAberto(false);
+
+  /**
+   * Mesma função de busca da Home (Inicio.jsx: irParaPatrimonios) — aqui
+   * duplicada em vez de importada porque é só uma linha; se crescer, vale
+   * extrair pra um hook compartilhado (ex.: useBuscaPatrimonios).
+   */
+  const buscar = (e) => {
+    e.preventDefault();
+    const termo = termoBusca.trim();
+    navigate(
+      termo
+        ? `/patrimonios?busca=${encodeURIComponent(termo)}`
+        : "/patrimonios",
+    );
+    setBuscaAberta(false);
+    setTermoBusca("");
+  };
 
   const itensNav = (
     <>
@@ -52,9 +72,39 @@ export default function Navbar() {
       <nav className="navbar-nav navbar-nav-desktop">{itensNav}</nav>
 
       <div className="navbar-actions">
-        <button className="navbar-search-btn" aria-label="Buscar">
-          <MagnifyingGlassIcon width={18} height={18} />
-        </button>
+        {buscaAberta ? (
+          <form className="navbar-busca" onSubmit={buscar}>
+            <MagnifyingGlassIcon width={16} height={16} />
+            <input
+              type="text"
+              autoFocus
+              placeholder="Buscar patrimônios..."
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+            />
+            <button
+              type="button"
+              className="navbar-busca-fechar"
+              aria-label="Fechar busca"
+              onClick={() => {
+                setBuscaAberta(false);
+                setTermoBusca("");
+              }}
+            >
+              <XMarkIcon width={15} height={15} />
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            className="navbar-search-btn"
+            aria-label="Buscar"
+            onClick={() => setBuscaAberta(true)}
+          >
+            <MagnifyingGlassIcon width={18} height={18} />
+          </button>
+        )}
+
         {/* Acesso administrativo — só a "porta de entrada" visual.
             A segurança de verdade está em RotaProtegida + backend. */}
         <Link

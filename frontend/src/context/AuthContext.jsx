@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import api from "../services/api";
+// [API DESATIVADA TEMPORARIAMENTE] o login abaixo usa usuários em texto puro.
+// import api from "../services/api";
 import { AuthContext } from "./AuthContextInstance.js";
 import { CHAVE_SESSAO_MOCK } from "./authConstants.js";
 
@@ -44,6 +45,27 @@ import { CHAVE_SESSAO_MOCK } from "./authConstants.js";
  *   5. o middleware exigirAdmin do backend passa a validar esse cookie em
  *      vez de confiar em headers que o próprio front manda
  */
+
+/**
+ * Usuários de teste em texto puro (mesmos do db.json). Só existem para o
+ * painel abrir sem backend; apagar quando o login voltar a usar a API.
+ */
+const USUARIOS_MOCK = [
+  {
+    id: 1,
+    nome: "Administrador",
+    email: "admin@guarulhos.sp.gov.servidor.br",
+    senha: "admin123",
+    perfil: "admin",
+  },
+  {
+    id: 2,
+    nome: "Técnico de Patrimônio",
+    email: "tecnico@guarulhos.sp.gov.br",
+    senha: "tecnico123",
+    perfil: "tecnico",
+  },
+];
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
@@ -112,6 +134,7 @@ export function AuthProvider({ children }) {
   // ===========================================================================
 
   /* ---------- MOCK (login simples via sessionStorage), ATIVO ---------- */
+  /* ----- ORIGINAL (API) — descomentar quando o backend estiver integrado -----
   const login = useCallback(async (email, senha) => {
     setErro(null);
 
@@ -149,6 +172,30 @@ export function AuthProvider({ children }) {
       }
       return false;
     }
+  }, []);
+----- fim do ORIGINAL (API) ----- */
+
+  /* ---------- MOCK TEMPORÁRIO (sem API): confere em USUARIOS_MOCK ---------- */
+  const login = useCallback(async (email, senha) => {
+    setErro(null);
+
+    const encontrado = USUARIOS_MOCK.find(
+      (u) => u.email === email.trim().toLowerCase() && u.senha === senha,
+    );
+
+    if (!encontrado) {
+      // Mensagem genérica de propósito: não revela se o e-mail existe.
+      setErro("E-mail ou senha inválidos.");
+      return false;
+    }
+
+    // Nunca deixar a senha entrar no estado do React nem no storage.
+    const usuarioSeguro = { ...encontrado };
+    delete usuarioSeguro.senha;
+
+    sessionStorage.setItem(CHAVE_SESSAO_MOCK, JSON.stringify(usuarioSeguro));
+    setUsuario(usuarioSeguro);
+    return true;
   }, []);
 
   /* ---------- PRODUÇÃO (sessão real), descomentar quando existir ----------

@@ -32,6 +32,7 @@ import CASARAO_LIMA_IMG from "../../assets/casarao_jorge_lima.jpg";
 // Imagens de patrimônios históricos demolidos
 import CASARAO_SARACENI_IMG from "../../assets/casarao_saraceni_demolido.jpg";
 import CASARAO_ALBERTIS_IMG from "../../assets/casarao_albertis_demolido.jpg";
+import CARBONELL_IMG from "../../assets/antiga_carbonell_demolida.jpg";
 
 export const patrimoniosMock = [
   // Patrimônios Materiais existentes
@@ -377,7 +378,7 @@ export const patrimoniosMock = [
     endereco: "Antiga Chácara Saraceni (Anexo ao Internacional Shopping)",
     cep: "07042-040",
     resumo:
-      "Imóvel eclético do início do século XX, tombado em 2000 e demolido para expansão de estacionamento.",
+      "Construído em estilo art nouveau na região da Vila Itapegica, pertenceu a Giuseppe Saraceni, pioneiro da indústria calçadista e ex-prefeito. Foi demolido na madrugada de 11 de novembro de 2010 após perder o tombamento municipal.",
     imagemPrincipal: CASARAO_SARACENI_IMG,
     localizacao: { lat: -23.479, lng: -46.545 },
   },
@@ -404,5 +405,17 @@ export const patrimoniosMock = [
       "Imóvel dos anos 1940 que possuía vitrais da Casa Conrado e painel de Lisbeth Forell (resgatados antes da demolição).",
     imagemPrincipal: CASARAO_ALBERTIS_IMG,
     localizacao: { lat: -23.471, lng: -46.535 },
+  },
+  {
+    id: "31",
+    nome: "Antiga Carbonell Fiação e Tecelagem e Casarões Gêmeos (Demolidos)",
+    categoria: "demolido",
+    bairro: "Centro",
+    endereco: "Região Central de Guarulhos",
+    cep: "07010-000",
+    resumo:
+      "Fundada na década de 1920 pelos irmãos Carbonell no centro de Guarulhos, a fábrica e os tradicionais casarões gêmeos da família foram completamente demolidos para dar lugar a um empreendimento imobiliário residencial.",
+    imagemPrincipal: CARBONELL_IMG,
+    localizacao: { lat: -23.465, lng: -46.531 },
   },
 ];

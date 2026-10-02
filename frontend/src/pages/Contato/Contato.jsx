@@ -88,7 +88,8 @@ export default function Contato() {
         <h1>Fale conosco</h1>
         <p>
           Escolha o canal certo para o seu assunto ou envie uma mensagem
-          diretamente para a equipe de Patrimônio Cultural de Guarulhos.
+          diretamente para a equipe responsável pelos patrimônios históricosde
+          Guarulhos.
         </p>
       </div>
 
@@ -101,7 +102,7 @@ export default function Contato() {
               <p className="sub">
                 Dúvidas sobre um bem tombado, sugestões de catalogação, fotos,
                 relatos de dano ou pedidos de visita — fale direto com a equipe
-                de Patrimônio Cultural.
+                da Prefeitura de Guarulhos responsável.
               </p>
             </div>
           </div>
