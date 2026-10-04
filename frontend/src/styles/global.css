@@ -977,6 +977,176 @@ input:focus-visible {
   padding: 11px 18px;
   font-size: 13.5px;
 }
+/* ---- Seções de conteúdo (detalhe do patrimônio) ---- */
+.detalhe-secoes {
+  --tint-blue: rgba(62, 163, 220, 0.09);
+  --tint-green: rgba(28, 161, 65, 0.09);
+  margin-top: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+} /* ---- Detalhe: blocos de conteúdo ---- */
+.detalhe-bloco-titulo {
+  font-size: 22px;
+  color: var(--navy);
+  margin: 0 0 18px;
+}
+
+/* Cards "Em resumo" */
+.detalhe-fatos {
+  margin-top: 40px;
+}
+.detalhe-fatos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.detalhe-fato {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+  padding: 22px 24px;
+  background: #f1f1f6;
+  border-radius: 20px;
+}
+.detalhe-fato-rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.detalhe-fato-valor {
+  margin-top: auto;
+  font-size: 18px;
+  line-height: 1.35;
+  color: var(--navy);
+}
+
+/* Seções em faixas, título e texto alternando lados */
+.detalhe-secoes {
+  margin-top: 56px;
+}
+.detalhe-secao {
+  padding: 48px 0;
+  background: #fff;
+}
+.detalhe-secao--dir {
+  background: rgba(62, 163, 220, 0.08);
+}
+.detalhe-secao-inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 48px;
+  align-items: start;
+}
+.detalhe-secao--dir .detalhe-secao-inner {
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+}
+.detalhe-secao--dir .detalhe-secao-titulo {
+  order: 2;
+}
+.detalhe-secao--dir .detalhe-secao-texto {
+  order: 1;
+}
+
+.detalhe-secao-titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.detalhe-secao-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: rgba(62, 163, 220, 0.12);
+  color: var(--indigo);
+}
+.detalhe-secao--dir .detalhe-secao-icone {
+  background: #fff;
+  color: var(--accent-dark);
+}
+.detalhe-secao-titulo h2 {
+  font-size: clamp(20px, 2.4vw, 24px);
+  color: var(--navy);
+}
+.detalhe-secao-texto p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.detalhe-secao-texto p + p {
+  margin-top: 14px;
+}
+
+/* Cards "Continue explorando" */
+.detalhe-body--fim {
+  margin-top: 56px;
+}
+.detalhe-ligacoes {
+  margin-bottom: 48px;
+}
+.detalhe-ligacoes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.detalhe-ligacao {
+  display: flex;
+  flex-direction: column;
+  min-height: 170px;
+  padding: 26px 28px;
+  background: #f1f1f6;
+  border-radius: 20px;
+  color: var(--navy);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.detalhe-ligacao strong {
+  font-size: 18px;
+  line-height: 1.35;
+}
+.detalhe-ligacao span {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.detalhe-ligacao svg {
+  margin-top: auto;
+  transition: transform 0.15s ease;
+}
+.detalhe-ligacao:hover {
+  background: #e8e8f1;
+}
+.detalhe-ligacao:hover svg {
+  transform: translateX(4px);
+}
+
+@media (max-width: 760px) {
+  .detalhe-secao {
+    padding: 36px 0;
+  }
+  .detalhe-secao-inner,
+  .detalhe-secao--dir .detalhe-secao-inner {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .detalhe-secao--dir .detalhe-secao-titulo,
+  .detalhe-secao--dir .detalhe-secao-texto {
+    order: 0;
+  }
+}
 
 .detalhe-relacionados {
   margin-top: 52px;
@@ -1304,6 +1474,10 @@ input:focus-visible {
   color: #56661f;
 }
 
+.cat-badge.cat-demolido {
+  background: #b54d3d;
+  color: #ffffff;
+}
 /* =========================================================
    MAPA (MapaPatrimonios) — modo mockup + InfoWindow
    ========================================================= */
@@ -4687,5 +4861,184 @@ input:focus-visible {
 @media (max-width: 640px) {
   .navbar-busca input {
     width: 38vw;
+  }
+}
+
+/* =========================================================
+   HISTÓRIA DO PATRIMÔNIO
+   ========================================================= */
+
+.detalhe-historia {
+  margin-top: 80px;
+}
+
+.detalhe-historia-header {
+  max-width: 760px;
+  margin-bottom: 48px;
+}
+
+.detalhe-historia-header > span {
+  display: inline-block;
+  margin-bottom: 10px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+
+  color: var(--accent, #69c9bd);
+}
+
+.detalhe-historia-header h2 {
+  margin: 0 0 12px;
+
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.1;
+}
+
+.detalhe-historia-header p {
+  max-width: 650px;
+  margin: 0;
+
+  color: var(--muted, #667085);
+  line-height: 1.7;
+}
+
+/* =========================================================
+   BLOCOS ALTERNADOS
+   ========================================================= */
+
+.detalhe-historia-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.detalhe-historia-item {
+  display: grid;
+  grid-template-columns: 58% 42%;
+  min-height: 330px;
+
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+/* Texto à esquerda */
+.detalhe-historia-texto {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 52px 56px;
+}
+
+/* Imagem à direita */
+.detalhe-historia-fundo {
+  min-height: 330px;
+
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* Segundo bloco: imagem esquerda / texto direita */
+.detalhe-historia-item.invertido {
+  grid-template-columns: 42% 58%;
+}
+
+.detalhe-historia-item.invertido .detalhe-historia-texto {
+  order: 2;
+}
+
+.detalhe-historia-item.invertido .detalhe-historia-fundo {
+  order: 1;
+}
+
+/* =========================================================
+   CONTEÚDO DOS BLOCOS
+   ========================================================= */
+
+.detalhe-historia-numero {
+  margin-bottom: 18px;
+
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+
+  color: var(--accent, #69c9bd);
+}
+
+.detalhe-historia-texto h3 {
+  margin: 0 0 18px;
+
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.2;
+}
+
+.detalhe-historia-texto p {
+  max-width: 680px;
+  margin: 0;
+
+  font-size: 1rem;
+  line-height: 1.8;
+
+  color: var(--muted, #667085);
+}
+
+/* =========================================================
+   EFEITO VISUAL NA IMAGEM
+   ========================================================= */
+
+.detalhe-historia-fundo {
+  position: relative;
+}
+
+.detalhe-historia-fundo::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.18));
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .detalhe-historia {
+    margin-top: 56px;
+  }
+
+  .detalhe-historia-header {
+    margin-bottom: 32px;
+  }
+
+  .detalhe-historia-lista {
+    gap: 32px;
+  }
+
+  .detalhe-historia-item,
+  .detalhe-historia-item.invertido {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detalhe-historia-texto,
+  .detalhe-historia-item.invertido .detalhe-historia-texto {
+    order: 1;
+
+    padding: 36px 28px;
+  }
+
+  .detalhe-historia-fundo,
+  .detalhe-historia-item.invertido .detalhe-historia-fundo {
+    order: 2;
+
+    min-height: 230px;
   }
 }
