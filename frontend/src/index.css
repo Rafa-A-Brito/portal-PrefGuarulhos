@@ -1,0 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap");
+
+:root {
+  --navy: #0a012d;
+  --navy-soft: #160b47;
+  --blue: #0f059f;
+  --indigo: #3445af;
+  --gray: #d9d9d9;
+  --paper: #f6f4ee;
+  --bronze: #b3822e;
+  --bronze-dark: #7a5a1e;
+  --ink: #14122a;
+  --ink-soft: #5b5876;
+  --line: #e4e1d6;
+  --radius-card: 14px;
+  --shadow-plaque:
+    0 1px 0 rgba(10, 1, 45, 0.04), 0 8px 20px rgba(10, 1, 45, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
