@@ -1,7 +1,8 @@
+import { Link } from "react-router-dom";
 import { MapPinIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../categoriaMeta";
 
-import BACKGROUND_IMAGE from "../../assets/back_image.png";
+import SANATORIO_IMG from "../../assets/sanatorio_padre_bento.jpg";
 
 export default function PlaquetaCard({ item }) {
   const meta = CATEGORIA_META[item.categoria];
@@ -17,7 +18,7 @@ export default function PlaquetaCard({ item }) {
           alt={item.nome}
           loading="lazy"
           onError={(e) => {
-            e.currentTarget.src = BACKGROUND_IMAGE;
+            e.currentTarget.src = SANATORIO_IMG;
           }}
         />
         <span className={`cat-badge cat-${item.categoria}`}>
@@ -32,11 +33,16 @@ export default function PlaquetaCard({ item }) {
           <MapPinIcon className="inline-icon" aria-hidden="true" />
           {item.bairro}
         </div>
+        {item.cep && <span className="cep">CEP {item.cep}</span>}
         <p className="resumo">{item.resumo}</p>
-        <a className="verlink" href="#">
+        <Link
+          className="verlink"
+          to={`/patrimonios/${item.id}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           Ver detalhes{" "}
           <ArrowRightIcon className="inline-icon-sm" aria-hidden="true" />
-        </a>
+        </Link>
       </div>
     </article>
   );

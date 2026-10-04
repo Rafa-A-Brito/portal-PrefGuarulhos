@@ -1,4 +1,20 @@
 {
+  "usuarios": [
+    {
+      "id": 1,
+      "nome": "Administrador",
+      "email": "admin@guarulhos.sp.gov.servidor.br",
+      "senha": "admin123",
+      "perfil": "admin"
+    },
+    {
+      "id": 2,
+      "nome": "Técnico de Patrimônio",
+      "email": "tecnico@guarulhos.sp.gov.br",
+      "senha": "tecnico123",
+      "perfil": "tecnico"
+    }
+  ],
   "patrimonios": [
     {
       "id": "1",

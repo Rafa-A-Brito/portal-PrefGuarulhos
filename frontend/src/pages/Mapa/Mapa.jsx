@@ -11,6 +11,7 @@ import {
 import MapaPatrimonios from "../../features/mapa/MapaPatrimonios";
 import FiltroBar from "../../features/mapa/FiltroBar";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
+import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 
 const FALLBACK_THUMB =
@@ -23,17 +24,10 @@ export default function Mapa() {
   const [filtro, setFiltro] = useState("todos");
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
-  const filtrados = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    return patrimonios.filter((p) => {
-      const passaCategoria = filtro === "todos" || p.categoria === filtro;
-      const passaBusca =
-        !termo ||
-        p.nome.toLowerCase().includes(termo) ||
-        p.bairro.toLowerCase().includes(termo);
-      return passaCategoria && passaBusca;
-    });
-  }, [patrimonios, filtro, busca]);
+  const filtrados = useMemo(
+    () => filtrarPatrimonios(patrimonios, { categoria: filtro, busca }),
+    [patrimonios, filtro, busca],
+  );
 
   const handleFiltro = (novo) => {
     setFiltro(novo);
@@ -99,7 +93,7 @@ export default function Mapa() {
               <input
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                placeholder="Pesquisar patrimônio..."
+                placeholder="Pesquisar por nome, bairro ou CEP..."
               />
             </div>
             <button
@@ -155,11 +149,17 @@ export default function Mapa() {
                   <span className="mapa-detail-bairro">
                     <MapPinIcon width={14} height={14} /> {selecionado.bairro}
                   </span>
+                  {selecionado.endereco && (
+                    <span className="mapa-detail-endereco">
+                      {selecionado.endereco}
+                      {selecionado.cep ? ` – CEP ${selecionado.cep}` : ""}
+                    </span>
+                  )}
                   <p>{selecionado.resumo}</p>
                   <div className="mapa-detail-actions">
                     <Link
                       className="btn-outline"
-                      to={`/patrimonios?categoria=${selecionado.categoria}`}
+                      to={`/patrimonios/${selecionado.id}`}
                     >
                       <InformationCircleIcon width={16} height={16} /> Ver
                       detalhes

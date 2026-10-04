@@ -1,185 +1,186 @@
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BuildingLibraryIcon,
-  TagIcon,
   MapPinIcon,
-  CalendarDaysIcon,
   MagnifyingGlassIcon,
-  MapIcon,
-  AcademicCapIcon,
-  SparklesIcon,
-  UsersIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  HeartIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
-import PlaquetaCard from "../../features/mapa/PlaquetaCard";
+import {
+  BookOpenIcon as BookOpenIconSolid,
+  MapPinIcon as MapPinIconSolid,
+  UserGroupIcon as UserGroupIconSolid,
+  ShieldCheckIcon as ShieldCheckIconSolid,
+} from "@heroicons/react/24/solid";
+import { heroDestaqueMock } from "../../features/mocks/destaquesMock";
+import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
-import BACKGROUND_IMAGE from "../../assets/back_image.png";
+import BACKGROUND_IMAGE from "../../assets/viaduto_cid_guarulhos.png";
 
-const CAT_LABEL = {
-  arquitetonico: "Arquitetônico",
-  imaterial: "Imaterial",
-  natural: "Natural",
-  documental: "Documental",
-};
+const CARD_SCROLL_STEP = 236; // largura do card (220px) + gap (16px)
+const QTD_DESTAQUES = 6;
 
 export default function Inicio() {
   const navigate = useNavigate();
-  const { patrimonios, estatisticas, categorias, carregando } =
-    usePatrimoniosContext();
-  const destaques = patrimonios.slice(0, 4);
+  const trackRef = useRef(null);
+  const { patrimonios, carregando } = usePatrimoniosContext();
+  const destaques = patrimonios.slice(0, QTD_DESTAQUES);
+  const [termoBusca, setTermoBusca] = useState("");
 
-  const irParaMapa = () => navigate("/mapa");
-  const irParaPatrimonios = (categoria) => {
+  const irParaPatrimonios = (termo) => {
     navigate(
-      categoria ? `/patrimonios?categoria=${categoria}` : "/patrimonios",
+      termo
+        ? `/patrimonios?busca=${encodeURIComponent(termo)}`
+        : "/patrimonios",
     );
+  };
+
+  const buscar = (e) => {
+    e.preventDefault();
+    irParaPatrimonios(termoBusca.trim());
+  };
+
+  const rolarDestaques = (direcao = "next") => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    if (direcao === "prev") {
+      const noInicio = track.scrollLeft <= 0;
+      track.scrollTo({
+        left: noInicio
+          ? track.scrollWidth
+          : track.scrollLeft - CARD_SCROLL_STEP,
+        behavior: "smooth",
+      });
+    } else {
+      const noFinal =
+        track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+      track.scrollTo({
+        left: noFinal ? 0 : track.scrollLeft + CARD_SCROLL_STEP,
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
     <div>
       {/* ===== HERO ===== */}
       <section
-        className="hero"
-        style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}
+        className="hero hero-v2"
+        style={{
+          backgroundImage: `url(${BACKGROUND_IMAGE})`,
+        }}
       >
-        <div className="hero-inner">
-          <span className="eyebrow">Preserve a nossa história</span>
-          <h1>Conheça e valorize o patrimônio de Guarulhos</h1>
-          <p className="lede">
-            Um mapeamento vivo dos bens históricos, culturais e naturais do
-            município — para moradores, estudantes e visitantes redescobrirem a
-            cidade.
-          </p>
+        <div className="hero-inner hero-inner-v2">
+          <div className="hero-copy">
+            <span className="eyebrow">Guarulhos, nossa história</span>
+            <h1>
+              Conheça e valorize o<br />
+              patrimônio de <span className="hl">Guarulhos</span>
+            </h1>
+            <p className="lede">
+              Explore os bens culturais, históricos e naturais que fazem parte
+              da nossa identidade. Preserve a nossa história para o futuro.
+            </p>
 
-          <div className="searchbar">
-            <MagnifyingGlassIcon
-              width={18}
-              height={18}
-              className="searchbar-icon"
-            />
-            <input type="text" placeholder="Busque por nome, bairro ou CEP" />
-            <button onClick={() => irParaPatrimonios()}>Buscar</button>
+            <form className="searchbar" onSubmit={buscar}>
+              <MagnifyingGlassIcon
+                width={18}
+                height={18}
+                className="searchbar-icon"
+              />
+              <input
+                type="text"
+                value={termoBusca}
+                onChange={(e) => setTermoBusca(e.target.value)}
+                placeholder="Busque por nome, bairro, CEP ou categoria..."
+              />
+              <button type="submit">
+                Buscar <ChevronRightIcon width={16} height={16} />
+              </button>
+            </form>
+
+            <div className="sugestoes-row">
+              <span className="sugestoes-label">Sugestões:</span>
+              {CATEGORIAS_ORDEM.map((slug) => (
+                <button
+                  key={slug}
+                  className="sugestao-pill"
+                  onClick={() => navigate(`/patrimonios?categoria=${slug}`)}
+                >
+                  {CATEGORIA_META[slug].label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <aside className="hero-float-card">
+            <div className="hfc-head">
+              <MapPinIcon width={16} height={16} />
+              <div>
+                <h3>{heroDestaqueMock.nome}</h3>
+                <span className="hfc-bairro">{heroDestaqueMock.bairro}</span>
+              </div>
+              <button className="hfc-next" aria-label="Próximo destaque">
+                <ChevronRightIcon width={16} height={16} />
+              </button>
+            </div>
+            <p className="hfc-resumo">{heroDestaqueMock.resumo}</p>
+            <div className="hfc-thumbs">
+              {heroDestaqueMock.imagens.map((img, i) => (
+                <img key={i} src={img} alt="" />
+              ))}
+              <span className="hfc-extra">+{heroDestaqueMock.extra}</span>
+            </div>
+          </aside>
         </div>
       </section>
 
-      {/* ===== ESTATÍSTICAS ===== */}
-      <div className="stats-row">
-        <div className="stat-card">
-          <BuildingLibraryIcon width={22} height={22} className="stat-icon" />
-          <div>
-            <div className="n">
-              {carregando ? "—" : `${estatisticas?.totalBens ?? 0}+`}
-            </div>
-            <div className="l">Bens catalogados</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <TagIcon width={22} height={22} className="stat-icon" />
-          <div>
-            <div className="n">
-              {carregando ? "—" : (estatisticas?.totalCategorias ?? 0)}
-            </div>
-            <div className="l">Categorias de patrimônio</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <MapPinIcon width={22} height={22} className="stat-icon" />
-          <div>
-            <div className="n">
-              {carregando ? "—" : (estatisticas?.totalBairros ?? 0)}
-            </div>
-            <div className="l">Bairros mapeados</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <CalendarDaysIcon width={22} height={22} className="stat-icon" />
-          <div>
-            <div className="n">
-              {carregando ? "—" : estatisticas?.primeiroTombamento}
-            </div>
-            <div className="l">Primeiro tombamento</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== SOBRE O PROJETO ===== */}
-      <section className="sobre" id="sobre">
-        <div className="sobre-inner">
-          <div className="section-head">
+      {/* ===== FAIXA DE RECURSOS ===== */}
+      <div className="feature-bar">
+        <div className="feature-bar-inner">
+          <div className="feature-item">
+            <span className="feature-icon">
+              <BookOpenIconSolid width={18} height={18} />
+            </span>
             <div>
-              <h2>Sobre o projeto</h2>
-              <p className="sub">
-                Um esforço colaborativo para registrar e valorizar a memória
-                cultural do município.
-              </p>
+              <strong>Conheça a história</strong>
+              <span className="feature-item-sub">Explore nossa identidade</span>
             </div>
           </div>
-          <div className="sobre-grid">
-            <div className="sobre-card">
-              <AcademicCapIcon width={24} height={24} />
-              <h3>Educar</h3>
-              <p>
-                Aproxima estudantes e o público jovem da história e da memória
-                artística de Guarulhos.
-              </p>
-            </div>
-            <div className="sobre-card">
-              <SparklesIcon width={24} height={24} />
-              <h3>Preservar</h3>
-              <p>
-                Centraliza documentos, imagens e curiosidades sobre cada bem
-                tombado num só lugar.
-              </p>
-            </div>
-            <div className="sobre-card">
-              <UsersIcon width={24} height={24} />
-              <h3>Conectar</h3>
-              <p>
-                Incentiva o turismo cultural e aproxima moradores e visitantes
-                da própria história.
-              </p>
+          <div className="feature-item">
+            <span className="feature-icon">
+              <MapPinIconSolid width={18} height={18} />
+            </span>
+            <div>
+              <strong>Explore o mapa</strong>
+              <span className="feature-item-sub">Localize os patrimônios</span>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ===== CATEGORIAS ===== */}
-      <section className="categorias">
-        <div className="section-head">
-          <div>
-            <h2>Explore por categoria</h2>
-            <p className="sub">
-              Cada bem cadastrado pertence a uma destas frentes de preservação.
-            </p>
+          <div className="feature-item">
+            <span className="feature-icon">
+              <UserGroupIconSolid width={18} height={18} />
+            </span>
+            <div>
+              <strong>Participe</strong>
+              <span className="feature-item-sub">
+                Contribua com informações
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="categoria-chips">
-          {Object.entries(CAT_LABEL).map(([valor, label]) => (
-            <button
-              key={valor}
-              className={`categoria-chip cat-${valor}`}
-              onClick={() => irParaPatrimonios(valor)}
-            >
-              <span className="chip-label">{label}</span>
-              <span className="chip-count">{categorias[valor] ?? 0}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== CTA MAPA ===== */}
-      <div className="map-cta">
-        <div className="map-cta-inner">
-          <div>
-            <h2>Explore tudo no mapa interativo</h2>
-            <p>
-              Veja a localização de cada bem, filtre por categoria e navegue
-              pelo acervo completo de Guarulhos.
-            </p>
+          <div className="feature-item">
+            <span className="feature-icon">
+              <ShieldCheckIconSolid width={18} height={18} />
+            </span>
+            <div>
+              <strong>Preserve</strong>
+              <span className="feature-item-sub">
+                Ajude a manter viva nossa cultura
+              </span>
+            </div>
           </div>
-          <button className="map-cta-btn" onClick={() => irParaMapa()}>
-            <MapIcon width={18} height={18} /> Abrir o acervo
-          </button>
         </div>
       </div>
 
@@ -189,21 +190,87 @@ export default function Inicio() {
           <div>
             <h2>Destaques</h2>
             <p className="sub">
-              Conheça alguns dos bens tombados e catalogados pela plataforma.
+              Conheça alguns dos bens tombados e espaços mais relevantes de
+              Guarulhos.
             </p>
           </div>
+          <label className="ordenar-select">
+            Organizado por
+            <span className="ordenar-select-box">
+              Todos <ChevronDownIcon width={14} height={14} />
+            </span>
+          </label>
         </div>
+
         {carregando ? (
           <div className="skeleton-grid">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="skeleton-card" />
             ))}
           </div>
         ) : (
-          <div className="plaque-grid">
-            {destaques.map((item) => (
-              <PlaquetaCard key={item.id} item={item} />
-            ))}
+          <div className="destaques-carousel">
+            <button
+              className="destaques-arrow"
+              aria-label="Ver mais destaques"
+              onClick={rolarDestaques}
+            >
+              <ChevronLeftIcon width={18} height={18} />
+            </button>
+            <div
+              className="destaques-track"
+              ref={trackRef}
+              onWheel={(e) => {
+                if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+                e.currentTarget.scrollBy({ left: e.deltaY, behavior: "auto" });
+                e.preventDefault();
+              }}
+            >
+              {destaques.map((item) => {
+                const meta = CATEGORIA_META[item.categoria];
+                return (
+                  <article
+                    key={item.id}
+                    className="destaque-card"
+                    onClick={() =>
+                      navigate(`/patrimonios?categoria=${item.categoria}`)
+                    }
+                  >
+                    <figure>
+                      <img
+                        src={item.imagemPrincipal}
+                        alt={item.nome}
+                        loading="lazy"
+                      />
+                      <button
+                        className="destaque-fav"
+                        aria-label="Favoritar"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <HeartIcon width={16} height={16} />
+                      </button>
+                      <span className={`destaque-badge cat-${item.categoria}`}>
+                        {meta?.label.toUpperCase()}
+                      </span>
+                    </figure>
+                    <div className="destaque-body">
+                      <h3>{item.nome}</h3>
+                      <span className="destaque-bairro">
+                        <MapPinIcon width={13} height={13} />
+                        {item.bairro}
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            <button
+              className="destaques-arrow"
+              aria-label="Ver mais destaques"
+              onClick={rolarDestaques}
+            >
+              <ChevronRightIcon width={18} height={18} />
+            </button>
           </div>
         )}
       </section>

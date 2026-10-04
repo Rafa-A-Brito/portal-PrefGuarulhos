@@ -1,0 +1,259 @@
+/* =========================================================
+   ACRÉSCIMOS VISUAIS DO PAINEL ADMIN
+   Importado por AdminLayout.jsx DEPOIS do admin.css, então estas regras
+   vencem as de mesma força do admin.css. Para desfazer qualquer item, é só
+   apagar o bloco correspondente.
+   ========================================================= */
+
+/* ---------- 1) Barra lateral: hover em azul-escuro translúcido ----------
+   A lateral é navy (admin.css), então um navy translúcido não apareceria.
+   O hover usa o --indigo (azul escurecido da marca, 43, 127, 179) com 38% de
+   opacidade: dá um azul-escuro visível sobre o navy e continua diferente do
+   item ativo (--blue sólido). Para mais ou menos destaque, mude só o último
+   número do rgba. */
+.admin-sidebar-nav a:hover:not(.active) {
+  background: rgba(43, 127, 179, 0.38);
+  color: #fff;
+}
+
+/* ---------- 2) Ícones do dashboard: uma cor por tipo ---------- */
+.admin-dashboard-icon--usuarios {
+  background: rgba(62, 163, 220, 0.16);
+  color: var(--indigo);
+}
+
+.admin-dashboard-icon--patrimonios {
+  background: rgba(28, 161, 65, 0.16);
+  color: var(--accent-dark);
+}
+
+/* ---------- 3) Selos de perfil: administrador x técnico ---------- */
+.admin-badge-perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.admin-badge-admin {
+  background: rgba(43, 37, 92, 0.1);
+  color: var(--navy);
+}
+
+.admin-badge-tecnico {
+  background: rgba(250, 183, 72, 0.24);
+  color: #8a5a00;
+}
+
+/* ---------- 4) Cores por categoria patrimonial ----------
+   A cor vem do atributo data-cat (o slug da categoria). Para uma categoria
+   nova, copie um bloco abaixo trocando o slug e as cores. Categoria sem
+   bloco cai no cinza padrão. */
+[data-cat] {
+  --cat-bg: rgba(91, 100, 114, 0.14);
+  --cat-fg: var(--ink-soft);
+  --cat-dot: var(--ink-soft);
+  --cat-row: rgba(91, 100, 114, 0.04);
+}
+
+[data-cat="arquitetonico"] {
+  --cat-bg: rgba(62, 163, 220, 0.16);
+  --cat-fg: #1f6a96;
+  --cat-dot: var(--blue);
+  --cat-row: rgba(62, 163, 220, 0.06);
+}
+
+[data-cat="natural"] {
+  --cat-bg: rgba(28, 161, 65, 0.15);
+  --cat-fg: #11672a;
+  --cat-dot: var(--green);
+  --cat-row: rgba(28, 161, 65, 0.06);
+}
+
+[data-cat="imaterial"] {
+  --cat-bg: rgba(250, 183, 72, 0.26);
+  --cat-fg: #8a5a00;
+  --cat-dot: var(--orange-dark);
+  --cat-row: rgba(250, 183, 72, 0.1);
+}
+
+.admin-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+}
+
+.admin-cat::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cat-dot);
+}
+
+.admin-cat-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+/* Linha da tabela com a cor da categoria + faixa na lateral esquerda */
+.admin-table tbody tr[data-cat] td {
+  background: var(--cat-row);
+}
+
+.admin-table tbody tr[data-cat] td:first-child {
+  box-shadow: inset 4px 0 0 var(--cat-dot);
+}
+
+/* ---------- 5) Formulário de patrimônio: upload, abas e ajudas ---------- */
+/* O textarea do resumo não está dentro de um <label> (que no admin.css é
+   flex em coluna e estica os campos), então sem isto ele ficava ao lado das
+   abas, com a largura padrão do navegador. */
+.admin-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.admin-upload textarea {
+  display: block;
+  align-self: stretch;
+  width: 100%;
+  min-height: 112px;
+}
+
+.admin-upload .admin-resumo-contador,
+.admin-upload .admin-form-erro {
+  align-self: stretch;
+}
+
+.admin-upload-rotulo {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.admin-upload-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-upload-bloco {
+  margin-bottom: 10px;
+}
+
+.admin-upload-nome {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.admin-upload-remover {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.admin-upload-remover:hover {
+  color: #b3261e;
+  background: rgba(179, 38, 30, 0.08);
+}
+
+.admin-upload-previa {
+  display: block;
+  max-width: 100%;
+  max-height: 160px;
+  margin-top: 10px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-segmentado {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding: 3px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.admin-segmentado button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.admin-segmentado button[aria-selected="true"] {
+  background: #fff;
+  color: var(--navy);
+  box-shadow: var(--shadow-plaque);
+}
+
+.admin-resumo-contador {
+  margin-top: 4px;
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.admin-aviso-ia {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.admin-ajuda {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.admin-ajuda svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--blue);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar-nav a,
+  .admin-segmentado button {
+    transition: none;
+  }
+}

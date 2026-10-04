@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import {
   MapPinIcon,
-  EnvelopeIcon,
   PhoneIcon,
-  BuildingLibraryIcon,
+  //BuildingLibraryIcon,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 
 export default function Footer() {
@@ -12,43 +12,63 @@ export default function Footer() {
       <div className="footer-grid">
         <div className="footer-col footer-brand">
           <div className="footer-brand-row">
-            <BuildingLibraryIcon width={24} height={24} />
+            <img
+              src="/logo_guarulhos_4.png"
+              alt="Prefeitura de Guarulhos"
+              className="footer-logo"
+            />
+
             <div>
               <strong>Patrimônio Cultural</strong>
-              <span>Prefeitura de Guarulhos</span>
+              <span>Guarulhos, que faz e que cuida!</span>
             </div>
           </div>
+
           <p>
-            Mapeamento colaborativo dos bens históricos, culturais e naturais do
-            município — projeto acadêmico em parceria com a comunidade.
+            Plataforma dedicada à consulta e valorização dos bens históricos,
+            culturais e naturais do município de Guarulhos.
           </p>
         </div>
 
         <div className="footer-col">
           <h4>Navegação</h4>
+
           <Link to="/">Início</Link>
-          <Link to="/mapa">Acervo &amp; Mapa</Link>
+          <Link to="/mapa">Mapas</Link>
+          <Link to="/patrimonios">Patrimônios</Link>
+          <Link to="/conheca-mais">Conheça mais</Link>
+          <Link to="/contato">Contato</Link>
         </div>
 
         <div className="footer-col">
-          <h4>Institucional</h4>
+          <h4>Prefeitura de Guarulhos</h4>
+
           <span className="footer-info">
-            <MapPinIcon width={15} height={15} /> Guarulhos, SP
+            <MapPinIcon width={15} height={15} />
+            Av. Bom Clima, 91 — Bom Clima
           </span>
+
           <span className="footer-info">
-            <EnvelopeIcon width={15} height={15} />{" "}
-            patrimonio@guarulhos.sp.gov.br
+            <PhoneIcon width={15} height={15} />
+            (11) 2475-8600
           </span>
-          <span className="footer-info">
-            <PhoneIcon width={15} height={15} /> (11) 0000-0000
-          </span>
+
+          <a
+            href="https://www.guarulhos.sp.gov.br/"
+            target="_blank"
+            rel="noreferrer"
+            className="footer-external-link"
+          >
+            <ArrowTopRightOnSquareIcon width={15} height={15} />
+            Portal oficial da Prefeitura
+          </a>
         </div>
       </div>
 
       <div className="footer-bottom">
         <p>
-          © 2026 Mapeamento Cultural de Guarulhos. Projeto Acadêmico /
-          Colaborativo.
+          © {new Date().getFullYear()} Patrimônio Cultural de Guarulhos. Projeto
+          acadêmico.
         </p>
       </div>
     </footer>
