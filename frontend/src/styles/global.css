@@ -2538,7 +2538,9 @@ input:focus-visible {
   min-height: 460px;
 }
 .mapa-map-area .map-wrapper,
-.mapa-map-area .map-mockup-container {
+.mapa-map-area .map-mockup-container,
+.mapa-map-area .map-loading,
+.mapa-map-area .map-error {
   height: 100%;
   min-height: 460px;
 }
@@ -2569,26 +2571,12 @@ input:focus-visible {
   gap: 8px;
   color: var(--ink-soft);
 }
+/* A cor de cada bolinha vem de CATEGORIA_META (features/categoriaMeta.js). */
 .legenda-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   flex: none;
-}
-.legenda-dot.cat-arquitetonico {
-  background: #424039;
-}
-.legenda-dot.cat-imaterial {
-  background: #c6780c;
-}
-.legenda-dot.cat-natural {
-  background: #32e313;
-}
-.legenda-dot.cat-documental {
-  background: #4cc4b0;
-}
-.legenda-dot.cat-demolido {
-  background: #ff0202;
 }
 
 /* ---- Painel de detalhe (sobe ao selecionar) ---- */

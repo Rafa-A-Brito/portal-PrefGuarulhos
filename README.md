@@ -222,6 +222,68 @@ ainda não tem nenhuma tela liberada, só consegue fazer login.
 
 ---
 
+## 🗺️ Mapa (Google Maps)
+
+A página `/mapa` mostra cada patrimônio no Google Maps, usando a latitude e
+a longitude salvas no banco. Sem chave configurada, ela continua
+funcionando num **modo mockup** (uma grade de cards no lugar do mapa), então
+ninguém fica travado por não ter acesso ao Google Cloud.
+
+### Configurando a chave
+
+1. No Google Cloud, a chave precisa ter a **Maps JavaScript API** liberada
+   e, nos referenciadores HTTP, os endereços em que o site roda
+   (`http://localhost:5173/*`, `http://localhost:8090/*` e o domínio de
+   produção). É a única API necessária: o botão "Ver rota" só abre um link
+   do `google.com/maps`.
+2. Coloque a chave no `backend/.env`:
+   ```env
+   GOOGLE_MAPS_KEY=sua_chave_aqui
+   ```
+3. Reinicie o backend (`npm run dev` ou `docker compose up -d`). Não precisa
+   rebuildar o front.
+
+### Como funciona por dentro
+
+A chave mora só no backend. O front pede ela em `GET /config/mapa` quando
+alguém abre o mapa pela primeira vez, guarda em memória e só então carrega
+o script do Google. Duas vantagens: a chave fica configurada num lugar só,
+e dá pra trocá-la sem rebuildar o front (variáveis `VITE_*` são embutidas
+no JavaScript na hora do build, o que obrigaria a gerar uma imagem nova).
+
+Isso **não esconde** a chave: uma chave da Maps JavaScript API sempre fica
+visível no navegador, é assim que o Google funciona. Quem protege a chave é
+a restrição de referenciadores HTTP no Google Cloud, por isso ela é
+obrigatória.
+
+**Onde mexer em cada coisa:**
+
+- `backend/src/routes/configRoutes.js`: a rota que entrega a chave.
+- `frontend/src/features/mapa/useChaveGoogleMaps.js`: busca a chave e
+  decide entre mapa real e mockup.
+- `frontend/src/features/mapa/MapaPatrimonios.jsx`: o mapa em si, com os
+  dois modos.
+- `frontend/src/features/mapa/coordenadas.js`: patrimônios cadastrados pelo
+  admin podem não ter coordenadas. Qualquer código que coloque um
+  patrimônio no mapa ou monte um link de rota deve passar por aqui.
+- `frontend/src/features/categoriaMeta.js`: a cor de cada categoria. A
+  legenda e os pinos leem desse mesmo lugar, então mudar uma cor ali muda
+  as duas coisas juntas.
+
+### Dicas
+
+- **Mapa cinza ou modo mockup com aviso de "chave recusada":** o console do
+  navegador explica o motivo. Quase sempre é o endereço atual fora da lista
+  de referenciadores, ou a Maps JavaScript API desativada no projeto.
+- **Não quer gastar cota enquanto mexe no layout?** Coloque
+  `VITE_USE_MOCK_MAP=true` no `frontend/.env.local` e o mapa fica sempre em
+  modo mockup.
+- **Performance:** a biblioteca do Google Maps só é baixada por quem abre a
+  página do mapa (ela fica num arquivo separado do bundle principal), e o
+  script do Google é carregado uma vez por sessão.
+
+---
+
 ## 📂 Estrutura do Projeto
 
 ```text

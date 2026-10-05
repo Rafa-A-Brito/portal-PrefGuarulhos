@@ -3,6 +3,7 @@ import patrimonioRoutes from "./patrimonioRoutes.js";
 import authRoutes from "./authRoutes.js";
 import adminUsuarioRoutes from "./adminUsuarioRoutes.js";
 import adminPatrimonioRoutes from "./adminPatrimonioRoutes.js";
+import configRoutes from "./configRoutes.js";
 import { exigirAdmin } from "../middlewares/authMiddleware.js";
 
 const router = Router();
@@ -10,6 +11,7 @@ const router = Router();
 // Rotas públicas, usadas pelo site e pela tela de login.
 router.use("/patrimonios", patrimonioRoutes);
 router.use("/usuarios", authRoutes);
+router.use("/config", configRoutes);
 
 // A partir daqui, tudo passa pelo exigirAdmin antes de chegar no
 // controller. É por isso que o caminho já começa com "/admin": só de olhar

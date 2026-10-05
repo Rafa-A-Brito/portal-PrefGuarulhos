@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   MagnifyingGlassIcon,
@@ -8,11 +8,16 @@ import {
   InformationCircleIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
-import MapaPatrimonios from "../../features/mapa/MapaPatrimonios";
+import { urlRotaGoogleMaps } from "../../features/mapa/coordenadas";
 import FiltroBar from "../../features/mapa/FiltroBar";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
+
+// Carregado sob demanda: a biblioteca do Google Maps só entra no
+// navegador quando alguém abre esta página, em vez de pesar no bundle
+// principal que a Home e as outras páginas também baixam.
+const MapaPatrimonios = lazy(() => import("../../features/mapa/MapaPatrimonios"));
 
 const FALLBACK_THUMB =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3C/svg%3E";
@@ -111,17 +116,22 @@ export default function Mapa() {
           )}
 
           <div className="mapa-map-area">
-            <MapaPatrimonios
-              patrimonios={filtrados}
-              selecionado={selecionado}
-              onSelecionar={setSelecionado}
-            />
+            <Suspense fallback={<div className="map-loading">Carregando mapa...</div>}>
+              <MapaPatrimonios
+                patrimonios={filtrados}
+                selecionado={selecionado}
+                onSelecionar={setSelecionado}
+              />
+            </Suspense>
 
             <div className="mapa-legenda">
               <strong>Legenda</strong>
               {CATEGORIAS_ORDEM.map((valor) => (
                 <span key={valor} className="mapa-legenda-item">
-                  <i className={`legenda-dot cat-${valor}`} />
+                  <i
+                    className="legenda-dot"
+                    style={{ background: CATEGORIA_META[valor].cor }}
+                  />
                   {CATEGORIA_META[valor].label}
                 </span>
               ))}
@@ -164,15 +174,17 @@ export default function Mapa() {
                       <InformationCircleIcon width={16} height={16} /> Ver
                       detalhes
                     </Link>
-                    <a
-                      className="btn-solid"
-                      target="_blank"
-                      rel="noreferrer"
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${selecionado.localizacao.lat},${selecionado.localizacao.lng}`}
-                    >
-                      <ArrowTopRightOnSquareIcon width={16} height={16} /> Ver
-                      rota
-                    </a>
+                    {urlRotaGoogleMaps(selecionado) && (
+                      <a
+                        className="btn-solid"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={urlRotaGoogleMaps(selecionado)}
+                      >
+                        <ArrowTopRightOnSquareIcon width={16} height={16} /> Ver
+                        rota
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

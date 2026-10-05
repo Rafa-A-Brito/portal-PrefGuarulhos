@@ -1,205 +1,267 @@
-import {
-  GoogleMap,
-  InfoWindowF,
-  MarkerF,
-  useJsApiLoader,
-} from "@react-google-maps/api";
-import { useCallback, useEffect, useState } from "react";
-import "../../styles/global.css";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
+import { useChaveGoogleMaps } from "./useChaveGoogleMaps";
+import { temCoordenadas } from "./coordenadas";
+import { CATEGORIA_META } from "../categoriaMeta";
 
-const GUARULHOS_CENTER = { lat: -23.4542, lng: -46.5268 };
-const mapContainerStyle = {
+/**
+ * Mapa dos patrimônios. Tem dois modos:
+ *
+ *   real    Google Maps de verdade, quando o backend devolve uma chave
+ *           válida em GET /config/mapa (variável GOOGLE_MAPS_KEY no
+ *           backend/.env).
+ *   mockup  uma grade de cards no lugar do mapa, usada quando não existe
+ *           chave, quando o Google recusa a chave, ou quando o dev força
+ *           com VITE_USE_MOCK_MAP=true. Serve pra trabalhar no layout sem
+ *           gastar cota da API.
+ *
+ * O componente não mostra os detalhes do patrimônio selecionado (nada de
+ * InfoWindow do Google): quem faz isso é o painel lateral da página
+ * pages/Mapa/Mapa.jsx. Aqui a seleção só destaca o pino e centraliza o
+ * mapa nele.
+ */
+export default function MapaPatrimonios({ patrimonios, selecionado, onSelecionar }) {
+  const { carregando, apiKey } = useChaveGoogleMaps();
+  const [chaveRecusada, setChaveRecusada] = useState(false);
+  const marcarChaveRecusada = useCallback(() => setChaveRecusada(true), []);
+
+  if (carregando) {
+    return <div className="map-loading">Carregando mapa...</div>;
+  }
+
+  if (!apiKey || chaveRecusada) {
+    return (
+      <MapaMockup
+        patrimonios={patrimonios}
+        selecionado={selecionado}
+        onSelecionar={onSelecionar}
+        aviso={
+          chaveRecusada
+            ? "O Google recusou a chave do mapa. Mostrando o modo mockup."
+            : null
+        }
+      />
+    );
+  }
+
+  return (
+    <MapaGoogle
+      apiKey={apiKey}
+      patrimonios={patrimonios}
+      selecionado={selecionado}
+      onSelecionar={onSelecionar}
+      onChaveRecusada={marcarChaveRecusada}
+    />
+  );
+}
+
+// ===========================================================================
+// Modo real (Google Maps)
+// ===========================================================================
+
+const CENTRO_GUARULHOS = { lat: -23.4542, lng: -46.5268 };
+const ZOOM_INICIAL = 13;
+const ZOOM_AO_SELECIONAR = 16;
+
+// Objetos criados fora do componente de propósito: se fossem criados
+// dentro, seriam objetos novos a cada render, e o GoogleMap reaplicaria
+// estilo e opções no mapa toda vez que alguém clicasse num pino.
+const ESTILO_CONTAINER = {
   width: "100%",
   height: "100%",
   minHeight: "460px",
   borderRadius: "14px",
 };
 
-const FALLBACK_IMG =
-  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='16' fill='%235B5876' text-anchor='middle' dominant-baseline='middle'%3ESem imagem%3C/text%3E%3C/svg%3E";
-
-// Cor do pino no mapa real, por categoria — espelha as cores dos badges/chips.
-const COR_POR_CATEGORIA = {
-  arquitetonico: "#1D6E96",
-  imaterial: "#92590A",
-  natural: "#146A2E",
-  documental: "#56661F",
+const OPCOES_MAPA = {
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: false,
+  // Sem isso, clicar num restaurante ou ponto de ônibus do próprio Google
+  // abre um balão por cima dos nossos pinos.
+  clickableIcons: false,
+  // Esconde mercados, hospitais, pontos de ônibus etc. Num mapa de
+  // patrimônio eles só competem visualmente com os nossos pinos.
+  styles: [
+    { featureType: "poi", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", stylers: [{ visibility: "off" }] },
+  ],
 };
 
-function pinIcon(categoria) {
-  const cor = COR_POR_CATEGORIA[categoria] || "#2B255C";
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
-      <path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 25 15 25s15-14 15-25C30 6.7 23.3 0 15 0z" fill="${cor}"/>
-      <circle cx="15" cy="15" r="6" fill="#fff"/>
-    </svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize:
-      typeof window !== "undefined" && window.google
-        ? new window.google.maps.Size(30, 40)
-        : undefined,
-  };
+// O id precisa ser fixo: é ele que impede o script do Google de ser
+// injetado duas vezes quando o usuário sai e volta pra página do mapa.
+const ID_SCRIPT_GOOGLE = "google-maps-script";
+
+// Cor usada só se aparecer uma categoria que não existe em CATEGORIA_META.
+const COR_PADRAO = "#2B255C";
+
+function svgDoPino(cor) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40"><path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 25 15 25s15-14 15-25C30 6.7 23.3 0 15 0z" fill="${cor}"/><circle cx="15" cy="15" r="6" fill="#fff"/></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-export default function MapaPatrimonios({
-  patrimonios = [],
-  selecionado: selecionadoProp,
-  onSelecionar,
-}) {
-  const [internalSelecionado, setInternalSelecionado] = useState(null);
-  const selectedPatrimonio = onSelecionar
-    ? selecionadoProp
-    : internalSelecionado;
-  const setSelectedPatrimonio = onSelecionar ?? setInternalSelecionado;
+// Monta todos os ícones uma vez só (normal e destacado, por categoria), com
+// as mesmas cores da legenda, que vêm de CATEGORIA_META. Precisa do objeto
+// google já carregado por causa do google.maps.Size.
+function criarIcones(google) {
+  const icones = {};
+  const categorias = [...Object.keys(CATEGORIA_META), "padrao"];
 
-  const [map, setMap] = useState(null);
+  for (const categoria of categorias) {
+    const url = svgDoPino(CATEGORIA_META[categoria]?.cor ?? COR_PADRAO);
+    icones[categoria] = {
+      normal: { url, scaledSize: new google.maps.Size(30, 40) },
+      destaque: { url, scaledSize: new google.maps.Size(42, 56) },
+    };
+  }
+  return icones;
+}
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const isMockMode = import.meta.env.VITE_USE_MOCK_MAP === "true" || !apiKey;
-
+function MapaGoogle({ apiKey, patrimonios, selecionado, onSelecionar, onChaveRecusada }) {
   const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: apiKey || "",
+    id: ID_SCRIPT_GOOGLE,
+    googleMapsApiKey: apiKey,
     preventGoogleFontsLoading: true,
   });
 
-  const onLoad = useCallback((mapInstance) => {
-    setMap(mapInstance);
-  }, []);
+  const [mapa, setMapa] = useState(null);
 
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
+  // Chave inválida, sem a Maps JavaScript API ativada ou com um domínio
+  // fora da lista de referenciadores não dispara loadError: o Google chama
+  // esta função global. Sem tratar isso, o usuário só vê um mapa cinza.
   useEffect(() => {
-    if (!isMockMode && map && patrimonios.length > 0 && window.google) {
-      const bounds = new window.google.maps.LatLngBounds();
-      let contemPontosValidos = false;
+    window.gm_authFailure = () => {
+      console.error(
+        "[Mapa] O Google recusou a chave. Confira no Google Cloud se a Maps " +
+          "JavaScript API está ativada e se este endereço (" +
+          window.location.origin +
+          ") está na lista de referenciadores HTTP da chave.",
+      );
+      onChaveRecusada();
+    };
+    return () => {
+      delete window.gm_authFailure;
+    };
+  }, [onChaveRecusada]);
 
-      patrimonios.forEach((item) => {
-        // Valida se a localização e as coordenadas realmente existem antes de aplicar
-        if (item.localizacao?.lat && item.localizacao?.lng) {
-          bounds.extend({
-            lat: item.localizacao.lat,
-            lng: item.localizacao.lng,
-          });
-          contemPontosValidos = true;
-        }
-      });
+  const icones = useMemo(
+    () => (isLoaded ? criarIcones(window.google) : null),
+    [isLoaded],
+  );
 
-      if (contemPontosValidos) {
-        map.fitBounds(bounds);
-        if (patrimonios.length === 1) map.setZoom(15);
-      }
+  const pontos = useMemo(() => patrimonios.filter(temCoordenadas), [patrimonios]);
+
+  // Uma "assinatura" da lista: os ids na ordem. O array de patrimônios
+  // muda de referência sempre que a página re-renderiza o filtro, mas o
+  // mapa só deve reenquadrar quando os pontos realmente mudarem.
+  const assinaturaPontos = pontos.map((p) => p.id).join(",");
+
+  useEffect(() => {
+    if (!mapa || pontos.length === 0) return;
+
+    if (pontos.length === 1) {
+      mapa.setCenter(pontos[0].localizacao);
+      mapa.setZoom(ZOOM_AO_SELECIONAR);
+      return;
     }
-  }, [map, patrimonios, isMockMode]);
 
-  // ===== MODO MOCK — sem chave de API configurada =====
-  if (isMockMode) {
+    const limites = new window.google.maps.LatLngBounds();
+    pontos.forEach((p) => limites.extend(p.localizacao));
+    mapa.fitBounds(limites, 48);
+    // pontos fica de fora de propósito: a assinatura já representa ele.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapa, assinaturaPontos]);
+
+  // Centraliza no patrimônio selecionado, seja pelo clique no pino, pela
+  // lista lateral ou vindo do botão "Ver no mapa" da página de detalhe.
+  const idSelecionado = selecionado?.id;
+  useEffect(() => {
+    if (!mapa || !temCoordenadas(selecionado)) return;
+    mapa.panTo(selecionado.localizacao);
+    if (mapa.getZoom() < ZOOM_AO_SELECIONAR) mapa.setZoom(ZOOM_AO_SELECIONAR);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapa, idSelecionado]);
+
+  const aoCarregar = useCallback((instancia) => setMapa(instancia), []);
+  const aoDesmontar = useCallback(() => setMapa(null), []);
+
+  if (loadError) {
     return (
-      <div className="map-wrapper">
-        <div className="map-mockup-container">
-          <div className="mockup-badge">
-            <span className="mockup-dot" /> Modo Desenvolvedor (Mockup Sem Custo
-            de API)
-          </div>
-
-          <div className="mockup-grid">
-            {patrimonios.length === 0 ? (
-              <p className="mockup-empty">
-                Nenhum patrimônio encontrado para os filtros selecionados.
-              </p>
-            ) : (
-              patrimonios.map((item) => (
-                <div
-                  key={item.id}
-                  className={`mockup-pin-card ${selectedPatrimonio?.id === item.id ? "active" : ""}`}
-                  onClick={() => setSelectedPatrimonio(item)}
-                >
-                  <span className={`badge-categoria ${item.categoria}`}>
-                    {item.categoria}
-                  </span>
-                  <h4>{item.nome}</h4>
-                  <p>📍 {item.bairro}</p>
-                  {item.cep && <p className="mockup-pin-cep">CEP {item.cep}</p>}
-                  <small>Nº {String(item.id).padStart(3, "0")}</small>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      <div className="map-error">
+        Não foi possível carregar o Google Maps. Verifique sua conexão.
       </div>
     );
   }
 
-  // ===== MODO REAL — Google Maps API =====
-  if (loadError)
-    return <div className="map-error">Erro ao carregar a Google Maps API.</div>;
-  if (!isLoaded) return <div className="map-loading">Carregando mapa...</div>;
+  if (!isLoaded) {
+    return <div className="map-loading">Carregando mapa...</div>;
+  }
 
   return (
-    <div className="map-wrapper" style={{ height: "100%" }}>
+    <div className="map-wrapper">
       <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={GUARULHOS_CENTER}
-        zoom={13}
-        onLoad={onLoad}
-        onUnmount={onUnmount}
-        options={{
-          streetViewControl: false,
-          mapTypeControl: false,
-          fullscreenControl: false,
-        }}
+        mapContainerStyle={ESTILO_CONTAINER}
+        center={CENTRO_GUARULHOS}
+        zoom={ZOOM_INICIAL}
+        options={OPCOES_MAPA}
+        onLoad={aoCarregar}
+        onUnmount={aoDesmontar}
       >
-        {patrimonios.map((item) => (
-          <MarkerF
-            key={item.id}
-            position={{ lat: item.localizacao.lat, lng: item.localizacao.lng }}
-            title={item.nome}
-            icon={pinIcon(item.categoria)}
-            onClick={() => setSelectedPatrimonio(item)}
-          />
-        ))}
-
-        {selectedPatrimonio && (
-          <InfoWindowF
-            position={{
-              lat: selectedPatrimonio.localizacao.lat,
-              lng: selectedPatrimonio.localizacao.lng,
-            }}
-            onCloseClick={() => setSelectedPatrimonio(null)}
-          >
-            <div className="info-window-card">
-              <img
-                src={selectedPatrimonio.imagemPrincipal}
-                alt={selectedPatrimonio.nome}
-                className="info-window-img"
-                onError={(e) => {
-                  e.currentTarget.src = FALLBACK_IMG;
-                }}
-              />
-              <span
-                className={`badge-categoria ${selectedPatrimonio.categoria}`}
-              >
-                {selectedPatrimonio.categoria}
-              </span>
-              <h3>{selectedPatrimonio.nome}</h3>
-              <p className="info-window-bairro">
-                📍 {selectedPatrimonio.bairro}
-              </p>
-              {selectedPatrimonio.endereco && (
-                <p className="info-window-endereco">
-                  {selectedPatrimonio.endereco}
-                  {selectedPatrimonio.cep
-                    ? ` – CEP ${selectedPatrimonio.cep}`
-                    : ""}
-                </p>
-              )}
-              <p className="info-window-resumo">{selectedPatrimonio.resumo}</p>
-            </div>
-          </InfoWindowF>
-        )}
+        {pontos.map((item) => {
+          const ativo = item.id === idSelecionado;
+          const icone = icones[item.categoria] ?? icones.padrao;
+          return (
+            <MarkerF
+              key={item.id}
+              position={item.localizacao}
+              title={item.nome}
+              icon={ativo ? icone.destaque : icone.normal}
+              zIndex={ativo ? 1000 : undefined}
+              onClick={() => onSelecionar(item)}
+            />
+          );
+        })}
       </GoogleMap>
+    </div>
+  );
+}
+
+// ===========================================================================
+// Modo mockup (sem chave ou chave recusada)
+// ===========================================================================
+
+function MapaMockup({ patrimonios, selecionado, onSelecionar, aviso }) {
+  return (
+    <div className="map-wrapper">
+      <div className="map-mockup-container">
+        <div className="mockup-badge">
+          <span className="mockup-dot" /> {aviso ?? "Modo mockup (sem chave do Google Maps)"}
+        </div>
+
+        <div className="mockup-grid">
+          {patrimonios.length === 0 ? (
+            <p className="mockup-empty">
+              Nenhum patrimônio encontrado para os filtros selecionados.
+            </p>
+          ) : (
+            patrimonios.map((item) => (
+              <div
+                key={item.id}
+                className={`mockup-pin-card ${selecionado?.id === item.id ? "active" : ""}`}
+                onClick={() => onSelecionar(item)}
+              >
+                <span className={`badge-categoria ${item.categoria}`}>
+                  {item.categoria}
+                </span>
+                <h4>{item.nome}</h4>
+                <p>📍 {item.bairro}</p>
+                {item.cep && <p className="mockup-pin-cep">CEP {item.cep}</p>}
+                <small>Nº {String(item.id).padStart(3, "0")}</small>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }

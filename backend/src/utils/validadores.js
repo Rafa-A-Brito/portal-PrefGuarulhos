@@ -4,11 +4,15 @@
 // chama só precisa filtrar os valores que não forem null.
 
 export const PERFIS_VALIDOS = ["admin", "tecnico"];
+// Precisa bater com as chaves de CATEGORIA_META no front
+// (frontend/src/features/categoriaMeta.js). Se adicionar uma categoria
+// lá, adicione aqui também, senão o admin não consegue salvar.
 export const CATEGORIAS_VALIDAS = [
   "arquitetonico",
   "imaterial",
   "natural",
   "documental",
+  "demolido",
 ];
 
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

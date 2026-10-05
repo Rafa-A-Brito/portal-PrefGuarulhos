@@ -37,6 +37,7 @@ simples de entender; se o banco crescer bastante, vale reconsiderar.
 | GET    | `/patrimonios`        | Lista todos os patrimônios                         |
 | GET    | `/patrimonios/:id`    | Um patrimônio específico                           |
 | GET    | `/usuarios`           | Login: filtra por `?email=` e `?senha=`             |
+| GET    | `/config/mapa`        | Chave do Google Maps (`GOOGLE_MAPS_KEY` do `.env`), veja a seção "Mapa" do README da raiz |
 
 ### Administrativas (exigem estar logado como admin)
 

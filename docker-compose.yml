@@ -27,6 +27,12 @@ services:
     build:
       context: ./backend
     restart: unless-stopped
+    # Lê o backend/.env (se existir) pra pegar a GOOGLE_MAPS_KEY. As
+    # variáveis de "environment" abaixo têm prioridade, então os DB_* do
+    # .env local (pensados pra rodar fora do Docker) não atrapalham aqui.
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       PORT: 4000
       DB_HOST: mysql

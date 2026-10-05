@@ -20,6 +20,7 @@ import {
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import { CATEGORIA_META } from "../../features/categoriaMeta";
 import PlaquetaCard from "../../features/mapa/PlaquetaCard";
+import { urlRotaGoogleMaps } from "../../features/mapa/coordenadas";
 
 // Ícone de cada seção, escolhido pelo campo `icone` em item.detalhes (ver mock).
 const ICONES = {
@@ -87,9 +88,7 @@ export default function PatrimonioDetalhe() {
   const relacionados = patrimonios
     .filter((p) => p.categoria === item.categoria && p.id !== item.id)
     .slice(0, 3);
-  const rotaUrl = item.localizacao
-    ? `https://www.google.com/maps/dir/?api=1&destination=${item.localizacao.lat},${item.localizacao.lng}`
-    : null;
+  const rotaUrl = urlRotaGoogleMaps(item);
 
   return (
     <div className="detalhe-page">
