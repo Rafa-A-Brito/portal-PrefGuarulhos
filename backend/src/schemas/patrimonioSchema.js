@@ -35,8 +35,27 @@ export const createPatrimonioSchema = z.strictObject({
     categoriaId: z.uuid("Informe uma categoria válida."),
     historia: z.string().trim().min(1, "Informe uma história válida.").optional(),
     importanciaCultural: z.string().trim().min(1, "Informe uma importância cultural válida.").optional(),
+    categoriasAdicionais: z.array(z.uuid("Informe categorias adicionais válidas.")).max(6, "Informe no máximo 6 categorias adicionais.").optional(),
     situacao: z.enum(Object.values(SituacaoPatrimonio)).default(SituacaoPatrimonio.NAO_INFORMADO),
     localizacao: localizacaoSchema.optional(),
+}).superRefine((dados, context) => {
+    const adicionais = dados.categoriasAdicionais ?? [];
+
+    if (new Set(adicionais).size !== adicionais.length) {
+        context.addIssue({
+            code: "custom",
+            path: ["categoriasAdicionais"],
+            message: "Não repita categorias adicionais.",
+        });
+    }
+
+    if (adicionais.includes(dados.categoriaId)) {
+        context.addIssue({
+            code: "custom",
+            path: ["categoriasAdicionais"],
+            message: "A categoria principal não deve estar entre as adicionais.",
+        });
+    }
 });
 
 const queryText = (max, message) => z.string().trim().min(1, message).max(max).optional();

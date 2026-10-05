@@ -1,44 +1,45 @@
 {
-  "name": "portal-pref-guarulhos-backend",
-  "version": "1.0.0",
-  "description": "",
-  "homepage": "https://github.com/Rafa-A-Brito/portal-Pref-Guarulhos-backend#readme",
-  "bugs": {
-    "url": "https://github.com/Rafa-A-Brito/portal-Pref-Guarulhos-backend/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Rafa-A-Brito/portal-Pref-Guarulhos-backend.git"
-  },
-  "license": "ISC",
-  "author": "",
-  "type": "module",
-  "main": "src/server.js",
-  "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "test": "node --test",
-    "prisma:format": "prisma format",
-    "prisma:validate": "prisma validate",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:status": "prisma migrate status",
-    "prisma:seed": "prisma db seed"
-  },
-  "dependencies": {
-    "@prisma/adapter-pg": "7.10.0",
-    "@prisma/client": "7.10.0",
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "pg": "^8.23.0",
-    "zod": "^4.6.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14",
-    "prisma": "7.10.0"
-  }
+    "name": "portal-pref-guarulhos-backend",
+    "version": "1.0.0",
+    "description": "",
+    "homepage": "https://github.com/Rafa-A-Brito/portal-Pref-Guarulhos-backend#readme",
+    "bugs": {
+        "url": "https://github.com/Rafa-A-Brito/portal-Pref-Guarulhos-backend/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Rafa-A-Brito/portal-Pref-Guarulhos-backend.git"
+    },
+    "license": "ISC",
+    "author": "",
+    "type": "module",
+    "main": "src/server.js",
+    "scripts": {
+        "dev": "nodemon src/server.js",
+        "start": "node src/server.js",
+        "test": "node --test",
+        "prisma:format": "prisma format",
+        "prisma:validate": "prisma validate",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate:dev": "prisma migrate dev",
+        "prisma:migrate:deploy": "prisma migrate deploy",
+        "prisma:status": "prisma migrate status",
+        "prisma:seed": "prisma db seed",
+        "admin:create": "node prisma/create-admin.js"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "7.10.0",
+        "@prisma/client": "7.10.0",
+        "bcrypt": "^6.0.0",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "pg": "^8.23.0",
+        "zod": "^4.6.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14",
+        "prisma": "7.10.0"
+    }
 }
