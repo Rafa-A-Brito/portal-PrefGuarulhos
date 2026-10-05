@@ -260,6 +260,14 @@ src/
 
 ## 🤝 Contribuindo
 
+Para testar a consulta, edição, publicação e arquivamento de patrimônios, consulte o
+[guia de administração](docs/patrimonios-admin.md). A API documentada no Swagger está
+disponível em `/api/docs`.
+
+EDITOR e ADMIN podem trocar a própria senha em `PATCH /api/auth/senha`, informando
+`senhaAtual` e `novaSenha` com um token Bearer. A nova senha segue as regras do cadastro.
+JWTs emitidos antes da troca permanecem válidos até expirar.
+
 Contribuições são bem-vindas! Para contribuir:
 
 1. Faça um fork do projeto
