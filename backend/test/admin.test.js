@@ -54,9 +54,11 @@ function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
         }
         return null;
     };
-    prisma.user.create = onCreate ?? (async () => {
-        throw new Error("A criação não deveria ser chamada.");
-    });
+    prisma.user.create =
+        onCreate ??
+        (async () => {
+            throw new Error("A criação não deveria ser chamada.");
+        });
 
     return {
         token: generateToken(authenticatedUserId),
@@ -69,7 +71,10 @@ function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
 
 test("sem autenticação, cadastro retorna 401", async () => {
     const response = await adminRequest(null, {
-        nome: "Maria", email: "maria@example.com", role: "ADMIN", password: "senha-segura-123",
+        nome: "Maria",
+        email: "maria@example.com",
+        role: "ADMIN",
+        password: "senha-segura-123",
     });
     assert.equal(response.status, 401);
     assert.equal((await response.json()).error.code, "UNAUTHORIZED");
@@ -79,7 +84,10 @@ test("EDITOR não pode cadastrar contas", async () => {
     const mock = mockUsers({ authenticatedRole: "EDITOR" });
     try {
         const response = await adminRequest(mock.token, {
-            nome: "Maria", email: "maria@example.com", role: "EDITOR", password: "senha-segura-123",
+            nome: "Maria",
+            email: "maria@example.com",
+            role: "EDITOR",
+            password: "senha-segura-123",
         });
         assert.equal(response.status, 403);
         assert.equal((await response.json()).error.code, "FORBIDDEN");
@@ -90,16 +98,31 @@ test("EDITOR não pode cadastrar contas", async () => {
 
 test("valida senha sem transformá-la e normaliza nome e e-mail", () => {
     const password = " senha-segura-123 ";
-    assert.deepEqual(createAdminSchema.parse({
-        nome: " Maria ", email: "MARIA@EXAMPLE.COM", role: "EDITOR", password,
-    }), {
-        nome: "Maria", email: "maria@example.com", role: "EDITOR", password,
-    });
+    assert.deepEqual(
+        createAdminSchema.parse({
+            nome: " Maria ",
+            email: "MARIA@EXAMPLE.COM",
+            role: "EDITOR",
+            password,
+        }),
+        {
+            nome: "Maria",
+            email: "maria@example.com",
+            role: "EDITOR",
+            password,
+        }
+    );
 
     for (const invalidPassword of [undefined, "curta", "😀".repeat(6), "é".repeat(40)]) {
-        assert.equal(createAdminSchema.safeParse({
-            nome: "Maria", email: "maria@example.com", role: "ADMIN", password: invalidPassword,
-        }).success, false);
+        assert.equal(
+            createAdminSchema.safeParse({
+                nome: "Maria",
+                email: "maria@example.com",
+                role: "ADMIN",
+                password: invalidPassword,
+            }).success,
+            false
+        );
     }
 });
 
@@ -108,7 +131,11 @@ test("ADMIN cria contas ADMIN e EDITOR ativas, com hash e resposta sem senha", a
     const mock = mockUsers({
         onCreate: async ({ data, select }) => {
             assert.deepEqual(select, {
-                id: true, name: true, email: true, role: true, isActive: true,
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                isActive: true,
             });
             assert.equal(data.isActive, true);
             assert.equal("id" in data, false);
@@ -123,14 +150,21 @@ test("ADMIN cria contas ADMIN e EDITOR ativas, com hash e resposta sem senha", a
             const password = ` senha-${role.toLowerCase()}-segura `;
             const email = `${randomUUID()}@example.com`;
             const response = await adminRequest(mock.token, {
-                nome: " Maria ", email: email.toUpperCase(), role, password,
+                nome: " Maria ",
+                email: email.toUpperCase(),
+                role,
+                password,
             });
             const body = await response.json();
 
             assert.equal(response.status, 201);
             assert.equal(body.success, true);
             assert.deepEqual(body.data, {
-                id: created.at(-1).id, nome: "Maria", email, role, ativo: true,
+                id: created.at(-1).id,
+                nome: "Maria",
+                email,
+                role,
+                ativo: true,
             });
             assert.equal(created.at(-1).name, "Maria");
             assert.notEqual(created.at(-1).passwordHash, password);
@@ -147,7 +181,10 @@ test("dados inválidos retornam 400 antes da escrita", async () => {
     const mock = mockUsers();
     try {
         const valid = {
-            nome: "Maria", email: "maria@example.com", role: "ADMIN", password: "senha-segura-123",
+            nome: "Maria",
+            email: "maria@example.com",
+            role: "ADMIN",
+            password: "senha-segura-123",
         };
         for (const body of [
             { ...valid, nome: " " },
@@ -170,14 +207,19 @@ test("violação P2002 de e-mail retorna 409 com ADMIN_ALREADY_EXISTS", async ()
     const mock = mockUsers({
         onCreate: async () => {
             throw new Prisma.PrismaClientKnownRequestError("E-mail duplicado.", {
-                code: "P2002", clientVersion: "7.10.0", meta: { target: ["email"] },
+                code: "P2002",
+                clientVersion: "7.10.0",
+                meta: { target: ["email"] },
             });
         },
     });
 
     try {
         const response = await adminRequest(mock.token, {
-            nome: "Maria", email: "maria@example.com", role: "ADMIN", password: "senha-segura-123",
+            nome: "Maria",
+            email: "maria@example.com",
+            role: "ADMIN",
+            password: "senha-segura-123",
         });
         assert.equal(response.status, 409);
         assert.equal((await response.json()).error.code, "ADMIN_ALREADY_EXISTS");
@@ -203,7 +245,12 @@ test("conta criada consegue login pelo endpoint existente", async () => {
     try {
         const email = `${randomUUID()}@example.com`;
         const password = "senha-segura-123";
-        const created = await adminRequest(mock.token, { nome: "Maria", email, role: "EDITOR", password });
+        const created = await adminRequest(mock.token, {
+            nome: "Maria",
+            email,
+            role: "EDITOR",
+            password,
+        });
         assert.equal(created.status, 201);
 
         const response = await fetch(`${baseUrl}/api/auth/login`, {

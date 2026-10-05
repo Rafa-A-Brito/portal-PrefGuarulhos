@@ -1,5 +1,4 @@
 import axios from "axios";
-import { CHAVE_SESSAO_MOCK } from "../context/authConstants.js";
 
 /**
  * Instância central do axios, usada por toda chamada de rede do front.
@@ -14,9 +13,11 @@ import { CHAVE_SESSAO_MOCK } from "../context/authConstants.js";
  * (veja frontend/nginx.conf). Assim o navegador nunca precisa saber o
  * hostname interno do backend, e não existe problema de CORS.
  */
+const API_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api",
-  timeout: 10000,
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,16 +36,10 @@ const api = axios.create({
  * (o que ele não faz hoje — ver o aviso em context/AuthContext.jsx).
  */
 api.interceptors.request.use((config) => {
-  try {
-    const bruto = sessionStorage.getItem(CHAVE_SESSAO_MOCK);
-    const sessao = bruto ? JSON.parse(bruto) : null;
+  const token = sessionStorage.getItem("token");
 
-    if (sessao?.token) {
-      config.headers.Authorization = `Bearer ${sessao.token}`;
-    }
-  } catch {
-    // sessionStorage bloqueado ou JSON corrompido: segue sem o header,
-    // o backend vai tratar isso como requisição sem login (401).
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
@@ -58,5 +53,37 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("usuario");
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+export async function listarPatrimonios(params = {}) {
+  const response = await api.get("/patrimonios", {
+    params,
+  });
+
+  return response.data?.data ?? [];
+}
+
+export async function buscarPatrimonioPorSlug(slug) {
+  const response = await api.get(`/patrimonios/${encodeURIComponent(slug)}`);
+
+  return response.data?.data ?? null;
+}
+
+export async function login(credentials) {
+  const response = await api.post("/auth/login", credentials);
+
+  return response.data?.data ?? response.data;
+}
 
 export default api;

@@ -63,44 +63,31 @@ function avisarFallback(origem, err) {
  * achatado (por exemplo, vindo do fallback local patrimoniosMock), ela
  * devolve como está — detecta isso pelo "categoria" já ser string.
  */
-function normalizarPatrimonio(p) {
-  if (!p) return p;
-  if (typeof p.categoria === "string") return p; // já está no formato achatado (mock local)
-
-  const detalhes = [
-    p.historia && {
-      icone: "historia",
-      titulo: "História",
-      texto: p.historia,
-    },
-    p.importanciaCultural && {
-      icone: "importancia",
-      titulo: "Importância cultural",
-      texto: p.importanciaCultural,
-    },
-  ].filter(Boolean);
-
+function normalizarPatrimonio(patrimonio) {
   return {
-    id: p.slug,
-    slug: p.slug,
-    uuid: p.id,
-    nome: p.nome,
-    categoria: p.categoria?.slug ?? "",
-    situacao: p.situacao,
-    bairro: p.localizacao?.bairro ?? "",
-    endereco: p.localizacao?.endereco ?? "",
-    cep: p.localizacao?.cep ?? "",
-    resumo: p.descricaoResumida,
-    descricao: p.descricao,
-    imagemPrincipal: p.imagens?.[0]?.url ?? "",
-    localizacao:
-      p.localizacao?.latitude != null && p.localizacao?.longitude != null
-        ? {
-            lat: Number(p.localizacao.latitude),
-            lng: Number(p.localizacao.longitude),
-          }
-        : null,
-    detalhes,
+    ...patrimonio,
+
+    id: patrimonio.id,
+
+    categoria: patrimonio.categoria?.slug ?? patrimonio.categoria?.nome ?? "",
+
+    localizacao: patrimonio.localizacao
+      ? {
+          ...patrimonio.localizacao,
+
+          lat:
+            patrimonio.localizacao.latitude != null
+              ? Number(patrimonio.localizacao.latitude)
+              : null,
+
+          lng:
+            patrimonio.localizacao.longitude != null
+              ? Number(patrimonio.localizacao.longitude)
+              : null,
+        }
+      : null,
+
+    imagens: patrimonio.imagens ?? [],
   };
 }
 
@@ -116,11 +103,12 @@ export async function listarPatrimonios() {
   }
 }
 
-/**
- * Busca por slug (que é o que vira "id" depois de normalizarPatrimonio —
- * ver comentário no topo do arquivo). O nome do parâmetro continua "id"
- * só pra não mudar a assinatura que PatrimonioDetalhe.jsx já chama.
- */
+export async function getPatrimonio(slug) {
+  const response = await api.get(`/patrimonios/${encodeURIComponent(slug)}`);
+
+  return normalizarPatrimonio(response.data?.data);
+}
+
 export async function buscarPatrimonioPorId(id) {
   try {
     const { data } = await api.get(`/patrimonios/${id}`);
