@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import SwaggerParser from "@apidevtools/swagger-parser";
+<<<<<<< HEAD
 import openapi from "../docs/openApi.js";
+=======
+import openapi from "../src/docs/openapi.js";
+>>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
 
 test("especificação OpenAPI válida, com referências, rotas e autenticação corretas", async () => {
     await SwaggerParser.validate(openapi);
@@ -9,6 +13,7 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
     assert.deepEqual(openapi.servers, [{ url: "/" }]);
 
     const operations = Object.entries(openapi.paths).flatMap(([path, methods]) =>
+<<<<<<< HEAD
         Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)
     );
     assert.deepEqual(
@@ -40,14 +45,33 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
                     path === "/api/auth/senha" ||
                     path.startsWith("/api/admin/patrimonios")
             );
+=======
+        Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`));
+    assert.deepEqual(operations.sort(), [
+        "GET /api", "GET /api/health", "GET /api/docs", "GET /api/docs.json",
+        "POST /api/auth/login", "PATCH /api/auth/senha", "POST /api/admins", "GET /api/patrimonios",
+        "GET /api/patrimonios/{slug}", "POST /api/admin/patrimonios",
+        "GET /api/admin/patrimonios", "GET /api/admin/patrimonios/{id}",
+        "PATCH /api/admin/patrimonios/{id}", "PATCH /api/admin/patrimonios/{id}/publicar",
+        "PATCH /api/admin/patrimonios/{id}/arquivar",
+    ].sort());
+
+    for (const [path, methods] of Object.entries(openapi.paths)) {
+        for (const operation of Object.values(methods)) {
+            assert.equal(Boolean(operation.security), path === "/api/admins" || path === "/api/auth/senha" || path.startsWith("/api/admin/patrimonios"));
+>>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
         }
     }
     assert.equal(openapi.components.schemas.AdminRequest.properties.password.writeOnly, true);
     assert.equal(openapi.components.schemas.LoginRequest.properties.password.writeOnly, true);
+<<<<<<< HEAD
     assert.equal(
         openapi.components.schemas.ChangePasswordRequest.properties.novaSenha.writeOnly,
         true
     );
+=======
+    assert.equal(openapi.components.schemas.ChangePasswordRequest.properties.novaSenha.writeOnly, true);
+>>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     assert.equal(JSON.stringify(openapi).includes("passwordHash"), false);
     assert.equal(openapi.components.schemas.PatrimonioResumo.properties.imagens.maxItems, 1);
 });
