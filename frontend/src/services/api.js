@@ -5,42 +5,46 @@ import { CHAVE_SESSAO_MOCK } from "../context/authConstants.js";
  * Instância central do axios, usada por toda chamada de rede do front.
  *
  * Em desenvolvimento local (rodando com npm run dev, sem Docker), o
- * backend Express costuma estar na porta 4000, então é esse o valor
- * padrão aqui embaixo. Dentro do Docker Compose, o build do frontend
- * recebe VITE_API_BASE_URL=/api (veja frontend/Dockerfile), e o Nginx que
- * serve os arquivos estáticos encaminha esse /api para o container do
- * backend (veja frontend/nginx.conf). Assim o navegador nunca precisa
- * saber o hostname interno do backend, e não existe problema de CORS.
+ * backend Express fica em http://localhost:3333, e TODAS as rotas dele
+ * vivem sob o prefixo /api (backend/src/app.js: app.use("/api", routes)).
+ * Por isso o padrão abaixo já inclui o /api — sem ele, qualquer chamada
+ * cai 404. Dentro do Docker Compose, o build do frontend recebe
+ * VITE_API_BASE_URL=/api (veja frontend/Dockerfile), e o Nginx que serve
+ * os arquivos estáticos encaminha esse /api para o container do backend
+ * (veja frontend/nginx.conf). Assim o navegador nunca precisa saber o
+ * hostname interno do backend, e não existe problema de CORS.
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:4000",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
-
-  // ===== PRODUÇÃO, descomentar junto com uma sessão real por cookie =====
-  // withCredentials: true,
 });
 
-// Antes de cada requisição sair, se tiver um usuário logado (mock, guardado
-// no sessionStorage pelo AuthContext), a gente manda quem ele é em dois
-// headers simples. É assim que o backend sabe, ainda que de um jeito não
-// muito seguro, se quem está chamando uma rota de admin realmente está
-// logado como admin. Tem uma explicação mais completa disso em
-// backend/src/middlewares/authMiddleware.js.
+/**
+ * O backend autentica por JWT Bearer (backend/src/middlewares/authenticate.js
+ * lê o header Authorization e confere o token — não existe cookie de sessão
+ * nem rota /auth/me). Por isso a sessão fica guardada inteira (token + dados
+ * do usuário) no sessionStorage pelo AuthContext, e aqui a gente só lê esse
+ * token pra anexar em toda requisição, se existir.
+ *
+ * Isso é um Bearer token comum em sessionStorage, então herda a limitação
+ * de sempre: um XSS no front consegue ler esse storage e roubar o token.
+ * Não tem como evitar isso sem o backend passar a emitir cookie HttpOnly
+ * (o que ele não faz hoje — ver o aviso em context/AuthContext.jsx).
+ */
 api.interceptors.request.use((config) => {
   try {
     const bruto = sessionStorage.getItem(CHAVE_SESSAO_MOCK);
-    const usuario = bruto ? JSON.parse(bruto) : null;
+    const sessao = bruto ? JSON.parse(bruto) : null;
 
-    if (usuario?.email) {
-      config.headers["x-user-email"] = usuario.email;
-      config.headers["x-user-perfil"] = usuario.perfil ?? "";
+    if (sessao?.token) {
+      config.headers.Authorization = `Bearer ${sessao.token}`;
     }
   } catch {
-    // sessionStorage bloqueado ou JSON corrompido: segue sem os headers,
-    // o backend vai tratar isso como requisição sem login.
+    // sessionStorage bloqueado ou JSON corrompido: segue sem o header,
+    // o backend vai tratar isso como requisição sem login (401).
   }
 
   return config;
@@ -51,18 +55,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("[API Error]:", error.response?.data || error.message);
-
-    // ===== PRODUÇÃO, descomentar quando houver sessão real por cookie =====
-    // Sessão expirada ou inválida: derruba o usuário para a tela de login.
-    // Cuidado para não entrar em loop quando o próprio /auth/me der 401.
-    //
-    // const url = error.config?.url || "";
-    // const ehRotaDeAuth = url.includes("/auth/");
-    //
-    // if (error.response?.status === 401 && !ehRotaDeAuth) {
-    //   window.location.assign("/admin/login");
-    // }
-
     return Promise.reject(error);
   },
 );

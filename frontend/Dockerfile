@@ -12,8 +12,13 @@ COPY . .
 # "/api" funciona porque o nginx desta mesma imagem faz proxy de /api/ para
 # o container do backend (ver nginx.conf) — sem isso o browser não saberia
 # resolver o hostname interno "backend" do Docker.
+
 ARG VITE_API_BASE_URL=/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_GOOGLE_MAPS_API_KEY=""
+ARG VITE_GEOCODING_ATIVO="false"
+ENV VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY
+ENV VITE_GEOCODING_ATIVO=$VITE_GEOCODING_ATIVO
 
 RUN npm run build
 
