@@ -11,10 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-<<<<<<< HEAD
-=======
 ADMIN.md
->>>>>>> master
 
 # Editor directories and files
 .vscode/*
@@ -26,7 +23,3 @@ ADMIN.md
 *.njsproj
 *.sln
 *.sw?
-<<<<<<< HEAD
-=======
-
->>>>>>> master

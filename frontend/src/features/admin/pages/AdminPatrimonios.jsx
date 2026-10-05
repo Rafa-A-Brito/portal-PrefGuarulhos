@@ -32,7 +32,7 @@ import {
 // import * as adminApi from "../../../services/adminApi";
 
 // Ajustar ao limite real do campo "descricao" quando a equipe confirmar.
-const LIMITE_RESUMO = 600;
+const LIMITE_RESUMO = 2000; // 2.000 caracteres (aprox. 300 palavras)
 
 const TIPOS_IMAGEM = ["image/jpeg", "image/png", "image/webp"];
 const TAMANHO_MAX_IMAGEM = 5 * 1024 * 1024; // 5 MB
@@ -694,6 +694,7 @@ export default function AdminPatrimonios() {
                 <>
                   <textarea
                     rows={4}
+                    style={{ resize: "none" }}
                     maxLength={LIMITE_RESUMO}
                     placeholder="Escreva um resumo curto do patrimônio."
                     value={formulario.resumo}

@@ -15,33 +15,15 @@ Aplicação web interativa para o mapeamento, consulta e preservação da memór
 
 ### Colaboradores
 
-<a href="https://github.com/Rafa-A-Brito">
-  <img src="https://github.com/Rafa-A-Brito.png" width="85;" style="border-radius: 50%;" alt="Rafael Brito"/>
-</a>
-<a href="https://github.com/f3rcar">
-  <img src="https://github.com/f3rcar.png" width="85;" style="border-radius: 50%;" alt="Fernando Cardoso"/>
-</a>
-<a href="https://github.com/enzo-dutra">
-  <img src="https://github.com/enzo-dutra.png" width="85;" style="border-radius: 50%;" alt="Enzo Dutra"/>
-</a>
-<a href="https://github.com/itsanapaula">
-  <img src="https://github.com/itsanapaula.png" width="85;" style="border-radius: 50%;" alt="Ana paula"/>
-</a>
-<a href="https://github.com/gimenes77">
-  <img src="https://github.com/gimenes77.png" width="85;" style="border-radius: 50%;" alt="Henrique Bezerra"/>
-</a>
-<a href="https://github.com/vilarongadiaseduardo-glitch">
-  <img src="https://github.com/vilarongadiaseduardo-glitch.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/>
-</a>
-<a href="https://github.com/arthuraugustocavalcante">
-  <img src="https://github.com/arthuraugustocavalcante.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/>
-</a>
-<a href="https://github.com/vpredeus">
-  <img src="https://github.com/vpredeus.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/>
-</a>
-<a href="https://github.com/vitinnsz">
-  <img src="https://github.com/vitinnsz.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/>
-</a>
+<a href="https://github.com/Rafa-A-Brito"><img src="https://github.com/Rafa-A-Brito.png" width="85;" style="border-radius: 50%;" alt="Rafael Brito"/></a>
+<a href="https://github.com/f3rcar"><img src="https://github.com/f3rcar.png" width="85;" style="border-radius: 50%;" alt="Fernando Cardoso"/></a>
+<a href="https://github.com/enzo-dutra"><img src="https://github.com/enzo-dutra.png" width="85;" style="border-radius: 50%;" alt="Enzo Dutra"/></a>
+<a href="https://github.com/itsanapaula"><img src="https://github.com/itsanapaula.png" width="85;" style="border-radius: 50%;" alt="Ana paula"/></a>
+<a href="https://github.com/gimenes77"><img src="https://github.com/gimenes77.png" width="85;" style="border-radius: 50%;" alt="Henrique Bezerra"/></a>
+<a href="https://github.com/vilarongadiaseduardo-glitch"><img src="https://github.com/vilarongadiaseduardo-glitch.png" width="85;" style="border-radius: 50%;" alt="Eduardo Vilaronga"/></a>
+<a href="https://github.com/arthuraugustocavalcante"><img src="https://github.com/arthuraugustocavalcante.png" width="85;" style="border-radius: 50%;" alt="Arthur Augusto"/></a>
+<a href="https://github.com/vpredeus"><img src="https://github.com/vpredeus.png" width="85;" style="border-radius: 50%;" alt="João Victor Predeus"/></a>
+<a href="https://github.com/vitinnsz"><img src="https://github.com/vitinnsz.png" width="85;" style="border-radius: 50%;" alt="Victor Santos"/></a>
 
 ### Motivação
 

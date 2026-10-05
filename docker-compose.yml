@@ -1,60 +1,53 @@
+# PROPOSTA (não testada com Docker). Fica na raiz do repo, no lugar do compose antigo (MySQL).
 services:
-  mysql:
-    image: mysql:8.0
+  db:
+    image: postgres:17-alpine
     restart: unless-stopped
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-guarulhos}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-guarulhos_patrimonio}
+      POSTGRES_USER: ${POSTGRES_USER:-portal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portal}
+      POSTGRES_DB: ${POSTGRES_DB:-patrimonio_guarulhos}
     ports:
-      - "${MYSQL_PORT:-3309}:3306"
+      - "5433:5432" # 5433 no host, para não colidir com o Postgres instalado na sua máquina (5432)
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portal} -d ${POSTGRES_DB:-patrimonio_guarulhos}"]
       interval: 5s
       timeout: 5s
       retries: 20
 
   backend:
-    build:
-      context: ./backend
+    build: ./backend
     restart: unless-stopped
     environment:
-      PORT: 4000
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-guarulhos}
-      DB_NAME: ${MYSQL_DATABASE:-guarulhos_patrimonio}
+      PORT: 3333
+      DATABASE_URL: postgresql://${POSTGRES_USER:-portal}:${POSTGRES_PASSWORD:-portal}@db:5432/${POSTGRES_DB:-patrimonio_guarulhos}
+      CORS_ORIGIN: http://localhost:8090
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env da raiz (mínimo 32 caracteres)}
+      JWT_TTL_SECONDS: 900
+      UPLOAD_DIR: /app/uploads # usado quando o upload de imagens existir
     ports:
-      - "${BACKEND_PORT:-4000}:4000"
+      - "3333:3333"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
-      mysql:
+      db:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
 
   frontend:
     build:
       context: ./frontend
       args:
         VITE_API_BASE_URL: /api
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+        VITE_GEOCODING_ATIVO: ${VITE_GEOCODING_ATIVO:-false}
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-8090}:80"
+      - "8090:80"
     depends_on:
       - backend
 
 volumes:
-  mysql_data:
+  pg_data:
+  uploads_data:
