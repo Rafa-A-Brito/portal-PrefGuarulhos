@@ -1,88 +1,88 @@
-// [API DESATIVADA TEMPORARIAMENTE] dados em texto puro (db.json) só para visualizar a tela.
-// import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { UsersIcon, BuildingLibraryIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
-// import { listarUsuarios } from "../../../services/adminApi";
-// import { listarPatrimonios } from "../../../services/fakeApi";
+import { useErroModal } from "../../../hooks/useErroModal";
+import { listarPatrimoniosAdmin } from "../../../services/adminApi";
 
 /**
- * Página inicial do painel: só mostra quantos usuários e patrimônios
- * existem hoje e dá um atalho pra cada tela de gerenciamento. Não tenta
- * fazer mais do que isso de propósito, dashboards ficam melhores quando
- * crescem aos poucos, conforme o time realmente sente falta de algo.
- *
- * Cores dos ícones: usuários em azul e patrimônios em verde (classes
- * --usuarios e --patrimonios, definidas em admin-extras.css).
+ * Página inicial do painel: quantos patrimônios existem (por status) e
+ * atalhos. O backend não tem endpoint para listar/contar usuários, por isso
+ * não há contador de usuários; ADMIN só vê o atalho para cadastrar novos.
  */
 export default function AdminDashboard() {
   const { usuario } = useAuth();
-
-  /* ----- ORIGINAL (API) — descomentar quando o backend estiver integrado -----
-  const [totalUsuarios, setTotalUsuarios] = useState(null);
-  const [totalPatrimonios, setTotalPatrimonios] = useState(null);
+  const { mostrarErro } = useErroModal();
+  const [contagem, setContagem] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
 
     async function carregar() {
       try {
-        const [usuarios, patrimonios] = await Promise.all([
-          listarUsuarios(),
-          listarPatrimonios(),
-        ]);
+        const lista = await listarPatrimoniosAdmin();
+        if (cancelado) return;
 
-        if (!cancelado) {
-          setTotalUsuarios(usuarios.length);
-          setTotalPatrimonios(patrimonios.length);
-        }
+        setContagem({
+          total: lista.length,
+          RASCUNHO: lista.filter((p) => p.status === "RASCUNHO").length,
+          PUBLICADO: lista.filter((p) => p.status === "PUBLICADO").length,
+          ARQUIVADO: lista.filter((p) => p.status === "ARQUIVADO").length,
+        });
       } catch (err) {
-        console.error("[AdminDashboard] Falha ao carregar os números:", err);
+        if (!cancelado) {
+          mostrarErro(err, { origem: "AdminDashboard › carregar" });
+        }
       }
     }
 
     carregar();
-
     return () => {
       cancelado = true;
     };
-  }, []);
-  ----- fim do ORIGINAL (API) ----- */
+  }, [mostrarErro]);
 
-  // Números do db.json em texto puro (2 usuários, 3 patrimônios).
-  const totalUsuarios = 2;
-  const totalPatrimonios = 3;
+  const eAdmin = usuario?.perfil === "ADMIN";
 
   return (
     <div>
       <div className="admin-page-head">
         <h1>Olá, {usuario?.nome?.split(" ")[0] || "administrador"}</h1>
         <p>
-          Aqui você gerencia os usuários e os patrimônios cadastrados no
-          sistema.
+          {eAdmin
+            ? "Aqui você gerencia os patrimônios e cadastra novos usuários."
+            : "Aqui você cadastra e edita rascunhos de patrimônios. A publicação é feita por um administrador."}
         </p>
       </div>
 
       <div className="admin-dashboard-grid">
-        <Link to="/admin/usuarios" className="admin-dashboard-card">
-          <span className="admin-dashboard-icon admin-dashboard-icon--usuarios">
-            <UsersIcon width={22} height={22} />
-          </span>
-          <div>
-            <strong>{totalUsuarios ?? "..."}</strong>
-            <span>Usuários cadastrados</span>
-          </div>
-        </Link>
-
         <Link to="/admin/patrimonios" className="admin-dashboard-card">
           <span className="admin-dashboard-icon admin-dashboard-icon--patrimonios">
             <BuildingLibraryIcon width={22} height={22} />
           </span>
           <div>
-            <strong>{totalPatrimonios ?? "..."}</strong>
+            <strong>{contagem?.total ?? "..."}</strong>
             <span>Patrimônios cadastrados</span>
+            {contagem && (
+              <small>
+                {contagem.PUBLICADO} publicados · {contagem.RASCUNHO} rascunhos
+                · {contagem.ARQUIVADO} arquivados
+              </small>
+            )}
           </div>
         </Link>
+
+        {eAdmin && (
+          <Link to="/admin/usuarios" className="admin-dashboard-card">
+            <span className="admin-dashboard-icon admin-dashboard-icon--usuarios">
+              <UsersIcon width={22} height={22} />
+            </span>
+            <div>
+              <strong>Usuários</strong>
+              <span>Cadastrar administrador ou editor</span>
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );

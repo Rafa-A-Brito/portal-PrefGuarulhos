@@ -21,7 +21,8 @@ export default function Patrimonios() {
 
   const [busca, setBusca] = useState(searchParams.get("busca") || "");
 
-  const { patrimonios, carregando, setSelecionado } = usePatrimoniosContext();
+  const { patrimonios, carregando, erro, recarregar, setSelecionado } =
+    usePatrimoniosContext();
 
   // Estado para controlar a página atual da paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -122,6 +123,13 @@ export default function Patrimonios() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="skeleton-card" />
             ))}
+          </div>
+        ) : erro ? (
+          <div className="empty-state" role="alert">
+            <p>{erro}</p>
+            <button type="button" className="btn-outline" onClick={recarregar}>
+              Tentar novamente
+            </button>
           </div>
         ) : filtrados.length === 0 ? (
           <div className="empty-state">

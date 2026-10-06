@@ -27,7 +27,6 @@ export default function PlaquetaCard({ item }) {
         </span>
       </figure>
       <div className="plaqueta-body">
-        <span className="num">Nº {String(item.id).padStart(3, "0")}</span>
         <h3>{item.nome}</h3>
         <div className="bairro">
           <MapPinIcon className="inline-icon" aria-hidden="true" />

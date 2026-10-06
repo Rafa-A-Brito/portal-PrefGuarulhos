@@ -1,182 +1,90 @@
-// [API DESATIVADA TEMPORARIAMENTE] dados em texto puro (db.json) só para visualizar a tela.
 import { useState } from "react";
-// import { useEffect, useState } from "react";
 import {
   PlusIcon,
-  PencilIcon,
-  TrashIcon,
   ShieldCheckIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import { useAuth } from "../../../hooks/useAuth";
 import { useErroModal } from "../../../hooks/useErroModal";
-// import * as adminApi from "../../../services/adminApi";
+import * as adminApi from "../../../services/adminApi";
 
-const FORMULARIO_VAZIO = { nome: "", email: "", senha: "", perfil: "tecnico" };
+/**
+ * Cadastro de usuários do painel.
+ *
+ * O backend só oferece POST /api/admins (somente ADMIN). Não existe rota
+ * para listar, editar, desativar ou excluir usuários, então esta tela só
+ * CRIA. A lista abaixo mostra apenas as contas criadas nesta sessão (fica
+ * em memória e some no F5), como confirmação de que deu certo.
+ *
+ * Perfis do backend: ADMIN (tudo) e EDITOR (cria e edita rascunhos).
+ */
 
-// Mínimo exigido no formulário (o backend precisa validar de novo: o front
-// é só conforto de uso, nunca a barreira de segurança).
-const TAMANHO_MIN_SENHA = 8;
+const FORMULARIO_VAZIO = { nome: "", email: "", password: "", role: "EDITOR" };
 
-// Usuários do db.json em texto puro (a lista da API nunca traz a senha).
-const USUARIOS_MOCK = [
-  {
-    id: 1,
-    nome: "Administrador",
-    email: "admin@guarulhos.sp.gov.servidor.br",
-    perfil: "admin",
-  },
-  {
-    id: 2,
-    nome: "Técnico de Patrimônio",
-    email: "tecnico@guarulhos.sp.gov.br",
-    perfil: "tecnico",
-  },
-];
+// Mesma regra do backend (adminSchema.js): 12+ caracteres, até 72 bytes.
+const TAMANHO_MIN_SENHA = 12;
+
+const ROTULO_PERFIL = { ADMIN: "Administrador", EDITOR: "Editor" };
 
 export default function AdminUsuarios() {
-  const { usuario: usuarioLogado } = useAuth();
   const { mostrarErro } = useErroModal();
 
-  // const [usuarios, setUsuarios] = useState([]);
-  // const [carregando, setCarregando] = useState(true);
-  // const [erro, setErro] = useState(null);
-  const [usuarios, setUsuarios] = useState(USUARIOS_MOCK);
-  const [carregando] = useState(false);
-  const [erro] = useState(null);
-
-  // Quando editandoId é null, o formulário está fechado. Quando é "novo",
-  // o formulário está aberto pra criar um usuário. Quando é um id de
-  // verdade, está editando aquele usuário específico.
-  const [editandoId, setEditandoId] = useState(null);
+  const [aberto, setAberto] = useState(false);
   const [formulario, setFormulario] = useState(FORMULARIO_VAZIO);
   const [erroFormulario, setErroFormulario] = useState(null);
-  // const [salvando, setSalvando] = useState(false);
-  const [salvando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [criados, setCriados] = useState([]);
 
-  /* ----- ORIGINAL (API) — descomentar quando o backend estiver integrado -----
-  async function carregarUsuarios() {
-    setCarregando(true);
-    setErro(null);
-
-    try {
-      const lista = await adminApi.listarUsuarios();
-      setUsuarios(lista);
-    } catch (err) {
-      setErro("Não foi possível carregar os usuários.");
-      mostrarErro(err, { origem: "AdminUsuarios › carregar" });
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    carregarUsuarios();
-  }, []);
-  ----- fim do ORIGINAL (API) ----- */
-
-  function abrirNovo() {
+  function abrir() {
     setFormulario(FORMULARIO_VAZIO);
     setErroFormulario(null);
-    setEditandoId("novo");
+    setAberto(true);
   }
 
-  function abrirEdicao(usuario) {
-    setFormulario({
-      nome: usuario.nome,
-      email: usuario.email,
-      senha: "",
-      perfil: usuario.perfil,
-    });
-    setErroFormulario(null);
-    setEditandoId(usuario.id);
-  }
-
-  function fecharFormulario() {
-    setEditandoId(null);
+  function fechar() {
+    setAberto(false);
     setFormulario(FORMULARIO_VAZIO);
     setErroFormulario(null);
   }
 
-  /* ----- ORIGINAL (API) — descomentar quando o backend estiver integrado -----
   async function salvar(e) {
     e.preventDefault();
-    setSalvando(true);
     setErroFormulario(null);
 
-    try {
-      if (editandoId === "novo") {
-        await adminApi.criarUsuario(formulario);
-      } else {
-        // Se a senha ficou em branco na edição, não manda o campo, assim o
-        // backend sabe que é pra manter a senha atual.
-        const dados = { ...formulario };
-        if (!dados.senha) delete dados.senha;
-        await adminApi.atualizarUsuario(editandoId, dados);
-      }
+    if (Array.from(formulario.password).length < TAMANHO_MIN_SENHA) {
+      setErroFormulario(
+        `A senha deve ter pelo menos ${TAMANHO_MIN_SENHA} caracteres.`,
+      );
+      return;
+    }
 
-      fecharFormulario();
-      await carregarUsuarios();
+    if (new TextEncoder().encode(formulario.password).length > 72) {
+      setErroFormulario("A senha deve ter no máximo 72 bytes.");
+      return;
+    }
+
+    setSalvando(true);
+
+    try {
+      const criado = await adminApi.criarUsuario({
+        nome: formulario.nome.trim(),
+        email: formulario.email.trim(),
+        role: formulario.role,
+        password: formulario.password,
+      });
+      setCriados((lista) => [criado, ...lista]);
+      fechar();
     } catch (err) {
-      mostrarErro(err, { origem: "AdminUsuarios › salvar" });
+      // 400 (dado inválido) e 409 (e-mail já existe) são erros de quem
+      // preencheu: ficam no formulário. O resto vai para o modal.
+      const status = err.response?.status;
+
+      if (status === 400 || status === 409) {
+        setErroFormulario(adminApi.extrairMensagemDeErro(err));
+      } else {
+        mostrarErro(err, { origem: "AdminUsuarios › salvar" });
+      }
     } finally {
       setSalvando(false);
-    }
-  }
-
-  async function excluir(usuario) {
-    const confirmou = window.confirm(
-      `Excluir o usuário "${usuario.nome}"? Essa ação não pode ser desfeita.`,
-    );
-    if (!confirmou) return;
-
-    try {
-      await adminApi.excluirUsuario(usuario.id);
-      await carregarUsuarios();
-    } catch (err) {
-      mostrarErro(err, { origem: "AdminUsuarios › excluir" });
-    }
-  }
-  ----- fim do ORIGINAL (API) ----- */
-
-  /* ---------- MOCK TEMPORÁRIO: altera só a lista em memória (some no F5) ---------- */
-  function salvar(e) {
-    e.preventDefault();
-    setErroFormulario(null);
-
-    try {
-      const { nome, email, perfil } = formulario;
-
-      if (editandoId === "novo") {
-        setUsuarios((lista) => [
-          ...lista,
-          { id: Date.now(), nome, email, perfil },
-        ]);
-      } else {
-        setUsuarios((lista) =>
-          lista.map((u) =>
-            u.id === editandoId ? { ...u, nome, email, perfil } : u,
-          ),
-        );
-      }
-
-      fecharFormulario();
-    } catch (err) {
-      mostrarErro(err, { origem: "AdminUsuarios › salvar" });
-    }
-  }
-
-  function excluir(usuario) {
-    const confirmou = window.confirm(
-      `Excluir o usuário "${usuario.nome}"? Essa ação não pode ser desfeita.`,
-    );
-    if (!confirmou) return;
-
-    try {
-      setUsuarios((lista) => lista.filter((u) => u.id !== usuario.id));
-    } catch (err) {
-      mostrarErro(err, { origem: "AdminUsuarios › excluir" });
     }
   }
 
@@ -185,24 +93,25 @@ export default function AdminUsuarios() {
       <div className="admin-page-head admin-page-head-row">
         <div>
           <h1>Usuários</h1>
-          <p>Quem pode entrar no painel administrativo e com qual perfil.</p>
+          <p>Cadastre quem pode entrar no painel e com qual perfil.</p>
         </div>
 
-        <button type="button" className="btn-solid" onClick={abrirNovo}>
+        <button type="button" className="btn-solid" onClick={abrir}>
           <PlusIcon width={16} height={16} />
           Novo usuário
         </button>
       </div>
 
-      {editandoId && (
+      {aberto && (
         <form className="admin-form" onSubmit={salvar}>
-          <h2>{editandoId === "novo" ? "Novo usuário" : "Editar usuário"}</h2>
+          <h2>Novo usuário</h2>
 
           <div className="admin-form-grid">
             <label>
               Nome
               <input
                 required
+                maxLength={100}
                 autoComplete="off"
                 value={formulario.nome}
                 onChange={(e) =>
@@ -216,6 +125,7 @@ export default function AdminUsuarios() {
               <input
                 type="email"
                 required
+                maxLength={254}
                 autoComplete="off"
                 value={formulario.email}
                 onChange={(e) =>
@@ -228,17 +138,13 @@ export default function AdminUsuarios() {
               Senha
               <input
                 type="password"
+                required
                 autoComplete="new-password"
                 minLength={TAMANHO_MIN_SENHA}
-                placeholder={
-                  editandoId === "novo"
-                    ? `Mínimo de ${TAMANHO_MIN_SENHA} caracteres`
-                    : "Deixe em branco para manter a atual"
-                }
-                required={editandoId === "novo"}
-                value={formulario.senha}
+                placeholder={`Mínimo de ${TAMANHO_MIN_SENHA} caracteres`}
+                value={formulario.password}
                 onChange={(e) =>
-                  setFormulario((f) => ({ ...f, senha: e.target.value }))
+                  setFormulario((f) => ({ ...f, password: e.target.value }))
                 }
               />
             </label>
@@ -246,29 +152,32 @@ export default function AdminUsuarios() {
             <label>
               Perfil
               <select
-                value={formulario.perfil}
+                value={formulario.role}
                 onChange={(e) =>
-                  setFormulario((f) => ({ ...f, perfil: e.target.value }))
+                  setFormulario((f) => ({ ...f, role: e.target.value }))
                 }
               >
-                <option value="admin">Administrador</option>
-                <option value="tecnico">Técnico</option>
+                <option value="EDITOR">Editor (edita rascunhos)</option>
+                <option value="ADMIN">Administrador (acesso total)</option>
               </select>
             </label>
           </div>
 
           {erroFormulario && (
-            <p className="admin-form-erro">{erroFormulario}</p>
+            <p className="admin-form-erro" role="alert">
+              {erroFormulario}
+            </p>
           )}
 
           <div className="admin-form-acoes">
             <button type="submit" className="btn-solid" disabled={salvando}>
-              {salvando ? "Salvando..." : "Salvar"}
+              {salvando ? "Salvando..." : "Criar usuário"}
             </button>
             <button
               type="button"
               className="btn-outline"
-              onClick={fecharFormulario}
+              disabled={salvando}
+              onClick={fechar}
             >
               Cancelar
             </button>
@@ -276,10 +185,12 @@ export default function AdminUsuarios() {
         </form>
       )}
 
-      {carregando ? (
-        <p className="empty-state">Carregando usuários...</p>
-      ) : erro ? (
-        <p className="empty-state">{erro}</p>
+      {criados.length === 0 ? (
+        <p className="empty-state">
+          Os usuários já cadastrados não são listados aqui: o backend ainda não
+          tem uma rota de listagem. As contas criadas nesta sessão aparecem
+          abaixo.
+        </p>
       ) : (
         <table className="admin-table">
           <thead>
@@ -287,47 +198,26 @@ export default function AdminUsuarios() {
               <th>Nome</th>
               <th>E-mail</th>
               <th>Perfil</th>
-              <th aria-label="Ações" />
             </tr>
           </thead>
           <tbody>
-            {usuarios.map((u) => (
+            {criados.map((u) => (
               <tr key={u.id}>
-                <td>{u.nome}</td>
+                <td>{u.name ?? u.nome}</td>
                 <td>{u.email}</td>
                 <td>
                   <span
-                    className={`admin-badge-perfil admin-badge-${u.perfil}`}
+                    className={`admin-badge-perfil admin-badge-${
+                      u.role === "ADMIN" ? "admin" : "tecnico"
+                    }`}
                   >
-                    {u.perfil === "admin" ? (
+                    {u.role === "ADMIN" ? (
                       <ShieldCheckIcon width={14} height={14} />
                     ) : (
                       <WrenchScrewdriverIcon width={14} height={14} />
                     )}
-                    {u.perfil === "admin" ? "Administrador" : "Técnico"}
+                    {ROTULO_PERFIL[u.role] ?? u.role}
                   </span>
-                </td>
-                <td className="admin-table-acoes">
-                  <button
-                    type="button"
-                    aria-label={`Editar ${u.nome}`}
-                    onClick={() => abrirEdicao(u)}
-                  >
-                    <PencilIcon width={16} height={16} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Excluir ${u.nome}`}
-                    disabled={u.id === usuarioLogado?.id}
-                    title={
-                      u.id === usuarioLogado?.id
-                        ? "Você não pode excluir o próprio usuário enquanto está logado com ele"
-                        : undefined
-                    }
-                    onClick={() => excluir(u)}
-                  >
-                    <TrashIcon width={16} height={16} />
-                  </button>
                 </td>
               </tr>
             ))}

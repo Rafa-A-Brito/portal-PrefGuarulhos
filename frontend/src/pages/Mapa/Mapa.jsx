@@ -18,7 +18,7 @@ const FALLBACK_THUMB =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3C/svg%3E";
 
 export default function Mapa() {
-  const { patrimonios, carregando, selecionado, setSelecionado } =
+  const { patrimonios, carregando, erro, recarregar, selecionado, setSelecionado } =
     usePatrimoniosContext();
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
@@ -56,6 +56,13 @@ export default function Mapa() {
               [1, 2, 3, 4].map((i) => (
                 <div key={i} className="mapa-sidebar-skeleton" />
               ))
+            ) : erro ? (
+              <div className="mockup-empty" role="alert">
+                <p>{erro}</p>
+                <button type="button" className="btn-outline" onClick={recarregar}>
+                  Tentar novamente
+                </button>
+              </div>
             ) : filtrados.length === 0 ? (
               <p className="mockup-empty">Nenhum patrimônio encontrado.</p>
             ) : (

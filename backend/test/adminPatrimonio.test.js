@@ -24,7 +24,6 @@ const editor = { id: randomUUID(), role: "EDITOR", isActive: true };
 function stub(t, target, method, implementation) {
     const original = target[method];
     target[method] = implementation;
-<<<<<<< HEAD
     t.after(() => {
         target[method] = original;
     });
@@ -46,29 +45,16 @@ const record = (extra = {}) => ({
     imagens: [{ id: randomUUID() }],
     documentos: [{ id: randomUUID() }],
     ...extra,
-=======
-    t.after(() => { target[method] = original; });
-}
-const record = (extra = {}) => ({
-    id: randomUUID(), nome: "Igreja", slug: "igreja", descricao: "Descrição", descricaoResumida: "Resumo",
-    categoriaId: randomUUID(), situacao: "PRESERVADO", status: "RASCUNHO", historia: null,
-    importanciaCultural: null, localizacao: null, publicadoEm: null, arquivadoEm: null,
-    imagens: [{ id: randomUUID() }], documentos: [{ id: randomUUID() }], ...extra,
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
 });
 function database(t, initial = record()) {
     let state = initial;
     const writes = [];
     let locks = 0;
     const tx = {
-<<<<<<< HEAD
         $queryRaw: async () => {
             locks++;
             return [];
         },
-=======
-        $queryRaw: async () => { locks++; return []; },
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
         categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
         patrimonio: {
             findUnique: async () => state,
@@ -76,22 +62,17 @@ function database(t, initial = record()) {
                 writes.push(data);
                 const { localizacao, ...fields } = data;
                 state = { ...state, ...fields };
-<<<<<<< HEAD
                 if (localizacao)
                     state.localizacao = localizacao.create ?? {
                         ...state.localizacao,
                         ...localizacao.update,
                     };
-=======
-                if (localizacao) state.localizacao = localizacao.create ?? { ...state.localizacao, ...localizacao.update };
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
                 return state;
             },
         },
     };
     stub(t, prisma, "$transaction", async (fn) => fn(tx));
     stub(t, prisma.patrimonio, "findUnique", async () => state);
-<<<<<<< HEAD
     stub(t, prisma.user, "findUnique", async ({ where }) =>
         where.id === admin.id ? admin : editor
     );
@@ -106,22 +87,11 @@ async function request(path, { user, method = "GET", body } = {}) {
         },
         ...(body !== undefined && { body: JSON.stringify(body) }),
     });
-=======
-    stub(t, prisma.user, "findUnique", async ({ where }) => where.id === admin.id ? admin : editor);
-    return { tx, writes, state: () => state, locks: () => locks };
-}
-async function request(path, { user, method = "GET", body } = {}) {
-    const response = await fetch(`${base}${path}`, { method, headers: {
-        ...(user && { authorization: `Bearer ${generateToken(user.id)}` }),
-        ...(body !== undefined && { "content-type": "application/json" }),
-    }, ...(body !== undefined && { body: JSON.stringify(body) }) });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     return { status: response.status, body: await response.json() };
 }
 
 test("schemas parciais não introduzem defaults e recusam campos vazios/protegidos", () => {
     assert.deepEqual(schemas.updatePatrimonioSchema.parse({ nome: " Novo " }), { nome: "Novo" });
-<<<<<<< HEAD
     assert.deepEqual(schemas.updatePatrimonioSchema.parse({ localizacao: { bairro: "Centro" } }), {
         localizacao: { bairro: "Centro" },
     });
@@ -160,23 +130,12 @@ test("schemas parciais não introduzem defaults e recusam campos vazios/protegid
         schemas.listPatrimoniosQuerySchema.safeParse({ status: "RASCUNHO" }).success,
         false
     );
-=======
-    assert.deepEqual(schemas.updatePatrimonioSchema.parse({ localizacao: { bairro: "Centro" } }), { localizacao: { bairro: "Centro" } });
-    for (const body of [{}, { localizacao: {} }, { nome: " " }, { categoriaId: "123" }, { localizacao: { latitude: 91 } },
-        ...["id", "slug", "status", "createdBy", "updatedBy", "createdAt", "updatedAt", "publicadoEm", "arquivadoEm", "imagens", "documentos"].map((key) => ({ [key]: "x" })),
-        { localizacao: { id: randomUUID() } }]) {
-        assert.equal(schemas.updatePatrimonioSchema.safeParse(body).success, false, JSON.stringify(body));
-    }
-    assert.equal(schemas.adminListPatrimoniosQuerySchema.safeParse({ status: "OUTRO" }).success, false);
-    assert.equal(schemas.listPatrimoniosQuerySchema.safeParse({ status: "RASCUNHO" }).success, false);
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
 });
 
 test("listagem administrativa reutiliza filtros, paginação e ordenação estável em todos os status", async (t) => {
     database(t);
     let args;
     let countWhere;
-<<<<<<< HEAD
     stub(t, prisma.patrimonio, "count", async ({ where }) => {
         countWhere = where;
         return 0;
@@ -190,36 +149,25 @@ test("listagem administrativa reutiliza filtros, paginação e ordenação está
             `/admin/patrimonios?busca=igreja&categoria=Religioso&bairro=Centro&situacao=PRESERVADO&pagina=2&limite=5${status ? `&status=${status}` : ""}`,
             { user: editor }
         );
-=======
-    stub(t, prisma.patrimonio, "count", async ({ where }) => { countWhere = where; return 0; });
-    stub(t, prisma.patrimonio, "findMany", async (input) => { args = input; return []; });
-    for (const status of [undefined, "RASCUNHO", "PUBLICADO", "ARQUIVADO"]) {
-        const result = await request(`/admin/patrimonios?busca=igreja&categoria=Religioso&bairro=Centro&situacao=PRESERVADO&pagina=2&limite=5${status ? `&status=${status}` : ""}`, { user: editor });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
         assert.equal(result.status, 200);
         assert.equal(args.where.status, status);
         assert.deepEqual(countWhere, args.where);
         assert.equal(args.where.OR.length, 5);
         assert.equal(args.where.OR[0].nome.contains, "igreja");
-<<<<<<< HEAD
-        assert.equal(args.where.categoria.nome.equals, "Religioso");
-=======
         assert.equal(args.where.AND[0].OR[0].categoria.nome.equals, "Religioso");
-        assert.equal(args.where.AND[0].OR[1].categoriasAdicionais.some.categoria.nome.equals, "Religioso");
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
+        assert.equal(
+            args.where.AND[0].OR[1].categoriasAdicionais.some.categoria.nome.equals,
+            "Religioso"
+        );
         assert.equal(args.where.localizacao.is.bairro.equals, "Centro");
         assert.equal(args.where.situacao, "PRESERVADO");
         assert.equal(args.skip, 5);
         assert.equal(args.take, 5);
         assert.deepEqual(args.orderBy, [{ nome: "asc" }, { id: "asc" }]);
-<<<<<<< HEAD
         assert.deepEqual(result.body.data, {
             itens: [],
             paginacao: { pagina: 2, limite: 5, total: 0, totalPaginas: 0 },
         });
-=======
-        assert.deepEqual(result.body.data, { itens: [], paginacao: { pagina: 2, limite: 5, total: 0, totalPaginas: 0 } });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     }
 });
 
@@ -244,15 +192,11 @@ test("detalhes administrativos incluem relações e aceitam qualquer status por 
 test("edição preserva slug, campos omitidos e mídias, registra updatedBy", async (t) => {
     const original = record();
     const db = database(t, original);
-<<<<<<< HEAD
     const result = await request(`/admin/patrimonios/${original.id}`, {
         user: editor,
         method: "PATCH",
         body: { nome: "Novo" },
     });
-=======
-    const result = await request(`/admin/patrimonios/${original.id}`, { user: editor, method: "PATCH", body: { nome: "Novo" } });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     assert.equal(result.status, 200);
     assert.deepEqual(db.state(), { ...original, nome: "Novo", updatedBy: editor.id });
     assert.deepEqual(db.writes[0], { nome: "Novo", updatedBy: editor.id });
@@ -262,7 +206,6 @@ test("edição preserva slug, campos omitidos e mídias, registra updatedBy", as
 test("localização pode ser criada e atualizada parcialmente, validando coordenadas finais", async (t) => {
     const db = database(t);
     const id = db.state().id;
-<<<<<<< HEAD
     await assert.rejects(
         service.updatePatrimonio(id, { localizacao: { bairro: "Centro" } }, admin)
     );
@@ -295,22 +238,10 @@ test("localização pode ser criada e atualizada parcialmente, validando coorden
         latitude: 3,
         longitude: 2,
     });
-=======
-    await assert.rejects(service.updatePatrimonio(id, { localizacao: { bairro: "Centro" } }, admin));
-    await assert.rejects(service.updatePatrimonio(id, { localizacao: { endereco: "Rua", bairro: "Centro", latitude: 1 } }, admin));
-    assert.equal(db.writes.length, 0);
-    await service.updatePatrimonio(id, { localizacao: { endereco: "Rua", bairro: "Centro", latitude: 1, longitude: 2 } }, admin);
-    assert.equal(db.state().localizacao.cidade, "Guarulhos");
-    assert.equal(db.state().localizacao.uf, "SP");
-    await service.updatePatrimonio(id, { localizacao: { cidade: "Outra", uf: "RJ" } }, admin);
-    await service.updatePatrimonio(id, schemas.updatePatrimonioSchema.parse({ localizacao: { latitude: 3 } }), admin);
-    assert.deepEqual(db.state().localizacao, { endereco: "Rua", bairro: "Centro", cidade: "Outra", uf: "RJ", latitude: 3, longitude: 2 });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
 });
 
 test("localização Prisma Decimal e campos opcionais nulos são validados sem sobrescrever omitidos", async (t) => {
     const { Prisma } = await import("@prisma/client");
-<<<<<<< HEAD
     const db = database(
         t,
         record({
@@ -328,9 +259,6 @@ test("localização Prisma Decimal e campos opcionais nulos são validados sem s
             },
         })
     );
-=======
-    const db = database(t, record({ localizacao: { id: randomUUID(), patrimonioId: randomUUID(), endereco: "Rua", bairro: "Centro", cidade: "Guarulhos", uf: "SP", numero: null, cep: null, latitude: new Prisma.Decimal(1), longitude: new Prisma.Decimal(2) } }));
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     await service.updatePatrimonio(db.state().id, { localizacao: { bairro: "Novo" } }, admin);
     assert.deepEqual(db.writes[0].localizacao, { update: { bairro: "Novo" } });
 });
@@ -338,15 +266,11 @@ test("localização Prisma Decimal e campos opcionais nulos são validados sem s
 test("categoria inexistente retorna 400 e não escreve", async (t) => {
     const db = database(t);
     db.tx.categoria.findUnique = async () => null;
-<<<<<<< HEAD
     const result = await request(`/admin/patrimonios/${db.state().id}`, {
         user: admin,
         method: "PATCH",
         body: { categoriaId: randomUUID() },
     });
-=======
-    const result = await request(`/admin/patrimonios/${db.state().id}`, { user: admin, method: "PATCH", body: { categoriaId: randomUUID() } });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     assert.equal(result.status, 400);
     assert.equal(db.writes.length, 0);
 });
@@ -356,7 +280,6 @@ test("EDITOR não edita publicados/arquivados; ADMIN edita ambos", async (t) => 
     for (const status of ["PUBLICADO", "ARQUIVADO"]) {
         db.state().status = status;
         const path = `/admin/patrimonios/${db.state().id}`;
-<<<<<<< HEAD
         assert.equal(
             (await request(path, { user: editor, method: "PATCH", body: { nome: "Novo" } })).status,
             403
@@ -365,17 +288,12 @@ test("EDITOR não edita publicados/arquivados; ADMIN edita ambos", async (t) => 
             (await request(path, { user: admin, method: "PATCH", body: { nome: "Novo" } })).status,
             200
         );
-=======
-        assert.equal((await request(path, { user: editor, method: "PATCH", body: { nome: "Novo" } })).status, 403);
-        assert.equal((await request(path, { user: admin, method: "PATCH", body: { nome: "Novo" } })).status, 200);
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     }
 });
 
 test("publicar, arquivar e republicar mantêm datas, autoria, mídias e visibilidade pública", async (t) => {
     const original = record();
     const db = database(t, original);
-<<<<<<< HEAD
     stub(t, prisma.patrimonio, "findFirst", async ({ where }) =>
         db.state().status === where.status ? db.state() : null
     );
@@ -391,14 +309,6 @@ test("publicar, arquivar e republicar mantêm datas, autoria, mídias e visibili
             user: admin,
             method: "PATCH",
         });
-=======
-    stub(t, prisma.patrimonio, "findFirst", async ({ where }) => db.state().status === where.status ? db.state() : null);
-    stub(t, prisma.patrimonio, "count", async ({ where }) => Number(db.state().status === where.status));
-    stub(t, prisma.patrimonio, "findMany", async ({ where }) => db.state().status === where.status ? [db.state()] : []);
-    for (const action of ["publicar", "arquivar", "publicar"]) {
-        const start = Date.now();
-        const response = await request(`/admin/patrimonios/${original.id}/${action}`, { user: admin, method: "PATCH" });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
         assert.equal(response.status, 200);
         const current = db.state();
         const published = action === "publicar";
@@ -411,14 +321,10 @@ test("publicar, arquivar e republicar mantêm datas, autoria, mídias e visibili
         assert.deepEqual(current.documentos, original.documentos);
         const writes = db.writes.length;
         const snapshot = { ...current };
-<<<<<<< HEAD
         await request(`/admin/patrimonios/${original.id}/${action}`, {
             user: admin,
             method: "PATCH",
         });
-=======
-        await request(`/admin/patrimonios/${original.id}/${action}`, { user: admin, method: "PATCH" });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
         assert.equal(db.writes.length, writes);
         assert.deepEqual(db.state(), snapshot);
         assert.equal((await request("/patrimonios/igreja")).status, published ? 200 : 404);
@@ -439,7 +345,6 @@ test("arquiva rascunho preservando data de publicação nula; publicação valid
 test("rotas exigem login, UUID válido, existência e ADMIN nas transições", async (t) => {
     const db = database(t, null);
     const id = randomUUID();
-<<<<<<< HEAD
     for (const [method, suffix, body] of [
         ["GET", "", undefined],
         ["PATCH", "", { nome: "Novo" }],
@@ -468,16 +373,6 @@ test("rotas exigem login, UUID válido, existência e ADMIN nas transições", a
                 .status,
             403
         );
-=======
-    for (const [method, suffix, body] of [["GET", "", undefined], ["PATCH", "", { nome: "Novo" }], ["PATCH", "/publicar", undefined], ["PATCH", "/arquivar", undefined]]) {
-        assert.equal((await request(`/admin/patrimonios/${id}${suffix}`, { method, body })).status, 401);
-        assert.equal((await request(`/admin/patrimonios/123${suffix}`, { user: admin, method, body })).status, 400);
-        assert.equal((await request(`/admin/patrimonios/${id}${suffix}`, { user: admin, method, body })).status, 404);
-    }
-    assert.equal((await request("/admin/patrimonios")).status, 401);
-    for (const action of ["publicar", "arquivar"]) {
-        assert.equal((await request(`/admin/patrimonios/${id}/${action}`, { user: editor, method: "PATCH" })).status, 403);
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     }
     assert.equal(db.writes.length, 0);
 });
@@ -494,7 +389,6 @@ test("falhas internas do Prisma não expõem mensagens do banco", async (t) => {
     const db = database(t);
     const { Prisma } = await import("@prisma/client");
     db.tx.patrimonio.update = async () => {
-<<<<<<< HEAD
         throw new Prisma.PrismaClientKnownRequestError("detalhe interno secreto", {
             code: "P2010",
             clientVersion: "7.10.0",
@@ -506,12 +400,6 @@ test("falhas internas do Prisma não expõem mensagens do banco", async (t) => {
         method: "PATCH",
         body: { nome: "Novo" },
     });
-=======
-        throw new Prisma.PrismaClientKnownRequestError("detalhe interno secreto", { code: "P2010", clientVersion: "7.10.0" });
-    };
-    stub(t, console, "error", () => {});
-    const result = await request(`/admin/patrimonios/${db.state().id}`, { user: admin, method: "PATCH", body: { nome: "Novo" } });
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     assert.equal(result.status, 500);
     assert.equal(result.body.error.code, "INTERNAL_ERROR");
     assert.equal(JSON.stringify(result.body).includes("secreto"), false);

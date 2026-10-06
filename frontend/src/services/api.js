@@ -1,4 +1,5 @@
 import axios from "axios";
+import { CHAVE_SESSAO_MOCK } from "../context/authConstants.js";
 
 /**
  * Instância central do axios, usada por toda chamada de rede do front.
@@ -13,11 +14,9 @@ import axios from "axios";
  * (veja frontend/nginx.conf). Assim o navegador nunca precisa saber o
  * hostname interno do backend, e não existe problema de CORS.
  */
-const API_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api";
-
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api",
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -36,54 +35,56 @@ const api = axios.create({
  * (o que ele não faz hoje — ver o aviso em context/AuthContext.jsx).
  */
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("token");
+  try {
+    const bruto = sessionStorage.getItem(CHAVE_SESSAO_MOCK);
+    const sessao = bruto ? JSON.parse(bruto) : null;
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (sessao?.token) {
+      config.headers.Authorization = `Bearer ${sessao.token}`;
+    }
+  } catch {
+    // sessionStorage bloqueado ou JSON corrompido: segue sem o header,
+    // o backend vai tratar isso como requisição sem login (401).
   }
 
   return config;
 });
 
-// Interceptador para tratamento global de erros nas respostas.
+// Tratamento global de erros nas respostas.
+//
+// 401 em rota autenticada = token expirado (JWT_TTL_SECONDS, 15 min por padrão)
+// ou conta desativada. Não existe refresh token, então a sessão local é
+// descartada e a pessoa volta para o login. O próprio POST /auth/login também
+// responde 401 (senha errada): esse caso NÃO é sessão expirada, é tratado pelo
+// AuthContext.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("[API Error]:", error.response?.data || error.message);
-    return Promise.reject(error);
-  },
-);
+    const status = error.response?.status;
+    const ehLogin = error.config?.url?.includes("/auth/login");
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("usuario");
+    if (status === 401 && !ehLogin) {
+      try {
+        if (sessionStorage.getItem(CHAVE_SESSAO_MOCK)) {
+          sessionStorage.removeItem(CHAVE_SESSAO_MOCK);
+
+          if (
+            window.location.pathname.startsWith("/admin") &&
+            window.location.pathname !== "/admin/login"
+          ) {
+            window.location.assign("/admin/login?expirou=1");
+          }
+        }
+      } catch {
+        // storage bloqueado: nada a limpar.
+      }
     }
 
+    if (import.meta.env.DEV) {
+      console.error("[API Error]:", error.response?.data || error.message);
+    }
     return Promise.reject(error);
   },
 );
-
-export async function listarPatrimonios(params = {}) {
-  const response = await api.get("/patrimonios", {
-    params,
-  });
-
-  return response.data?.data ?? [];
-}
-
-export async function buscarPatrimonioPorSlug(slug) {
-  const response = await api.get(`/patrimonios/${encodeURIComponent(slug)}`);
-
-  return response.data?.data ?? null;
-}
-
-export async function login(credentials) {
-  const response = await api.post("/auth/login", credentials);
-
-  return response.data?.data ?? response.data;
-}
 
 export default api;

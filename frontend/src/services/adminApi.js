@@ -1,62 +1,82 @@
 /**
- * Chamadas de API usadas só pelo painel admin. Ficam separadas do
- * fakeApi.js de propósito: fakeApi.js é lido pelo site público inteiro e
- * tem aquele fallback pra dados locais quando o backend está fora, mas as
- * funções daqui embaixo mexem em dado de verdade (criar, editar, apagar),
- * então não faz sentido nenhum ter um "fallback local" pra uma escrita. Se
- * o backend estiver fora, a pessoa que está no admin precisa saber disso
- * na hora, não continuar clicando em "salvar" achando que funcionou.
+ * Chamadas usadas só pelo painel admin. Separadas do fakeApi.js de
+ * propósito: aqui as escritas mexem em dado de verdade e NÃO têm fallback
+ * local. Se o backend estiver fora, a pessoa precisa saber na hora.
+ *
+ * Rotas do backend (todas exigem Bearer token; ver backend/src/routes):
+ *   POST  /auth/login                     público
+ *   PATCH /auth/senha                     ADMIN e EDITOR
+ *   POST  /admins                         ADMIN
+ *   GET   /admin/patrimonios              ADMIN e EDITOR (todos os status)
+ *   GET   /admin/patrimonios/:id          ADMIN e EDITOR (UUID)
+ *   POST  /admin/patrimonios              ADMIN e EDITOR (nasce RASCUNHO)
+ *   PATCH /admin/patrimonios/:id          ADMIN; EDITOR só em RASCUNHO
+ *   PATCH /admin/patrimonios/:id/publicar ADMIN
+ *   PATCH /admin/patrimonios/:id/arquivar ADMIN
+ *
+ * NÃO existem no backend: listar/editar/excluir usuários, excluir
+ * patrimônio (só arquivar) e upload de imagem.
  */
 import api from "./api";
+import { buscarTodasAsPaginas, normalizarPatrimonio } from "./fakeApi";
 
 // ===== Usuários =====
 
-export async function listarUsuarios() {
-  const { data } = await api.get("/admin/usuarios");
-  return data;
+/** role: "ADMIN" | "EDITOR". A senha precisa ter 12+ caracteres. */
+export async function criarUsuario({ nome, email, role, password }) {
+  const { data } = await api.post("/admins", { nome, email, role, password });
+  return data.data;
 }
 
-export async function criarUsuario(dados) {
-  const { data } = await api.post("/admin/usuarios", dados);
-  return data;
-}
-
-export async function atualizarUsuario(id, dados) {
-  const { data } = await api.put(`/admin/usuarios/${id}`, dados);
-  return data;
-}
-
-export async function excluirUsuario(id) {
-  await api.delete(`/admin/usuarios/${id}`);
+export async function alterarSenha({ senhaAtual, novaSenha }) {
+  await api.patch("/auth/senha", { senhaAtual, novaSenha });
 }
 
 // ===== Patrimônios =====
 
+/** Lista TODOS os status (rascunho, publicado, arquivado). */
+export async function listarPatrimoniosAdmin() {
+  const itens = await buscarTodasAsPaginas("/admin/patrimonios");
+  return itens.map(normalizarPatrimonio);
+}
+
+/** Detalhe completo (com descricao, historia...) pelo UUID. */
+export async function buscarPatrimonioAdmin(uuid) {
+  const { data } = await api.get(`/admin/patrimonios/${uuid}`);
+  return normalizarPatrimonio(data.data);
+}
+
 export async function criarPatrimonio(dados) {
   const { data } = await api.post("/admin/patrimonios", dados);
-  return data;
+  return data.data;
 }
 
-export async function atualizarPatrimonio(id, dados) {
-  const { data } = await api.put(`/admin/patrimonios/${id}`, dados);
-  return data;
+export async function atualizarPatrimonio(uuid, dados) {
+  const { data } = await api.patch(`/admin/patrimonios/${uuid}`, dados);
+  return data.data;
 }
 
-export async function excluirPatrimonio(id) {
-  await api.delete(`/admin/patrimonios/${id}`);
+export async function publicarPatrimonio(uuid) {
+  const { data } = await api.patch(`/admin/patrimonios/${uuid}/publicar`);
+  return data.data;
+}
+
+export async function arquivarPatrimonio(uuid) {
+  const { data } = await api.patch(`/admin/patrimonios/${uuid}/arquivar`);
+  return data.data;
 }
 
 /**
- * Junta as mensagens de erro que vêm do backend (erro único em "erro", ou
- * uma lista em "erros", dependendo da rota) num texto só, pronto pra
- * mostrar pro usuário. Fica aqui porque toda tela de formulário do admin
- * precisa fazer exatamente essa mesma coisa.
+ * Junta as mensagens de erro do backend num texto só. O formato é
+ * { success:false, message, details:[{field,message}], error:{code,message} }.
  */
 export function extrairMensagemDeErro(err) {
   const corpo = err.response?.data;
 
-  if (corpo?.erros?.length) return corpo.erros.join(" ");
-  if (corpo?.erro) return corpo.erro;
+  if (corpo?.details?.length) {
+    return corpo.details.map((d) => d.message).join(" ");
+  }
+  if (corpo?.message) return corpo.message;
   if (!err.response) return "Não foi possível falar com o servidor.";
 
   return "Algo deu errado. Tente novamente.";

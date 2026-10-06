@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   listarPatrimonios,
-  obterEstatisticas,
-  listarCategoriasComContagem,
+  calcularEstatisticas,
+  contarPorCategoria,
 } from "../services/fakeApi";
 import { PatrimoniosContext } from "./patrimoniosContextInstance";
 
@@ -21,14 +21,11 @@ export function PatrimoniosProvider({ children }) {
     setCarregando(true);
     setErro(null);
     try {
-      const [listaResp, statsResp, catResp] = await Promise.all([
-        listarPatrimonios(),
-        obterEstatisticas(),
-        listarCategoriasComContagem(),
-      ]);
-      setPatrimonios(listaResp);
-      setEstatisticas(statsResp);
-      setCategorias(catResp);
+      // Uma única requisição: estatísticas e contagens saem da própria lista.
+      const lista = await listarPatrimonios();
+      setPatrimonios(lista);
+      setEstatisticas(calcularEstatisticas(lista));
+      setCategorias(contarPorCategoria(lista));
     } catch (erroCapturado) {
       console.error(
         "[PatrimoniosProvider] falha ao carregar dados:",

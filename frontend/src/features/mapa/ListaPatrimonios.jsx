@@ -32,7 +32,6 @@ export default function ListaPatrimonios({
               }}
             />
             <div>
-              <span className="num">Nº {String(item.id).padStart(3, "0")}</span>
               <h4>{item.nome}</h4>
               <div className="meta">📍 {item.bairro}</div>
             </div>

@@ -41,6 +41,20 @@ import { CHAVE_SESSAO_MOCK } from "./authConstants.js";
  * como próximo passo, não implementado agora.
  */
 
+/**
+ * O backend devolve o usuário como { id, name, email, role } e role é
+ * "ADMIN" ou "EDITOR". O resto do front lê "nome" e "perfil", então a
+ * conversão acontece aqui, num único ponto.
+ */
+function paraUsuario(user) {
+  return {
+    id: user.id,
+    nome: user.name,
+    email: user.email,
+    perfil: user.role,
+  };
+}
+
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -64,7 +78,7 @@ export function AuthProvider({ children }) {
 
       // Confere o formato mínimo antes de confiar no que veio do storage.
       if (salva?.token && salva?.user?.id && salva?.user?.email) {
-        setUsuario(salva.user);
+        setUsuario(paraUsuario(salva.user));
       } else {
         sessionStorage.removeItem(CHAVE_SESSAO_MOCK);
         setUsuario(null);
@@ -103,7 +117,7 @@ export function AuthProvider({ children }) {
         CHAVE_SESSAO_MOCK,
         JSON.stringify({ token, user }),
       );
-      setUsuario(user);
+      setUsuario(paraUsuario(user));
       return true;
     } catch (err) {
       if (!err.response) {

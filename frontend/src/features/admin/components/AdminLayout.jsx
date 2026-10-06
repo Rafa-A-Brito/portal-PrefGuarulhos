@@ -46,13 +46,15 @@ export default function AdminLayout() {
             Dashboard
           </NavLink>
 
-          <NavLink
-            to="/admin/usuarios"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <UsersIcon width={18} height={18} />
-            Usuários
-          </NavLink>
+          {usuario?.perfil === "ADMIN" && (
+            <NavLink
+              to="/admin/usuarios"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <UsersIcon width={18} height={18} />
+              Usuários
+            </NavLink>
+          )}
 
           <NavLink
             to="/admin/patrimonios"
@@ -67,6 +69,7 @@ export default function AdminLayout() {
           <div className="admin-sidebar-usuario">
             <strong>{usuario?.nome}</strong>
             <span>{usuario?.email}</span>
+            <span>{usuario?.perfil === "ADMIN" ? "Administrador" : "Editor"}</span>
           </div>
 
           <button type="button" className="admin-sidebar-sair" onClick={sair}>

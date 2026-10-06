@@ -10,11 +10,11 @@ import { useAuth } from "../../../hooks/useAuth";
  * Vale repetir o aviso que já existe no AuthContext: isso só evita que o
  * React desenhe uma tela que a pessoa não deveria ver. Quem garante de
  * verdade que ninguém sem permissão consegue criar, editar ou apagar nada
- * é o middleware exigirAdmin do backend, em
- * backend/src/middlewares/authMiddleware.js.
+ * são os middlewares authenticate e authorize do
+ * backend (backend/src/middlewares/).
  *
  * A prop permissoes é opcional. Se ela não for passada, o único requisito
- * é estar logado. Se for passada (por exemplo, ["admin"]), o perfil do
+ * é estar logado. Se for passada (por exemplo, ["ADMIN"]), o perfil do
  * usuário logado precisa estar nessa lista.
  */
 export default function RotaProtegida({ permissoes }) {

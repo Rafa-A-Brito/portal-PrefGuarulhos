@@ -41,7 +41,8 @@ const ICONES = {
 export default function PatrimonioDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { patrimonios, carregando, setSelecionado } = usePatrimoniosContext();
+  const { patrimonios, carregando, erro, recarregar, setSelecionado } =
+    usePatrimoniosContext();
 
   const item = patrimonios.find((p) => String(p.id) === String(id));
 
@@ -59,6 +60,18 @@ export default function PatrimonioDetalhe() {
             <div className="skeleton-card" style={{ height: 220 }} />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (erro && !item) {
+    return (
+      <div className="page-hero" role="alert">
+        <h1>Não foi possível carregar</h1>
+        <p>{erro}</p>
+        <button type="button" className="btn-outline" onClick={recarregar}>
+          Tentar novamente
+        </button>
       </div>
     );
   }
@@ -108,6 +121,9 @@ export default function PatrimonioDetalhe() {
                 {meta.label}
               </span>
             )}
+            {item.situacao === "DEMOLIDO" && (
+              <span className="cat-badge situacao-demolido">Demolido</span>
+            )}
             <h1>{item.nome}</h1>
             <span className="detalhe-bairro">
               <MapPinIcon width={16} height={16} /> {item.bairro}
@@ -118,7 +134,6 @@ export default function PatrimonioDetalhe() {
 
       <div className="detalhe-body">
         <div className="detalhe-content">
-          <span className="num">Nº {String(item.id).padStart(3, "0")}</span>
           <p className="detalhe-resumo">{item.resumo}</p>
 
           {(item.endereco || item.cep) && (

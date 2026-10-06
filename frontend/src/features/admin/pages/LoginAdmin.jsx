@@ -46,6 +46,8 @@ export default function LoginAdmin() {
   const location = useLocation();
 
   const destino = location.state?.from?.pathname || "/admin";
+  // O interceptor de api.js manda para cá com ?expirou=1 quando o token vence.
+  const sessaoExpirou = new URLSearchParams(location.search).has("expirou");
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -268,6 +270,12 @@ export default function LoginAdmin() {
                 )}
               </div>
             </div>
+
+            {sessaoExpirou && !erro && !enviando && !sucesso && (
+              <p className="admin-login-erro" role="status">
+                Sua sessão expirou. Entre novamente para continuar.
+              </p>
+            )}
 
             {erro && !enviando && !sucesso && (
               <p className="admin-login-erro" role="alert">

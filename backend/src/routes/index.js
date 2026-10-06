@@ -3,6 +3,7 @@ import authRoutes from "./authRoute.js";
 import adminRoutes from "./adminRoute.js";
 import adminPatrimonioRoutes from "./adminPatrimonioRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
+import categoriaRoutes from "./configRoutes.js";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.get("/health", (_req, res) => {
 router.use("/auth", authRoutes);
 router.use("/admins", adminRoutes);
 router.use("/patrimonios", patrimonioRoutes);
+router.use("/categorias", categoriaRoutes);
 router.use("/admin/patrimonios", adminPatrimonioRoutes);
 
 export default router;

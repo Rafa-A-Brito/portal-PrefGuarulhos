@@ -5042,3 +5042,39 @@ input:focus-visible {
     min-height: 230px;
   }
 }
+
+/* =========================================================
+   CATEGORIAS REAIS DO BANCO (slugs de backend/prisma/seed.js)
+   As antigas (natural, documental) ficam acima só por compatibilidade
+   com o mock; as novas reaproveitam as mesmas famílias de cor.
+   ========================================================= */
+.cat-badge.cat-historico,
+.categoria-chip.cat-historico .chip-count {
+  background: #efe3f7;
+  color: #7a3e9d;
+}
+.cat-badge.cat-ambiental,
+.categoria-chip.cat-ambiental .chip-count {
+  background: #dff5e3;
+  color: #146a2e;
+}
+.cat-badge.cat-ferroviario,
+.categoria-chip.cat-ferroviario .chip-count {
+  background: #f8e1e1;
+  color: #8a2d2d;
+}
+.cat-badge.cat-educacional,
+.categoria-chip.cat-educacional .chip-count {
+  background: #d9f1ee;
+  color: #0f766e;
+}
+.cat-badge.cat-industrial,
+.categoria-chip.cat-industrial .chip-count {
+  background: #eef3dc;
+  color: #56661f;
+}
+/* Selo de situação (ex.: DEMOLIDO), separado da categoria */
+.cat-badge.situacao-demolido {
+  background: #b54d3d;
+  color: #ffffff;
+}

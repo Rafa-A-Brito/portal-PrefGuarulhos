@@ -256,3 +256,58 @@
     transition: none;
   }
 }
+
+/* Categorias reais do banco */
+[data-cat="historico"] {
+  --cat-bg: rgba(122, 62, 157, 0.14);
+  --cat-fg: #6a3487;
+  --cat-dot: #7a3e9d;
+  --cat-row: rgba(122, 62, 157, 0.05);
+}
+[data-cat="ambiental"] {
+  --cat-bg: rgba(28, 161, 65, 0.15);
+  --cat-fg: #11672a;
+  --cat-dot: var(--green);
+  --cat-row: rgba(28, 161, 65, 0.06);
+}
+[data-cat="ferroviario"] {
+  --cat-bg: rgba(138, 45, 45, 0.13);
+  --cat-fg: #7a2626;
+  --cat-dot: #8a2d2d;
+  --cat-row: rgba(138, 45, 45, 0.05);
+}
+[data-cat="educacional"] {
+  --cat-bg: rgba(15, 118, 110, 0.14);
+  --cat-fg: #0c5f58;
+  --cat-dot: #0f766e;
+  --cat-row: rgba(15, 118, 110, 0.05);
+}
+[data-cat="industrial"] {
+  --cat-bg: rgba(86, 102, 31, 0.15);
+  --cat-fg: #46541a;
+  --cat-dot: #56661f;
+  --cat-row: rgba(86, 102, 31, 0.06);
+}
+
+/* Status de publicação (painel de patrimônios) */
+.admin-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.admin-status--RASCUNHO { background: rgba(250, 183, 72, 0.26); color: #8a5a00; }
+.admin-status--PUBLICADO { background: rgba(28, 161, 65, 0.15); color: #11672a; }
+.admin-status--ARQUIVADO { background: rgba(91, 100, 114, 0.16); color: #4a5260; }
+.admin-form-check-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.admin-form-check-grid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+}

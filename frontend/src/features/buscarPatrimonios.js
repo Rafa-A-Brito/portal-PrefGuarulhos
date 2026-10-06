@@ -24,7 +24,10 @@ export function filtrarPatrimonios(patrimonios, { categoria, busca } = {}) {
 
   return patrimonios.filter((item) => {
     const passaCategoria =
-      !categoria || categoria === "todos" || item.categoria === categoria;
+      !categoria ||
+      categoria === "todos" ||
+      // Casa com a categoria principal OU com alguma adicional.
+      (item.categorias ?? [item.categoria]).includes(categoria);
 
     if (!passaCategoria) return false;
     if (!termo) return true;

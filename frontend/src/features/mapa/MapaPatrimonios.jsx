@@ -19,11 +19,15 @@ const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='16' fill='%235B5876' text-anchor='middle' dominant-baseline='middle'%3ESem imagem%3C/text%3E%3C/svg%3E";
 
 // Cor do pino no mapa real, por categoria — espelha as cores dos badges/chips.
+// Chaves = slugs reais do banco (ver categoriaMeta.js).
 const COR_POR_CATEGORIA = {
   arquitetonico: "#1D6E96",
+  historico: "#7A3E9D",
   imaterial: "#92590A",
-  natural: "#146A2E",
-  documental: "#56661F",
+  ambiental: "#146A2E",
+  ferroviario: "#8A2D2D",
+  educacional: "#0F766E",
+  industrial: "#56661F",
 };
 
 function pinIcon(categoria) {
@@ -122,7 +126,6 @@ export default function MapaPatrimonios({
                   <h4>{item.nome}</h4>
                   <p>📍 {item.bairro}</p>
                   {item.cep && <p className="mockup-pin-cep">CEP {item.cep}</p>}
-                  <small>Nº {String(item.id).padStart(3, "0")}</small>
                 </div>
               ))
             )}

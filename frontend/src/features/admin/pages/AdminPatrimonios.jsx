@@ -1,10 +1,10 @@
 // [API DESATIVADA TEMPORARIAMENTE] dados em texto puro (db.json) só para visualizar a tela.
 import { useEffect, useMemo, useRef, useState } from "react";
-// import { useEffect, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
-  TrashIcon,
+  ArchiveBoxArrowDownIcon,
+  CheckBadgeIcon,
   PaperClipIcon,
   XMarkIcon,
   SparklesIcon,
@@ -12,10 +12,8 @@ import {
   MapPinIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import {
-  CATEGORIA_META,
-  CATEGORIAS_ORDEM,
-} from "../../../features/categoriaMeta";
+import { CATEGORIA_META } from "../../../features/categoriaMeta";
+import { useAuth } from "../../../hooks/useAuth";
 import { useErroModal } from "../../../hooks/useErroModal";
 import {
   geocodificarEndereco,
@@ -28,75 +26,45 @@ import {
   EXTENSOES_RESUMO,
   IA_EM_MODO_DEMO,
 } from "../../../services/gemini";
-// import { listarPatrimonios } from "../../../services/fakeApi";
-// import * as adminApi from "../../../services/adminApi";
+import { listarCategorias } from "../../../services/fakeApi";
+import * as adminApi from "../../../services/adminApi";
 
-// Ajustar ao limite real do campo "descricao" quando a equipe confirmar.
+// "descricao" no backend é texto livre (sem limite); este é só o limite do
+// formulário. O campo "descricaoResumida" do backend aceita no máximo 500.
 const LIMITE_RESUMO = 2000; // 2.000 caracteres (aprox. 300 palavras)
+const LIMITE_RESUMO_CURTO = 500;
+const MAX_CATEGORIAS_ADICIONAIS = 6;
 
-const TIPOS_IMAGEM = ["image/jpeg", "image/png", "image/webp"];
-const TAMANHO_MAX_IMAGEM = 5 * 1024 * 1024; // 5 MB
+const SITUACOES = [
+  { valor: "NAO_INFORMADO", rotulo: "Não informada" },
+  { valor: "PRESERVADO", rotulo: "Preservado" },
+  { valor: "EM_RESTAURACAO", rotulo: "Em restauração" },
+  { valor: "NECESSITA_RESTAURACAO", rotulo: "Necessita restauração" },
+  { valor: "EM_RUINAS", rotulo: "Em ruínas" },
+  { valor: "DEMOLIDO", rotulo: "Demolido" },
+];
+
+const ROTULO_STATUS = {
+  RASCUNHO: "Rascunho",
+  PUBLICADO: "Publicado",
+  ARQUIVADO: "Arquivado",
+};
 
 const FORMULARIO_VAZIO = {
   nome: "",
-  categoria: CATEGORIAS_ORDEM[0],
+  categoriaId: "",
+  categoriasAdicionais: [],
+  situacao: "NAO_INFORMADO",
   cep: "",
   endereco: "",
   numero: "",
   complemento: "",
   bairro: "",
-  imagemPrincipal: "",
-  imagemNome: "",
   modoResumo: "escrever", // "escrever" | "arquivo"
   resumo: "",
+  historia: "",
+  importanciaCultural: "",
 };
-
-// Patrimônios do db.json em texto puro, no mesmo formato que a API devolve.
-// Os endereços e CEPs vêm do init.sql do projeto.
-const PATRIMONIOS_MOCK = [
-  {
-    id: "1",
-    nome: "Capela de Nossa Senhora do Bonsucesso",
-    categoria: "arquitetonico",
-    bairro: "Bonsucesso",
-    endereco: "Rua Silva Bueno",
-    numero: "",
-    complemento: "",
-    cep: "07162-160",
-    resumo:
-      "Construção histórica datada de meados do século XVIII, ponto central da tradicional Festa de Bonsucesso.",
-    imagemPrincipal: "/src/assets/sra_bonsucesso.png",
-    localizacao: { lat: -23.4182, lng: -46.4111 },
-  },
-  {
-    id: "2",
-    nome: "Bosque Maia",
-    categoria: "natural",
-    bairro: "Jardim Maia",
-    endereco: "Rua Alberto Byington",
-    numero: "",
-    complemento: "",
-    cep: "07097-030",
-    resumo:
-      "Maior parque urbano de Guarulhos, considerado o pulmão verde do município e espaço de convivência.",
-    imagemPrincipal: "/src/assets/bosque_maia.jpg",
-    localizacao: { lat: -23.4565, lng: -46.5292 },
-  },
-  {
-    id: "3",
-    nome: "Festa de Bonsucesso",
-    categoria: "imaterial",
-    bairro: "Bonsucesso",
-    endereco: "Rua Silva Bueno",
-    numero: "",
-    complemento: "",
-    cep: "07162-160",
-    resumo:
-      "Uma das manifestações religiosas e culturais mais antigas da Região Metropolitana de São Paulo.",
-    imagemPrincipal: "/src/assets/fest_bonsucesso.jpg",
-    localizacao: { lat: -23.419, lng: -46.4105 },
-  },
-];
 
 // "07162160" -> "07162-160" (aceita colar com ou sem traço)
 function formatarCep(valor) {
@@ -106,68 +74,63 @@ function formatarCep(valor) {
     .replace(/^(\d{5})(\d)/, "$1-$2");
 }
 
-function nomeDoArquivo(url) {
-  return url ? url.split("/").pop() : "";
+/** descricaoResumida (<= 500) derivada do resumo, cortando em fim de palavra. */
+function resumoCurto(texto) {
+  if (texto.length <= LIMITE_RESUMO_CURTO) return texto;
+
+  const corte = texto.slice(0, LIMITE_RESUMO_CURTO - 1);
+  const ultimoEspaco = corte.lastIndexOf(" ");
+  return `${(ultimoEspaco > 300 ? corte.slice(0, ultimoEspaco) : corte).trimEnd()}…`;
 }
 
-// Transforma o patrimônio que veio da API (com localizacao.lat/lng) no
-// formato "plano" que o formulário usa. As coordenadas NÃO vão para o
-// formulário: a pessoa nunca as vê nem as digita (veja salvar).
+// Detalhe do backend (já normalizado por fakeApi) -> formulário plano.
+// As coordenadas NÃO vão para o formulário: a pessoa nunca as vê nem as digita.
 function paraFormulario(patrimonio) {
   return {
     ...FORMULARIO_VAZIO,
     nome: patrimonio.nome,
-    categoria: patrimonio.categoria,
+    categoriaId: patrimonio.categoriaId ?? "",
+    categoriasAdicionais: patrimonio.categoriasAdicionaisIds ?? [],
+    situacao: patrimonio.situacao ?? "NAO_INFORMADO",
     cep: patrimonio.cep || "",
     endereco: patrimonio.endereco || "",
     numero: patrimonio.numero || "",
     complemento: patrimonio.complemento || "",
-    bairro: patrimonio.bairro,
-    imagemPrincipal: patrimonio.imagemPrincipal || "",
-    imagemNome: nomeDoArquivo(patrimonio.imagemPrincipal),
-    resumo: patrimonio.resumo,
+    bairro: patrimonio.bairro || "",
+    resumo: patrimonio.descricao || patrimonio.resumo || "",
+    historia: patrimonio.historia || "",
+    importanciaCultural: patrimonio.importanciaCultural || "",
   };
 }
 
 export default function AdminPatrimonios() {
+  const { usuario } = useAuth();
   const { mostrarErro } = useErroModal();
+  const eAdmin = usuario?.perfil === "ADMIN";
 
-  // const [patrimonios, setPatrimonios] = useState([]);
-  // const [carregando, setCarregando] = useState(true);
-  // const [erro, setErro] = useState(null);
-  const [patrimonios, setPatrimonios] = useState(PATRIMONIOS_MOCK);
-  const [carregando] = useState(false);
-  const [erro] = useState(null);
+  const [patrimonios, setPatrimonios] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
 
+  // null = formulário fechado; "novo" = criando; senão, UUID do patrimônio.
   const [editandoId, setEditandoId] = useState(null);
   const [formulario, setFormulario] = useState(FORMULARIO_VAZIO);
   const [erroFormulario, setErroFormulario] = useState(null);
-  // const [salvando, setSalvando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [etapaSalvando, setEtapaSalvando] = useState("");
+  const [acaoEmAndamento, setAcaoEmAndamento] = useState(null);
 
-  // Coordenadas do patrimônio que está sendo editado e a "chave" do endereço
-  // com que elas foram calculadas: se o endereço não mudou, reaproveitamos
-  // as coordenadas e NÃO gastamos uma nova consulta de geocodificação.
+  // Coordenadas do patrimônio em edição e a "chave" do endereço com que
+  // foram calculadas: endereço igual => reaproveita e não gasta geocodificação.
   const [coordenadas, setCoordenadas] = useState(null);
   const [chaveOriginal, setChaveOriginal] = useState("");
 
-  const [erroImagem, setErroImagem] = useState(null);
   const [erroArquivo, setErroArquivo] = useState(null);
   const [arquivoResumo, setArquivoResumo] = useState(null);
   const [gerando, setGerando] = useState(false);
 
-  const inputImagemRef = useRef(null);
   const inputArquivoRef = useRef(null);
-  const urlPreviaRef = useRef(null);
-
-  // Libera a URL temporária da prévia se a tela for fechada com ela aberta.
-  useEffect(() => {
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      if (urlPreviaRef.current) URL.revokeObjectURL(urlPreviaRef.current);
-    };
-  }, []);
 
   const contagemPorCategoria = useMemo(
     () =>
@@ -178,14 +141,17 @@ export default function AdminPatrimonios() {
     [patrimonios],
   );
 
-  /* ----- ORIGINAL (API) — descomentar quando o backend estiver integrado -----
   async function carregarPatrimonios() {
     setCarregando(true);
     setErro(null);
 
     try {
-      const lista = await listarPatrimonios();
+      const [lista, cats] = await Promise.all([
+        adminApi.listarPatrimoniosAdmin(),
+        listarCategorias(),
+      ]);
       setPatrimonios(lista);
+      setCategorias(cats);
     } catch (err) {
       setErro("Não foi possível carregar os patrimônios.");
       mostrarErro(err, { origem: "AdminPatrimonios › carregar" });
@@ -197,40 +163,40 @@ export default function AdminPatrimonios() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarPatrimonios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  ----- fim do ORIGINAL (API) ----- */
-
-  function liberarPrevia() {
-    if (urlPreviaRef.current) {
-      URL.revokeObjectURL(urlPreviaRef.current);
-      urlPreviaRef.current = null;
-    }
-  }
 
   function reiniciarEstadosAuxiliares() {
     setErroFormulario(null);
-    setErroImagem(null);
     setErroArquivo(null);
     setArquivoResumo(null);
     setGerando(false);
   }
 
   function abrirNovo() {
-    liberarPrevia();
     reiniciarEstadosAuxiliares();
-    setFormulario(FORMULARIO_VAZIO);
+    setFormulario({
+      ...FORMULARIO_VAZIO,
+      categoriaId: categorias[0]?.id ?? "",
+    });
     setCoordenadas(null);
     setChaveOriginal("");
     setEditandoId("novo");
   }
 
-  function abrirEdicao(patrimonio) {
-    liberarPrevia();
+  // A listagem não traz descricao/historia, então a edição busca o detalhe.
+  async function abrirEdicao(resumo) {
     reiniciarEstadosAuxiliares();
-    setFormulario(paraFormulario(patrimonio));
-    setCoordenadas(patrimonio.localizacao ?? null);
-    setChaveOriginal(chaveEndereco(patrimonio));
-    setEditandoId(patrimonio.id);
+
+    try {
+      const detalhe = await adminApi.buscarPatrimonioAdmin(resumo.uuid);
+      setFormulario(paraFormulario(detalhe));
+      setCoordenadas(detalhe.localizacao ?? null);
+      setChaveOriginal(chaveEndereco(detalhe));
+      setEditandoId(detalhe.uuid);
+    } catch (err) {
+      mostrarErro(err, { origem: "AdminPatrimonios › abrirEdicao" });
+    }
   }
 
   function fecharFormulario() {
@@ -243,7 +209,6 @@ export default function AdminPatrimonios() {
   }
 
   function cancelarFormulario() {
-    liberarPrevia(); // descarta a prévia de uma imagem que não foi salva
     fecharFormulario();
   }
 
@@ -251,42 +216,29 @@ export default function AdminPatrimonios() {
     setFormulario((f) => ({ ...f, [campo]: valor }));
   }
 
-  // ===== Imagem (clipe) =====
-
-  function escolherImagem(e) {
-    const arquivo = e.target.files?.[0];
-    e.target.value = ""; // permite escolher o mesmo arquivo de novo depois
-
-    if (!arquivo) return;
-
-    // Conferência só de conforto. O backend precisa validar o conteúdo de
-    // verdade (tipo real do arquivo, tamanho, recompressão) antes de guardar.
-    if (!TIPOS_IMAGEM.includes(arquivo.type)) {
-      setErroImagem("Use uma imagem JPG, PNG ou WebP.");
-      return;
-    }
-
-    if (arquivo.size > TAMANHO_MAX_IMAGEM) {
-      setErroImagem("A imagem pode ter no máximo 5 MB.");
-      return;
-    }
-
-    liberarPrevia();
-    const url = URL.createObjectURL(arquivo);
-    urlPreviaRef.current = url;
-
-    setErroImagem(null);
+  // Trocar a principal tira essa categoria das adicionais (o backend recusa
+  // a principal repetida entre as adicionais).
+  function trocarCategoriaPrincipal(id) {
     setFormulario((f) => ({
       ...f,
-      imagemPrincipal: url,
-      imagemNome: arquivo.name,
+      categoriaId: id,
+      categoriasAdicionais: f.categoriasAdicionais.filter((c) => c !== id),
     }));
   }
 
-  function removerImagem() {
-    liberarPrevia();
-    setErroImagem(null);
-    setFormulario((f) => ({ ...f, imagemPrincipal: "", imagemNome: "" }));
+  function alternarCategoriaAdicional(id) {
+    setFormulario((f) => {
+      const jaTem = f.categoriasAdicionais.includes(id);
+      if (!jaTem && f.categoriasAdicionais.length >= MAX_CATEGORIAS_ADICIONAIS)
+        return f;
+
+      return {
+        ...f,
+        categoriasAdicionais: jaTem
+          ? f.categoriasAdicionais.filter((c) => c !== id)
+          : [...f.categoriasAdicionais, id],
+      };
+    });
   }
 
   // ===== Resumo: escrever ou enviar arquivo para a IA =====
@@ -336,32 +288,6 @@ export default function AdminPatrimonios() {
 
   // ===== Salvar =====
 
-  /* ----- ORIGINAL (API) — descomentar quando o backend estiver integrado -----
-  // Mesmo fluxo do salvar abaixo, trocando o final por chamadas à API.
-  // Atenção: o formato de "dados" e o envio da imagem (multipart) precisam
-  // ser confirmados com a equipe do backend (veja ADMIN.md).
-  async function salvar(e) {
-    e.preventDefault();
-    ...validações e geocodificação iguais às do mock...
-
-    if (editandoId === "novo") {
-      await adminApi.criarPatrimonio(dados);
-    } else {
-      await adminApi.atualizarPatrimonio(editandoId, dados);
-    }
-
-    fecharFormulario();
-    await carregarPatrimonios();
-  }
-
-  async function excluir(patrimonio) {
-    ...confirmação igual à do mock...
-    await adminApi.excluirPatrimonio(patrimonio.id);
-    await carregarPatrimonios();
-  }
-  ----- fim do ORIGINAL (API) ----- */
-
-  /* ---------- MOCK TEMPORÁRIO: altera só a lista em memória (some no F5) ---------- */
   async function salvar(e) {
     e.preventDefault();
     setErroFormulario(null);
@@ -370,6 +296,11 @@ export default function AdminPatrimonios() {
 
     if (cepNumeros.length !== 8) {
       setErroFormulario("Informe um CEP válido, com 8 dígitos.");
+      return;
+    }
+
+    if (!formulario.categoriaId) {
+      setErroFormulario("Escolha a categoria principal.");
       return;
     }
 
@@ -385,67 +316,110 @@ export default function AdminPatrimonios() {
     setSalvando(true);
 
     try {
-      // Só consulta o mapa se for um cadastro novo, se ainda não houver
-      // coordenadas ou se o endereço mudou. Caso contrário, reaproveita.
-      let localizacao = coordenadas;
-      const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
+      // Coordenadas: só são calculadas com a geocodificação REAL ligada. No
+      // modo demonstração elas são inventadas, e aqui o destino é o banco de
+      // verdade, então simplesmente não são enviadas.
+      let latitude;
+      let longitude;
 
-      if (editandoId === "novo" || !localizacao || enderecoMudou) {
-        setEtapaSalvando("Localizando o endereço no mapa…");
-        localizacao = await geocodificarEndereco(formulario);
+      if (!GEOCODING_EM_MODO_DEMO) {
+        let ponto = coordenadas;
+        const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
+
+        if (editandoId === "novo" || !ponto || enderecoMudou) {
+          setEtapaSalvando("Localizando o endereço no mapa…");
+          ponto = await geocodificarEndereco(formulario);
+        }
+
+        latitude = ponto.lat;
+        longitude = ponto.lng;
       }
+
+      setEtapaSalvando("Salvando…");
+
+      // Campos opcionais vazios NÃO são enviados: o backend rejeita string
+      // vazia (min 1) e campos desconhecidos (strictObject).
+      const opcional = (valor) => {
+        const texto = valor.trim();
+        return texto ? texto : undefined;
+      };
+      const resumo = formulario.resumo.trim();
 
       const dados = {
         nome: formulario.nome.trim(),
-        categoria: formulario.categoria,
-        bairro: formulario.bairro.trim(),
-        endereco: formulario.endereco.trim(),
-        numero: formulario.numero.trim(),
-        complemento: formulario.complemento.trim(),
-        cep: formulario.cep,
-        resumo: formulario.resumo.trim(),
-        imagemPrincipal: formulario.imagemPrincipal,
-        localizacao,
+        descricao: resumo,
+        descricaoResumida: resumoCurto(resumo),
+        categoriaId: formulario.categoriaId,
+        categoriasAdicionais: formulario.categoriasAdicionais,
+        situacao: formulario.situacao,
+        historia: opcional(formulario.historia),
+        importanciaCultural: opcional(formulario.importanciaCultural),
+        localizacao: {
+          endereco: formulario.endereco.trim(),
+          numero: opcional(formulario.numero),
+          complemento: opcional(formulario.complemento),
+          bairro: formulario.bairro.trim(),
+          cep: formulario.cep,
+          ...(latitude !== undefined && { latitude, longitude }),
+        },
       };
 
       if (editandoId === "novo") {
-        setPatrimonios((lista) => [
-          ...lista,
-          { id: String(Date.now()), ...dados },
-        ]);
+        await adminApi.criarPatrimonio(dados);
       } else {
-        setPatrimonios((lista) =>
-          lista.map((p) => (p.id === editandoId ? { ...p, ...dados } : p)),
-        );
+        await adminApi.atualizarPatrimonio(editandoId, dados);
       }
 
-      // A imagem salva continua usando a URL temporária (no mock). Não
-      // revogamos aqui, senão a imagem do item sumiria da lista.
-      urlPreviaRef.current = null;
       fecharFormulario();
+      await carregarPatrimonios();
     } catch (err) {
-      mostrarErro(err, {
-        origem: "AdminPatrimonios › salvar",
-        mensagem: "Não foi possível salvar o patrimônio.",
-      });
+      // 400 = dado recusado pelo backend: mensagem específica no formulário.
+      if (err.response?.status === 400) {
+        setErroFormulario(adminApi.extrairMensagemDeErro(err));
+      } else {
+        mostrarErro(err, {
+          origem: "AdminPatrimonios › salvar",
+          mensagem: "Não foi possível salvar o patrimônio.",
+        });
+      }
     } finally {
       setSalvando(false);
       setEtapaSalvando("");
     }
   }
 
-  function excluir(patrimonio) {
+  // ===== Publicar / arquivar (somente ADMIN) =====
+
+  async function mudarStatus(patrimonio, acao) {
+    const publicar = acao === "publicar";
     const confirmou = window.confirm(
-      `Excluir "${patrimonio.nome}"? Essa ação não pode ser desfeita.`,
+      publicar
+        ? `Publicar "${patrimonio.nome}"? Ele passa a aparecer no site público.`
+        : `Arquivar "${patrimonio.nome}"? Ele deixa de aparecer no site público.`,
     );
     if (!confirmou) return;
 
+    setAcaoEmAndamento(patrimonio.uuid);
+
     try {
-      setPatrimonios((lista) => lista.filter((p) => p.id !== patrimonio.id));
+      if (publicar) await adminApi.publicarPatrimonio(patrimonio.uuid);
+      else await adminApi.arquivarPatrimonio(patrimonio.uuid);
+
+      await carregarPatrimonios();
     } catch (err) {
-      mostrarErro(err, { origem: "AdminPatrimonios › excluir" });
+      mostrarErro(err, {
+        origem: `AdminPatrimonios › ${acao}`,
+        mensagem: publicar
+          ? "Não foi possível publicar. Confira se o cadastro está completo."
+          : "Não foi possível arquivar o patrimônio.",
+      });
+    } finally {
+      setAcaoEmAndamento(null);
     }
   }
+
+  // EDITOR só edita rascunho; ADMIN edita qualquer status.
+  const podeEditar = (p) => eAdmin || p.status === "RASCUNHO";
 
   const modoArquivo = formulario.modoResumo === "arquivo";
 
@@ -454,7 +428,7 @@ export default function AdminPatrimonios() {
       <div className="admin-page-head admin-page-head-row">
         <div>
           <h1>Patrimônios</h1>
-          <p>O acervo que aparece no site público vem direto daqui.</p>
+          <p>O site público mostra só os patrimônios publicados; novos cadastros começam como rascunho.</p>
         </div>
 
         <button type="button" className="btn-solid" onClick={abrirNovo}>
@@ -482,16 +456,50 @@ export default function AdminPatrimonios() {
             <label>
               Categoria
               <select
-                value={formulario.categoria}
-                onChange={(e) => atualizar("categoria", e.target.value)}
+                required
+                value={formulario.categoriaId}
+                onChange={(e) => trocarCategoriaPrincipal(e.target.value)}
               >
-                {CATEGORIAS_ORDEM.map((slug) => (
-                  <option key={slug} value={slug}>
-                    {CATEGORIA_META[slug].label}
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
                   </option>
                 ))}
               </select>
             </label>
+
+            <label>
+              Situação
+              <select
+                value={formulario.situacao}
+                onChange={(e) => atualizar("situacao", e.target.value)}
+              >
+                {SITUACOES.map((sit) => (
+                  <option key={sit.valor} value={sit.valor}>
+                    {sit.rotulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <fieldset className="admin-form-col-2 admin-form-check-grid">
+              <legend>
+                Categorias adicionais (até {MAX_CATEGORIAS_ADICIONAIS}) — o bem
+                também aparece nesses filtros
+              </legend>
+              {categorias
+                .filter((c) => c.id !== formulario.categoriaId)
+                .map((c) => (
+                  <label key={c.id}>
+                    <input
+                      type="checkbox"
+                      checked={formulario.categoriasAdicionais.includes(c.id)}
+                      onChange={() => alternarCategoriaAdicional(c.id)}
+                    />
+                    {c.nome}
+                  </label>
+                ))}
+            </fieldset>
 
             <label>
               Bairro
@@ -550,60 +558,17 @@ export default function AdminPatrimonios() {
                 automaticamente a partir do endereço quando você salva; não
                 precisa informar latitude nem longitude.
                 {GEOCODING_EM_MODO_DEMO &&
-                  " (Modo demonstração: as coordenadas são simuladas.)"}
+                  " (Geocodificação desligada: o patrimônio é salvo SEM coordenadas e não aparece no mapa até ela ser ativada.)"}
               </span>
             </p>
 
-            {/* ----- Imagem principal (clipe) ----- */}
-            <div className="admin-form-col-2 admin-upload">
-              <span className="admin-upload-rotulo">Imagem principal</span>
-
-              <div className="admin-upload-linha">
-                <input
-                  ref={inputImagemRef}
-                  type="file"
-                  accept={TIPOS_IMAGEM.join(",")}
-                  hidden
-                  onChange={escolherImagem}
-                />
-
-                <button
-                  type="button"
-                  className="btn-outline"
-                  onClick={() => inputImagemRef.current?.click()}
-                >
-                  <PaperClipIcon width={16} height={16} />
-                  {formulario.imagemPrincipal
-                    ? "Trocar imagem"
-                    : "Anexar imagem"}
-                </button>
-
-                <span className="admin-upload-nome">
-                  {formulario.imagemNome || "JPG, PNG ou WebP, até 5 MB"}
-                </span>
-
-                {formulario.imagemPrincipal && (
-                  <button
-                    type="button"
-                    className="admin-upload-remover"
-                    aria-label="Remover imagem"
-                    onClick={removerImagem}
-                  >
-                    <XMarkIcon width={16} height={16} />
-                  </button>
-                )}
-              </div>
-
-              {formulario.imagemPrincipal && (
-                <img
-                  className="admin-upload-previa"
-                  src={formulario.imagemPrincipal}
-                  alt="Prévia da imagem principal"
-                />
-              )}
-
-              {erroImagem && <p className="admin-form-erro">{erroImagem}</p>}
-            </div>
+            <p className="admin-ajuda admin-form-col-2">
+              <PaperClipIcon width={16} height={16} />
+              <span>
+                Imagens ainda não podem ser enviadas por aqui: a API não tem
+                rota de upload.
+              </span>
+            </p>
 
             {/* ----- Resumo: escrever ou enviar arquivo ----- */}
             <div className="admin-form-col-2 admin-upload">
@@ -715,6 +680,27 @@ export default function AdminPatrimonios() {
                 </p>
               )}
             </div>
+            <label className="admin-form-col-2">
+              História (opcional)
+              <textarea
+                rows={5}
+                style={{ resize: "vertical" }}
+                value={formulario.historia}
+                onChange={(e) => atualizar("historia", e.target.value)}
+              />
+            </label>
+
+            <label className="admin-form-col-2">
+              Importância cultural (opcional)
+              <textarea
+                rows={4}
+                style={{ resize: "vertical" }}
+                value={formulario.importanciaCultural}
+                onChange={(e) =>
+                  atualizar("importanciaCultural", e.target.value)
+                }
+              />
+            </label>
           </div>
 
           {erroFormulario && (
@@ -746,9 +732,9 @@ export default function AdminPatrimonios() {
 
       {/* Legenda: cada categoria tem a sua cor (veja admin-extras.css) */}
       <div className="admin-cat-legenda" aria-label="Legenda das categorias">
-        {CATEGORIAS_ORDEM.map((slug) => (
-          <span key={slug} className="admin-cat" data-cat={slug}>
-            {CATEGORIA_META[slug].label} · {contagemPorCategoria[slug] || 0}
+        {categorias.map((c) => (
+          <span key={c.id} className="admin-cat" data-cat={c.slug}>
+            {c.nome} · {contagemPorCategoria[c.slug] || 0}
           </span>
         ))}
       </div>
@@ -764,34 +750,68 @@ export default function AdminPatrimonios() {
               <th>Nome</th>
               <th>Categoria</th>
               <th>Bairro</th>
+              <th>Status</th>
               <th aria-label="Ações" />
             </tr>
           </thead>
           <tbody>
+            {patrimonios.length === 0 && (
+              <tr>
+                <td colSpan={5}>Nenhum patrimônio cadastrado.</td>
+              </tr>
+            )}
             {patrimonios.map((p) => (
-              <tr key={p.id} data-cat={p.categoria}>
+              <tr key={p.uuid} data-cat={p.categoria}>
                 <td>{p.nome}</td>
                 <td>
                   <span className="admin-cat" data-cat={p.categoria}>
                     {CATEGORIA_META[p.categoria]?.label ?? p.categoria}
                   </span>
                 </td>
-                <td>{p.bairro}</td>
+                <td>{p.bairro || "—"}</td>
+                <td>
+                  <span className={`admin-status admin-status--${p.status}`}>
+                    {ROTULO_STATUS[p.status] ?? p.status}
+                  </span>
+                </td>
                 <td className="admin-table-acoes">
                   <button
                     type="button"
                     aria-label={`Editar ${p.nome}`}
+                    title={
+                      podeEditar(p)
+                        ? undefined
+                        : "Editores só podem editar rascunhos"
+                    }
+                    disabled={!podeEditar(p)}
                     onClick={() => abrirEdicao(p)}
                   >
                     <PencilIcon width={16} height={16} />
                   </button>
-                  <button
-                    type="button"
-                    aria-label={`Excluir ${p.nome}`}
-                    onClick={() => excluir(p)}
-                  >
-                    <TrashIcon width={16} height={16} />
-                  </button>
+
+                  {eAdmin && p.status !== "PUBLICADO" && (
+                    <button
+                      type="button"
+                      aria-label={`Publicar ${p.nome}`}
+                      title="Publicar"
+                      disabled={acaoEmAndamento === p.uuid}
+                      onClick={() => mudarStatus(p, "publicar")}
+                    >
+                      <CheckBadgeIcon width={16} height={16} />
+                    </button>
+                  )}
+
+                  {eAdmin && p.status !== "ARQUIVADO" && (
+                    <button
+                      type="button"
+                      aria-label={`Arquivar ${p.nome}`}
+                      title="Arquivar"
+                      disabled={acaoEmAndamento === p.uuid}
+                      onClick={() => mudarStatus(p, "arquivar")}
+                    >
+                      <ArchiveBoxArrowDownIcon width={16} height={16} />
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
