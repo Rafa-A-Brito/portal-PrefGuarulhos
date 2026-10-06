@@ -172,19 +172,21 @@ function AppRoutes() {
       />
 
       {/* ===== Área administrativa =====
-         Por enquanto só existe o perfil "admin" com acesso a este painel
-         (o perfil "tecnico" já existe no banco, pensando num RBAC maior
-         mais pra frente, mas ainda não tem nenhuma tela liberada pra ele).
-         Todas as rotas dentro do RotaProtegida com permissoes={["admin"]}
-         só renderizam se a pessoa logada tiver esse perfil. */}
+         O backend tem dois perfis: ADMIN (tudo) e EDITOR (cria patrimônios
+         e edita apenas rascunhos; não publica, não arquiva e não cria
+         usuários). Aqui o guard só decide o que aparece na tela; quem
+         impede de verdade é o authorize() do backend. */}
 
       <Route path="/admin/login" element={<LoginAdmin />} />
 
-      <Route element={<RotaProtegida permissoes={["admin"]} />}>
+      <Route element={<RotaProtegida permissoes={["ADMIN", "EDITOR"]} />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           <Route path="/admin/patrimonios" element={<AdminPatrimonios />} />
+
+          <Route element={<RotaProtegida permissoes={["ADMIN"]} />}>
+            <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

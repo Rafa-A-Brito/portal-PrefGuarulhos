@@ -88,12 +88,42 @@ model Patrimonio {
   documentos    PatrimonioDocumento[]
   rotas         RotaPatrimonio[]
   categoriasAdicionais PatrimonioCategoria[]
+    detalhes      PatrimonioDetalhe[]
 
   @@index([categoriaId, status])
   @@index([createdBy])
   @@index([updatedBy])
   @@index([status])
   @@map("patrimonio")
+}
+
+model PatrimonioDetalhe {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patrimonioId String     @map("patrimonio_id") @db.Uuid
+  icone        String?
+  titulo       String
+  texto        String
+  ordem        Int        @default(0)
+
+  patrimonio Patrimonio @relation(fields: [patrimonioId], references: [id], onDelete: Cascade)
+
+  @@index([patrimonioId, ordem])
+  @@map("patrimonio_detalhes")
+}
+
+model SiteHero {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pagina     String   @unique
+  eyebrow    String?
+  titulo     String
+  subtitulo  String?
+  imagemUrl  String?
+  ctaLabel   String?
+  ctaUrl     String?
+  ativo      Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+
+  @@map("site_hero")
 }
 
 model Localizacao {
