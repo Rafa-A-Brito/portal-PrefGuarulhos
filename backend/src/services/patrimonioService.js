@@ -75,6 +75,10 @@ const publicDetailSelect = {
             principal: true,
         },
     },
+    detalhes: {
+        orderBy: { ordem: "asc" },
+        select: { id: true, icone: true, titulo: true, texto: true, ordem: true },
+    },
     documentos: {
         orderBy: { createdAt: "asc" },
         select: {
@@ -122,10 +126,18 @@ export async function listPatrimonios(query) {
 }
 
 export async function listAdminPatrimonios(query) {
-    return listWithStatus(query, query.status, { ...publicListSelect, status: true, arquivadoEm: true });
+    return listWithStatus(query, query.status, {
+        ...publicListSelect,
+        status: true,
+        arquivadoEm: true,
+    });
 }
 
-async function listWithStatus({ busca, categoria, situacao, bairro, pagina, limite }, status, select) {
+async function listWithStatus(
+    { busca, categoria, situacao, bairro, pagina, limite },
+    status,
+    select
+) {
     const where = {
         ...(status && { status }),
         ...(busca && {
@@ -140,16 +152,20 @@ async function listWithStatus({ busca, categoria, situacao, bairro, pagina, limi
         // O filtro de categoria casa com a principal OU com alguma adicional.
         // Fica dentro de AND para não colidir com o OR da busca acima.
         ...(categoria && {
-            AND: [{
-                OR: [
-                    { categoria: { nome: { equals: categoria, mode: "insensitive" } } },
-                    {
-                        categoriasAdicionais: {
-                            some: { categoria: { nome: { equals: categoria, mode: "insensitive" } } },
+            AND: [
+                {
+                    OR: [
+                        { categoria: { nome: { equals: categoria, mode: "insensitive" } } },
+                        {
+                            categoriasAdicionais: {
+                                some: {
+                                    categoria: { nome: { equals: categoria, mode: "insensitive" } },
+                                },
+                            },
                         },
-                    },
-                ],
-            }],
+                    ],
+                },
+            ],
         }),
         ...(situacao && { situacao }),
         ...(bairro && {
@@ -184,6 +200,7 @@ const adminInclude = {
     categoriasAdicionais: { include: { categoria: true } },
     localizacao: true,
     imagens: { orderBy: [{ principal: "desc" }, { ordem: "asc" }, { id: "asc" }] },
+    detalhes: { orderBy: [{ ordem: "asc" }, { id: "asc" }] },
     documentos: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
 };
 
@@ -205,9 +222,37 @@ async function lockPatrimonio(transaction, id) {
 function locationInput(localizacao) {
     if (!localizacao) return undefined;
     const { id, patrimonioId, ...fields } = localizacao;
-    return Object.fromEntries(Object.entries(fields)
-        .filter(([, value]) => value !== null)
-        .map(([key, value]) => [key, ["latitude", "longitude"].includes(key) ? Number(value) : value]));
+    return Object.fromEntries(
+        Object.entries(fields)
+            .filter(([, value]) => value !== null)
+            .map(([key, value]) => [
+                key,
+                ["latitude", "longitude"].includes(key) ? Number(value) : value,
+            ])
+    );
+}
+
+// latitude/longitude explicitamente null significam "limpar as coordenadas"
+// (o front faz isso quando o endereço muda e não há geocodificação). No update
+// o Prisma aceita null direto; já para validar a localização final (e para
+// criar uma localização nova) as coordenadas nulas são simplesmente omitidas.
+function semCoordenadasNulas(localizacao) {
+    return Object.fromEntries(
+        Object.entries(localizacao).filter(
+            ([key, value]) => !(["latitude", "longitude"].includes(key) && value === null)
+        )
+    );
+}
+
+// Latitude e longitude só fazem sentido juntas: um ponto com só um dos
+// valores deixaria o patrimônio num ponto errado ou fora do mapa sem aviso.
+function validarParDeCoordenadas(localizacao) {
+    const temLat = localizacao.latitude !== undefined;
+    const temLng = localizacao.longitude !== undefined;
+
+    if (temLat !== temLng) {
+        throw new BadRequestError("Informe latitude e longitude juntas.");
+    }
 }
 
 export async function updatePatrimonio(id, data, user) {
@@ -217,33 +262,48 @@ export async function updatePatrimonio(id, data, user) {
             throw new ForbiddenError("Editor pode editar somente rascunhos.");
         }
         const categoriaId = data.categoriaId ?? current.categoriaId;
-        const adicionaisIds = data.categoriasAdicionais ?? current.categoriasAdicionais.map((item) => item.id);
+        const adicionaisIds =
+            data.categoriasAdicionais ?? current.categoriasAdicionais.map((item) => item.id);
         if (adicionaisIds.includes(categoriaId)) {
             throw new BadRequestError("A categoria principal não deve estar entre as adicionais.");
         }
         if (data.categoriaId !== undefined) {
-            const categoria = await transaction.categoria.findUnique({ where: { id: data.categoriaId } });
+            const categoria = await transaction.categoria.findUnique({
+                where: { id: data.categoriaId },
+            });
             if (!categoria) throw new BadRequestError("Categoria não encontrada.");
         }
         if (data.categoriasAdicionais !== undefined && adicionaisIds.length > 0) {
-            const encontradas = await transaction.categoria.findMany({ where: { id: { in: adicionaisIds } }, select: { id: true } });
-            if (encontradas.length !== adicionaisIds.length) throw new BadRequestError("Categoria adicional não encontrada.");
+            const encontradas = await transaction.categoria.findMany({
+                where: { id: { in: adicionaisIds } },
+                select: { id: true },
+            });
+            if (encontradas.length !== adicionaisIds.length)
+                throw new BadRequestError("Categoria adicional não encontrada.");
         }
         const { localizacao, categoriasAdicionais, ...fields } = data;
         let locationUpdate;
         if (localizacao !== undefined) {
-            const finalLocation = localizacaoSchema.parse({ ...locationInput(current.localizacao), ...localizacao });
-            locationUpdate = current.localizacao ? { update: localizacao } : { create: finalLocation };
+            validarParDeCoordenadas(localizacao);
+            const finalLocation = localizacaoSchema.parse(
+                semCoordenadasNulas({ ...locationInput(current.localizacao), ...localizacao })
+            );
+            locationUpdate = current.localizacao
+                ? { update: localizacao }
+                : { create: finalLocation };
         }
         const updated = await transaction.patrimonio.update({
             where: { id },
             data: {
-                ...fields, updatedBy: user.id,
+                ...fields,
+                updatedBy: user.id,
                 ...(locationUpdate && { localizacao: locationUpdate }),
-                ...(categoriasAdicionais !== undefined && { categoriasAdicionais: {
-                    deleteMany: {},
-                    create: categoriasAdicionais.map((categoriaId) => ({ categoriaId })),
-                } }),
+                ...(categoriasAdicionais !== undefined && {
+                    categoriasAdicionais: {
+                        deleteMany: {},
+                        create: categoriasAdicionais.map((categoriaId) => ({ categoriaId })),
+                    },
+                }),
             },
             include: adminInclude,
         });
@@ -316,8 +376,9 @@ export async function createPatrimonio(data, createdBy) {
             }
 
             // A principal não entra na lista de adicionais (o schema zod já rejeita, aqui é defesa extra).
-            const adicionaisIds = [...new Set(data.categoriasAdicionais ?? [])]
-                .filter((id) => id !== data.categoriaId);
+            const adicionaisIds = [...new Set(data.categoriasAdicionais ?? [])].filter(
+                (id) => id !== data.categoriaId
+            );
 
             if (adicionaisIds.length > 0) {
                 const encontradas = await transaction.categoria.findMany({

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPinIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../categoriaMeta";
 
-import SANATORIO_IMG from "../../assets/sanatorio_padre_bento.jpg";
+import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
 
 export default function PlaquetaCard({ item }) {
   const meta = CATEGORIA_META[item.categoria];

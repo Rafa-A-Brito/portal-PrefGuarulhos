@@ -9,12 +9,28 @@ const localizacaoFieldsSchema = z.strictObject({
     complemento: optionalText(150, "Informe um complemento válido."),
     bairro: z.string().trim().min(1, "Informe o bairro.").max(100),
     cidade: z.string().trim().min(1, "Informe a cidade.").max(100).default("Guarulhos"),
-    uf: z.string().trim().length(2, "A UF deve conter 2 caracteres.")
-        .transform((uf) => uf.toUpperCase()).default("SP"),
-    cep: z.string().trim().regex(/^\d{5}-?\d{3}$/, "Informe um CEP válido.")
-        .transform((cep) => cep.replace(/^(\d{5})-?(\d{3})$/, "$1-$2")).optional(),
-    latitude: z.number().min(-90, "A latitude mínima é -90.").max(90, "A latitude máxima é 90.").optional(),
-    longitude: z.number().min(-180, "A longitude mínima é -180.").max(180, "A longitude máxima é 180.").optional(),
+    uf: z
+        .string()
+        .trim()
+        .length(2, "A UF deve conter 2 caracteres.")
+        .transform((uf) => uf.toUpperCase())
+        .default("SP"),
+    cep: z
+        .string()
+        .trim()
+        .regex(/^\d{5}-?\d{3}$/, "Informe um CEP válido.")
+        .transform((cep) => cep.replace(/^(\d{5})-?(\d{3})$/, "$1-$2"))
+        .optional(),
+    latitude: z
+        .number()
+        .min(-90, "A latitude mínima é -90.")
+        .max(90, "A latitude máxima é 90.")
+        .optional(),
+    longitude: z
+        .number()
+        .min(-180, "A longitude mínima é -180.")
+        .max(180, "A longitude máxima é 180.")
+        .optional(),
 });
 
 export const localizacaoSchema = localizacaoFieldsSchema.superRefine((localizacao, context) => {
@@ -36,8 +52,15 @@ const createPatrimonioFieldsSchema = z.strictObject({
     descricaoResumida: z.string().trim().min(1, "Informe a descrição resumida.").max(500),
     categoriaId: z.uuid("Informe uma categoria válida."),
     historia: z.string().trim().min(1, "Informe uma história válida.").optional(),
-    importanciaCultural: z.string().trim().min(1, "Informe uma importância cultural válida.").optional(),
-    categoriasAdicionais: z.array(z.uuid("Informe categorias adicionais válidas.")).max(6, "Informe no máximo 6 categorias adicionais.").optional(),
+    importanciaCultural: z
+        .string()
+        .trim()
+        .min(1, "Informe uma importância cultural válida.")
+        .optional(),
+    categoriasAdicionais: z
+        .array(z.uuid("Informe categorias adicionais válidas."))
+        .max(6, "Informe no máximo 6 categorias adicionais.")
+        .optional(),
     situacao: z.enum(Object.values(SituacaoPatrimonio)).default(SituacaoPatrimonio.NAO_INFORMADO),
     localizacao: localizacaoSchema.optional(),
 });
@@ -74,7 +97,11 @@ export const listPatrimoniosQuerySchema = z.strictObject({
 });
 
 export const patrimonioSlugParamsSchema = z.strictObject({
-    slug: z.string().trim().min(1).max(220)
+    slug: z
+        .string()
+        .trim()
+        .min(1)
+        .max(220)
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Informe um slug válido."),
 });
 
@@ -85,19 +112,43 @@ export const adminListPatrimoniosQuerySchema = listPatrimoniosQuerySchema.extend
 export const patrimonioIdParamsSchema = z.strictObject({ id: z.uuid() });
 
 const nonEmpty = (data) => Object.keys(data).length > 0;
-export const updatePatrimonioSchema = createPatrimonioFieldsSchema.partial().extend({
-    situacao: z.enum(Object.values(SituacaoPatrimonio)).optional(),
-    localizacao: localizacaoFieldsSchema.partial().extend({
-        cidade: localizacaoFieldsSchema.shape.cidade.removeDefault().optional(),
-        uf: localizacaoFieldsSchema.shape.uf.removeDefault().optional(),
-    }).refine(nonEmpty, "Informe algum campo da localização.").optional(),
-}).refine(nonEmpty, "Informe algum campo para atualizar.").superRefine((dados, context) => {
-    if (dados.categoriasAdicionais && new Set(dados.categoriasAdicionais).size !== dados.categoriasAdicionais.length) {
-        context.addIssue({ code: "custom", path: ["categoriasAdicionais"], message: "Não repita categorias adicionais." });
-    }
-    if (dados.categoriasAdicionais?.includes(dados.categoriaId)) {
-        context.addIssue({ code: "custom", path: ["categoriasAdicionais"], message: "A categoria principal não deve estar entre as adicionais." });
-    }
-});
+export const updatePatrimonioSchema = createPatrimonioFieldsSchema
+    .partial()
+    .extend({
+        situacao: z.enum(Object.values(SituacaoPatrimonio)).optional(),
+        localizacao: localizacaoFieldsSchema
+            .partial()
+            .extend({
+                cidade: localizacaoFieldsSchema.shape.cidade.removeDefault().optional(),
+                uf: localizacaoFieldsSchema.shape.uf.removeDefault().optional(),
+                // Somente no update: null limpa as coordenadas (endereço alterado com a
+                // geocodificação desligada). A faixa -90..90 / -180..180 continua valendo
+                // para números. No cadastro (localizacaoSchema) null segue proibido.
+                latitude: localizacaoFieldsSchema.shape.latitude.nullable(),
+                longitude: localizacaoFieldsSchema.shape.longitude.nullable(),
+            })
+            .refine(nonEmpty, "Informe algum campo da localização.")
+            .optional(),
+    })
+    .refine(nonEmpty, "Informe algum campo para atualizar.")
+    .superRefine((dados, context) => {
+        if (
+            dados.categoriasAdicionais &&
+            new Set(dados.categoriasAdicionais).size !== dados.categoriasAdicionais.length
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: ["categoriasAdicionais"],
+                message: "Não repita categorias adicionais.",
+            });
+        }
+        if (dados.categoriasAdicionais?.includes(dados.categoriaId)) {
+            context.addIssue({
+                code: "custom",
+                path: ["categoriasAdicionais"],
+                message: "A categoria principal não deve estar entre as adicionais.",
+            });
+        }
+    });
 
 export const statusPatrimonioSchema = z.strictObject({}).optional();

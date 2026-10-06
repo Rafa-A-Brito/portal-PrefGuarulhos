@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import MapaPatrimonios from "../../features/mapa/MapaPatrimonios";
 import FiltroBar from "../../features/mapa/FiltroBar";
+import { obterCoordenadas } from "../../features/mapa/coordenadas";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
@@ -18,8 +19,14 @@ const FALLBACK_THUMB =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3C/svg%3E";
 
 export default function Mapa() {
-  const { patrimonios, carregando, erro, recarregar, selecionado, setSelecionado } =
-    usePatrimoniosContext();
+  const {
+    patrimonios,
+    carregando,
+    erro,
+    recarregar,
+    selecionado,
+    setSelecionado,
+  } = usePatrimoniosContext();
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
@@ -28,6 +35,10 @@ export default function Mapa() {
     () => filtrarPatrimonios(patrimonios, { categoria: filtro, busca }),
     [patrimonios, filtro, busca],
   );
+
+  // Sem coordenadas válidas: o item continua na lista, mas não há marcador
+  // nem rota.
+  const coordenadasSelecionado = obterCoordenadas(selecionado);
 
   const handleFiltro = (novo) => {
     setFiltro(novo);
@@ -59,7 +70,11 @@ export default function Mapa() {
             ) : erro ? (
               <div className="mockup-empty" role="alert">
                 <p>{erro}</p>
-                <button type="button" className="btn-outline" onClick={recarregar}>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={recarregar}
+                >
                   Tentar novamente
                 </button>
               </div>
@@ -162,6 +177,11 @@ export default function Mapa() {
                       {selecionado.cep ? ` – CEP ${selecionado.cep}` : ""}
                     </span>
                   )}
+                  {!coordenadasSelecionado && (
+                    <span className="mapa-detail-endereco">
+                      Este patrimônio ainda não tem posição no mapa.
+                    </span>
+                  )}
                   <p>{selecionado.resumo}</p>
                   <div className="mapa-detail-actions">
                     <Link
@@ -171,15 +191,17 @@ export default function Mapa() {
                       <InformationCircleIcon width={16} height={16} /> Ver
                       detalhes
                     </Link>
-                    <a
-                      className="btn-solid"
-                      target="_blank"
-                      rel="noreferrer"
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${selecionado.localizacao.lat},${selecionado.localizacao.lng}`}
-                    >
-                      <ArrowTopRightOnSquareIcon width={16} height={16} /> Ver
-                      rota
-                    </a>
+                    {coordenadasSelecionado && (
+                      <a
+                        className="btn-solid"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${coordenadasSelecionado.lat},${coordenadasSelecionado.lng}`}
+                      >
+                        <ArrowTopRightOnSquareIcon width={16} height={16} /> Ver
+                        rota
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

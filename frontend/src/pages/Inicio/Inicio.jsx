@@ -17,7 +17,7 @@ import {
 import { heroDestaqueMock } from "../../features/mocks/destaquesMock";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
-import BACKGROUND_IMAGE from "../../assets/viaduto_cid_guarulhos.png";
+import BACKGROUND_IMAGE from "../../assets/patrimonios/viaduto_cid_guarulhos.png";
 
 const CARD_SCROLL_STEP = 236; // largura do card (220px) + gap (16px)
 const QTD_DESTAQUES = 6;

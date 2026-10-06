@@ -1,6 +1,6 @@
-import CAPELA_BONSUCESSO_IMG from "../../assets/capela_bonsucesso.png";
-import SANATORIO_IMG from "../../assets/sanatorio_padre_bento.jpg";
-import FESTA_BONSUCESSO_IMG from "../../assets/festa_bonsucesso.jpg";
+import CAPELA_BONSUCESSO_IMG from "../../assets/patrimonios/capela_bonsucesso.png";
+import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
+import FESTA_BONSUCESSO_IMG from "../../assets/patrimonios/festa_bonsucesso.jpg";
 
 /**
  * Conteúdo específico do Hero da Home — não faz parte do catálogo de

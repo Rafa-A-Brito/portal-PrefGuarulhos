@@ -1,11 +1,8 @@
-import {
-  GoogleMap,
-  InfoWindowF,
-  MarkerF,
-  useJsApiLoader,
-} from "@react-google-maps/api";
-import { useCallback, useEffect, useState } from "react";
+import { GoogleMap, InfoWindowF, MarkerF } from "@react-google-maps/api";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../styles/global.css";
+import { useGoogleMaps } from "../../hooks/useGoogleMaps";
+import { obterCoordenadas } from "./coordenadas";
 
 const GUARULHOS_CENTER = { lat: -23.4542, lng: -46.5268 };
 const mapContainerStyle = {
@@ -30,20 +27,27 @@ const COR_POR_CATEGORIA = {
   industrial: "#56661F",
 };
 
+// Um ícone por categoria, criado uma vez: gerar um objeto novo a cada render
+// faria todo marcador redesenhar o ícone sem necessidade.
+const cacheIcones = new Map();
+
 function pinIcon(categoria) {
-  const cor = COR_POR_CATEGORIA[categoria] || "#2B255C";
-  const svg = `
+  if (!window.google?.maps) return undefined;
+
+  if (!cacheIcones.has(categoria)) {
+    const cor = COR_POR_CATEGORIA[categoria] || "#2B255C";
+    const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
       <path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 25 15 25s15-14 15-25C30 6.7 23.3 0 15 0z" fill="${cor}"/>
       <circle cx="15" cy="15" r="6" fill="#fff"/>
     </svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize:
-      typeof window !== "undefined" && window.google
-        ? new window.google.maps.Size(30, 40)
-        : undefined,
-  };
+    cacheIcones.set(categoria, {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+      scaledSize: new window.google.maps.Size(30, 40),
+    });
+  }
+
+  return cacheIcones.get(categoria);
 }
 
 export default function MapaPatrimonios({
@@ -59,14 +63,19 @@ export default function MapaPatrimonios({
 
   const [map, setMap] = useState(null);
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const isMockMode = import.meta.env.VITE_USE_MOCK_MAP === "true" || !apiKey;
+  // Só entram no mapa patrimônios com coordenadas válidas. Os demais seguem
+  // na lista e nos filtros (que usam "patrimonios"), mas não viram marcador.
+  const marcadores = useMemo(
+    () =>
+      patrimonios
+        .map((item) => ({ item, posicao: obterCoordenadas(item) }))
+        .filter((marcador) => marcador.posicao),
+    [patrimonios],
+  );
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: apiKey || "",
-    preventGoogleFontsLoading: true,
-  });
+  // Loader único do Google Maps (o mesmo do geocoding no admin).
+  const { configurado, pronto, erro: loadError } = useGoogleMaps();
+  const isMockMode = !configurado;
 
   const onLoad = useCallback((mapInstance) => {
     setMap(mapInstance);
@@ -75,28 +84,18 @@ export default function MapaPatrimonios({
   const onUnmount = useCallback(() => {
     setMap(null);
   }, []);
+
+  // Reenquadra o mapa quando o mapa carrega ou a lista filtrada muda.
+  // Dependências: map (instância), marcadores (muda com os filtros) e o modo.
   useEffect(() => {
-    if (!isMockMode && map && patrimonios.length > 0 && window.google) {
-      const bounds = new window.google.maps.LatLngBounds();
-      let contemPontosValidos = false;
+    if (isMockMode || !map || marcadores.length === 0 || !window.google) return;
 
-      patrimonios.forEach((item) => {
-        // Valida se a localização e as coordenadas realmente existem antes de aplicar
-        if (item.localizacao?.lat && item.localizacao?.lng) {
-          bounds.extend({
-            lat: item.localizacao.lat,
-            lng: item.localizacao.lng,
-          });
-          contemPontosValidos = true;
-        }
-      });
+    const bounds = new window.google.maps.LatLngBounds();
+    marcadores.forEach(({ posicao }) => bounds.extend(posicao));
 
-      if (contemPontosValidos) {
-        map.fitBounds(bounds);
-        if (patrimonios.length === 1) map.setZoom(15);
-      }
-    }
-  }, [map, patrimonios, isMockMode]);
+    map.fitBounds(bounds);
+    if (marcadores.length === 1) map.setZoom(15);
+  }, [map, marcadores, isMockMode]);
 
   // ===== MODO MOCK — sem chave de API configurada =====
   if (isMockMode) {
@@ -136,9 +135,11 @@ export default function MapaPatrimonios({
   }
 
   // ===== MODO REAL — Google Maps API =====
+  const posicaoSelecionada = obterCoordenadas(selectedPatrimonio);
+
   if (loadError)
     return <div className="map-error">Erro ao carregar a Google Maps API.</div>;
-  if (!isLoaded) return <div className="map-loading">Carregando mapa...</div>;
+  if (!pronto) return <div className="map-loading">Carregando mapa...</div>;
 
   return (
     <div className="map-wrapper" style={{ height: "100%" }}>
@@ -154,22 +155,19 @@ export default function MapaPatrimonios({
           fullscreenControl: false,
         }}
       >
-        {patrimonios.map((item) => (
+        {marcadores.map(({ item, posicao }) => (
           <MarkerF
             key={item.id}
-            position={{ lat: item.localizacao.lat, lng: item.localizacao.lng }}
+            position={posicao}
             title={item.nome}
             icon={pinIcon(item.categoria)}
             onClick={() => setSelectedPatrimonio(item)}
           />
         ))}
 
-        {selectedPatrimonio && (
+        {selectedPatrimonio && posicaoSelecionada && (
           <InfoWindowF
-            position={{
-              lat: selectedPatrimonio.localizacao.lat,
-              lng: selectedPatrimonio.localizacao.lng,
-            }}
+            position={posicaoSelecionada}
             onCloseClick={() => setSelectedPatrimonio(null)}
           >
             <div className="info-window-card">

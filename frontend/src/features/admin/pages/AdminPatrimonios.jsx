@@ -11,9 +11,13 @@ import {
   PencilSquareIcon,
   MapPinIcon,
   ArrowPathIcon,
+  PhotoIcon,
+  TrashIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../../../features/categoriaMeta";
 import { useAuth } from "../../../hooks/useAuth";
+import { useGoogleMaps } from "../../../hooks/useGoogleMaps";
 import { useErroModal } from "../../../hooks/useErroModal";
 import {
   geocodificarEndereco,
@@ -83,6 +87,23 @@ function resumoCurto(texto) {
   return `${(ultimoEspaco > 300 ? corte.slice(0, ultimoEspaco) : corte).trimEnd()}…`;
 }
 
+/**
+ * Põe a imagem recém-enviada na lista local. A ordem espelha a do backend
+ * (capa primeiro, depois "ordem"), e uma nova capa tira a marca das demais,
+ * como o imageService faz no banco. Evita um GET só para atualizar a tela.
+ */
+function mesclarImagem(lista, nova) {
+  const base = nova.principal
+    ? lista.map((img) => ({ ...img, principal: false }))
+    : lista;
+
+  return [...base, nova].sort(
+    (a, b) =>
+      Number(b.principal) - Number(a.principal) ||
+      (a.ordem ?? 0) - (b.ordem ?? 0),
+  );
+}
+
 // Detalhe do backend (já normalizado por fakeApi) -> formulário plano.
 // As coordenadas NÃO vão para o formulário: a pessoa nunca as vê nem as digita.
 function paraFormulario(patrimonio) {
@@ -108,6 +129,11 @@ export default function AdminPatrimonios() {
   const { mostrarErro } = useErroModal();
   const eAdmin = usuario?.perfil === "ADMIN";
 
+  // Mesmo loader do mapa público (um script só). Aqui ele serve ao geocoding:
+  // o geocodificarEndereco espera o Geocoder existir, e este "erro" só avisa
+  // antes de salvar quando o script falhou de vez (chave, rede, domínio).
+  const { erro: erroMaps } = useGoogleMaps();
+
   const [patrimonios, setPatrimonios] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -131,6 +157,20 @@ export default function AdminPatrimonios() {
   const [gerando, setGerando] = useState(false);
 
   const inputArquivoRef = useRef(null);
+
+  // Imagens do patrimônio em edição (só existem depois de ele ser salvo).
+  const [imagens, setImagens] = useState([]);
+  const [imagemSelecionada, setImagemSelecionada] = useState(null);
+  const [textoAltImagem, setTextoAltImagem] = useState("");
+  const [creditoImagem, setCreditoImagem] = useState("");
+  const [imagemCapa, setImagemCapa] = useState(false);
+  const [enviandoImagem, setEnviandoImagem] = useState(false);
+  const [removendoImagemId, setRemovendoImagemId] = useState(null);
+  const [erroImagem, setErroImagem] = useState(null);
+  const [avisoFormulario, setAvisoFormulario] = useState(null);
+
+  const inputImagemRef = useRef(null);
+  const operandoImagem = enviandoImagem || removendoImagemId !== null;
 
   const contagemPorCategoria = useMemo(
     () =>
@@ -166,11 +206,22 @@ export default function AdminPatrimonios() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function limparSelecaoImagem() {
+    setImagemSelecionada(null);
+    setTextoAltImagem("");
+    setCreditoImagem("");
+    setImagemCapa(false);
+  }
+
   function reiniciarEstadosAuxiliares() {
     setErroFormulario(null);
     setErroArquivo(null);
     setArquivoResumo(null);
     setGerando(false);
+    setImagens([]);
+    limparSelecaoImagem();
+    setErroImagem(null);
+    setAvisoFormulario(null);
   }
 
   function abrirNovo() {
@@ -185,17 +236,21 @@ export default function AdminPatrimonios() {
   }
 
   // A listagem não traz descricao/historia, então a edição busca o detalhe.
+  // Devolve true quando o formulário abriu em modo edição.
   async function abrirEdicao(resumo) {
     reiniciarEstadosAuxiliares();
 
     try {
       const detalhe = await adminApi.buscarPatrimonioAdmin(resumo.uuid);
       setFormulario(paraFormulario(detalhe));
+      setImagens(detalhe.imagens ?? []);
       setCoordenadas(detalhe.localizacao ?? null);
       setChaveOriginal(chaveEndereco(detalhe));
       setEditandoId(detalhe.uuid);
+      return true;
     } catch (err) {
       mostrarErro(err, { origem: "AdminPatrimonios › abrirEdicao" });
+      return false;
     }
   }
 
@@ -313,18 +368,29 @@ export default function AdminPatrimonios() {
       return;
     }
 
+    if (!GEOCODING_EM_MODO_DEMO && erroMaps) {
+      setErroFormulario(
+        "Não foi possível carregar o Google Maps para localizar o endereço. Verifique a chave da API e a conexão e recarregue a página.",
+      );
+      return;
+    }
+
     setSalvando(true);
 
     try {
-      // Coordenadas: só são calculadas com a geocodificação REAL ligada. No
-      // modo demonstração elas são inventadas, e aqui o destino é o banco de
-      // verdade, então simplesmente não são enviadas.
+      // Coordenadas:
+      //  - geocodificação REAL ligada: recalcula quando é cadastro novo, quando
+      //    o patrimônio ainda não tem coordenadas ou quando o endereço mudou;
+      //  - modo demonstração: NUNCA inventa coordenadas. Se o endereço mudou
+      //    numa edição, as coordenadas antigas deixam de valer (apontariam
+      //    para o lugar errado) e são limpas (null) em vez de mantidas em
+      //    silêncio. Endereço igual: nada é enviado e o banco mantém o que tem.
       let latitude;
       let longitude;
+      const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
 
       if (!GEOCODING_EM_MODO_DEMO) {
         let ponto = coordenadas;
-        const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
 
         if (editandoId === "novo" || !ponto || enderecoMudou) {
           setEtapaSalvando("Localizando o endereço no mapa…");
@@ -333,6 +399,9 @@ export default function AdminPatrimonios() {
 
         latitude = ponto.lat;
         longitude = ponto.lng;
+      } else if (editandoId !== "novo" && enderecoMudou && coordenadas) {
+        latitude = null;
+        longitude = null;
       }
 
       setEtapaSalvando("Salvando…");
@@ -365,10 +434,27 @@ export default function AdminPatrimonios() {
       };
 
       if (editandoId === "novo") {
-        await adminApi.criarPatrimonio(dados);
-      } else {
-        await adminApi.atualizarPatrimonio(editandoId, dados);
+        const criado = await adminApi.criarPatrimonio(dados);
+        await carregarPatrimonios();
+
+        // As imagens precisam do UUID do patrimônio, que só existe depois de
+        // criado. Em vez de fechar, reabre o formulário já em modo edição
+        // para a pessoa enviar as imagens em seguida.
+        const abriu = await abrirEdicao({ uuid: criado.id });
+
+        if (abriu) {
+          setAvisoFormulario(
+            "Patrimônio criado como rascunho. Agora você já pode enviar as imagens.",
+          );
+        } else {
+          // O cadastro já foi criado; fechar evita que um novo clique em Salvar o duplique.
+          fecharFormulario();
+        }
+
+        return;
       }
+
+      await adminApi.atualizarPatrimonio(editandoId, dados);
 
       fecharFormulario();
       await carregarPatrimonios();
@@ -385,6 +471,110 @@ export default function AdminPatrimonios() {
     } finally {
       setSalvando(false);
       setEtapaSalvando("");
+    }
+  }
+
+  // ===== Imagens (POST/DELETE em /admin/patrimonios/.../imagens) =====
+
+  function escolherImagem(e) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+
+    if (!arquivo) return;
+
+    const problema = adminApi.validarArquivoImagem(arquivo);
+
+    if (problema) {
+      setErroImagem(problema);
+      return;
+    }
+
+    setErroImagem(null);
+    setImagemSelecionada(arquivo);
+    // A primeira imagem do patrimônio já nasce como capa.
+    setImagemCapa(imagens.length === 0);
+  }
+
+  // 400/403/404/413 têm mensagem própria aqui; o resto (rede, 5xx) vai pro modal.
+  function tratarErroImagem(err, acao) {
+    const status = err.response?.status;
+    const mensagens = {
+      403: "Você não tem permissão para esta ação.",
+      404: "Patrimônio ou imagem não encontrado. Recarregue a página.",
+      413: "A imagem é grande demais para o servidor (máximo de 10 MB).",
+    };
+
+    if (status === 400) {
+      setErroImagem(adminApi.extrairMensagemDeErro(err));
+    } else if (mensagens[status]) {
+      setErroImagem(mensagens[status]);
+    } else {
+      mostrarErro(err, {
+        origem: `AdminPatrimonios › ${acao} imagem`,
+        mensagem:
+          acao === "enviar"
+            ? "Não foi possível enviar a imagem."
+            : "Não foi possível remover a imagem.",
+      });
+    }
+  }
+
+  async function enviarImagem() {
+    if (!imagemSelecionada || operandoImagem) return;
+    if (!editandoId || editandoId === "novo") return;
+
+    setEnviandoImagem(true);
+    setErroImagem(null);
+
+    try {
+      const proximaOrdem = imagens.length
+        ? Math.max(...imagens.map((img) => img.ordem ?? 0)) + 1
+        : 0;
+
+      const nova = await adminApi.enviarImagemPatrimonio(
+        editandoId,
+        imagemSelecionada,
+        {
+          // Sem texto alternativo, usa o nome do patrimônio (melhor que o
+          // nome do arquivo, que é o que o backend usaria).
+          textoAlternativo: textoAltImagem.trim() || formulario.nome,
+          credito: creditoImagem,
+          ordem: proximaOrdem,
+          principal: imagemCapa,
+        },
+      );
+
+      setImagens((atual) => mesclarImagem(atual, nova));
+      limparSelecaoImagem();
+    } catch (err) {
+      tratarErroImagem(err, "enviar");
+    } finally {
+      setEnviandoImagem(false);
+    }
+  }
+
+  async function removerImagem(imagem) {
+    if (!eAdmin || operandoImagem) return;
+
+    const confirmou = window.confirm(
+      "Remover esta imagem? O arquivo também será apagado do servidor.",
+    );
+    if (!confirmou) return;
+
+    setRemovendoImagemId(imagem.id);
+    setErroImagem(null);
+
+    try {
+      await adminApi.removerImagemPatrimonio(imagem.id);
+      setImagens((atual) => atual.filter((img) => img.id !== imagem.id));
+    } catch (err) {
+      // 404: a imagem já não existe no servidor; some da tela também.
+      if (err.response?.status === 404) {
+        setImagens((atual) => atual.filter((img) => img.id !== imagem.id));
+      }
+      tratarErroImagem(err, "remover");
+    } finally {
+      setRemovendoImagemId(null);
     }
   }
 
@@ -428,7 +618,10 @@ export default function AdminPatrimonios() {
       <div className="admin-page-head admin-page-head-row">
         <div>
           <h1>Patrimônios</h1>
-          <p>O site público mostra só os patrimônios publicados; novos cadastros começam como rascunho.</p>
+          <p>
+            O site público mostra só os patrimônios publicados; novos cadastros
+            começam como rascunho.
+          </p>
         </div>
 
         <button type="button" className="btn-solid" onClick={abrirNovo}>
@@ -442,6 +635,13 @@ export default function AdminPatrimonios() {
           <h2>
             {editandoId === "novo" ? "Novo patrimônio" : "Editar patrimônio"}
           </h2>
+
+          {avisoFormulario && (
+            <p className="admin-ajuda" role="status">
+              <CheckCircleIcon width={16} height={16} />
+              <span>{avisoFormulario}</span>
+            </p>
+          )}
 
           <div className="admin-form-grid">
             <label className="admin-form-col-2">
@@ -558,17 +758,176 @@ export default function AdminPatrimonios() {
                 automaticamente a partir do endereço quando você salva; não
                 precisa informar latitude nem longitude.
                 {GEOCODING_EM_MODO_DEMO &&
-                  " (Geocodificação desligada: o patrimônio é salvo SEM coordenadas e não aparece no mapa até ela ser ativada.)"}
+                  " (Geocodificação desligada: o patrimônio é salvo SEM coordenadas e não aparece no mapa até ela ser ativada. Se você mudar o endereço de um patrimônio já cadastrado, a posição antiga é removida.)"}
               </span>
             </p>
 
-            <p className="admin-ajuda admin-form-col-2">
-              <PaperClipIcon width={16} height={16} />
-              <span>
-                Imagens ainda não podem ser enviadas por aqui: a API não tem
-                rota de upload.
-              </span>
-            </p>
+            {/* ----- Imagens: envio, listagem e remoção ----- */}
+            {editandoId === "novo" ? (
+              <p className="admin-ajuda admin-form-col-2">
+                <PhotoIcon width={16} height={16} />
+                <span>
+                  As imagens são enviadas logo depois de salvar: o patrimônio é
+                  criado como rascunho e o formulário continua aberto para o
+                  envio.
+                </span>
+              </p>
+            ) : (
+              <div className="admin-form-col-2 admin-upload admin-imagens">
+                <span className="admin-upload-rotulo">Imagens</span>
+
+                {imagens.length === 0 ? (
+                  <p className="admin-ajuda">Nenhuma imagem enviada ainda.</p>
+                ) : (
+                  <ul
+                    className="admin-imagens-lista"
+                    aria-label="Imagens do patrimônio"
+                  >
+                    {imagens.map((img) => (
+                      <li key={img.id} className="admin-imagem-item">
+                        <img
+                          src={img.url}
+                          alt={img.textoAlternativo || ""}
+                          loading="lazy"
+                        />
+                        <div className="admin-imagem-rodape">
+                          {img.principal ? (
+                            <span className="admin-status admin-status--PUBLICADO">
+                              Capa
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+
+                          {eAdmin && (
+                            <button
+                              type="button"
+                              className="admin-upload-remover"
+                              aria-label={`Remover imagem: ${img.textoAlternativo || "sem descrição"}`}
+                              title="Remover imagem"
+                              disabled={operandoImagem}
+                              onClick={() => removerImagem(img)}
+                            >
+                              {removendoImagemId === img.id ? (
+                                <ArrowPathIcon
+                                  width={16}
+                                  height={16}
+                                  className="icon-spin"
+                                />
+                              ) : (
+                                <TrashIcon width={16} height={16} />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="admin-upload-linha admin-upload-bloco">
+                  <input
+                    ref={inputImagemRef}
+                    type="file"
+                    accept={adminApi.TIPOS_IMAGEM_ACEITOS.join(",")}
+                    hidden
+                    onChange={escolherImagem}
+                  />
+
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    disabled={operandoImagem}
+                    onClick={() => inputImagemRef.current?.click()}
+                  >
+                    <PhotoIcon width={16} height={16} />
+                    {imagemSelecionada ? "Trocar imagem" : "Escolher imagem"}
+                  </button>
+
+                  <span className="admin-upload-nome">
+                    {imagemSelecionada?.name ||
+                      "JPG, PNG, WEBP ou GIF, até 10 MB"}
+                  </span>
+
+                  {imagemSelecionada && !enviandoImagem && (
+                    <button
+                      type="button"
+                      className="admin-upload-remover"
+                      aria-label="Descartar imagem escolhida"
+                      onClick={limparSelecaoImagem}
+                    >
+                      <XMarkIcon width={16} height={16} />
+                    </button>
+                  )}
+                </div>
+
+                {imagemSelecionada && (
+                  <div className="admin-imagem-campos">
+                    <label>
+                      Texto alternativo (descreva a imagem)
+                      <input
+                        maxLength={300}
+                        placeholder="Ex.: Fachada da estação vista da praça"
+                        value={textoAltImagem}
+                        onChange={(e) => setTextoAltImagem(e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Crédito (opcional)
+                      <input
+                        maxLength={200}
+                        value={creditoImagem}
+                        onChange={(e) => setCreditoImagem(e.target.value)}
+                      />
+                    </label>
+
+                    <label className="admin-imagem-capa">
+                      <input
+                        type="checkbox"
+                        checked={imagemCapa}
+                        onChange={(e) => setImagemCapa(e.target.checked)}
+                      />
+                      Usar como imagem de capa
+                    </label>
+
+                    <div>
+                      <button
+                        type="button"
+                        className="btn-solid"
+                        disabled={operandoImagem}
+                        onClick={enviarImagem}
+                      >
+                        {enviandoImagem ? (
+                          <>
+                            <ArrowPathIcon
+                              width={16}
+                              height={16}
+                              className="icon-spin"
+                            />
+                            Enviando…
+                          </>
+                        ) : (
+                          "Enviar imagem"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {erroImagem && (
+                  <p className="admin-form-erro" role="alert">
+                    {erroImagem}
+                  </p>
+                )}
+
+                {!eAdmin && imagens.length > 0 && (
+                  <p className="admin-aviso-ia">
+                    Somente administradores podem remover imagens.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* ----- Resumo: escrever ou enviar arquivo ----- */}
             <div className="admin-form-col-2 admin-upload">
@@ -708,7 +1067,11 @@ export default function AdminPatrimonios() {
           )}
 
           <div className="admin-form-acoes">
-            <button type="submit" className="btn-solid" disabled={salvando}>
+            <button
+              type="submit"
+              className="btn-solid"
+              disabled={salvando || operandoImagem}
+            >
               {salvando ? (
                 <>
                   <ArrowPathIcon width={16} height={16} className="icon-spin" />
@@ -721,7 +1084,7 @@ export default function AdminPatrimonios() {
             <button
               type="button"
               className="btn-outline"
-              disabled={salvando}
+              disabled={salvando || operandoImagem}
               onClick={cancelarFormulario}
             >
               Cancelar

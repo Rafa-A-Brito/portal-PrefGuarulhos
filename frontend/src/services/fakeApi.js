@@ -23,6 +23,28 @@ import api from "./api";
 const POR_PAGINA = 100; // máximo aceito pelo backend (limite: 1..100)
 const MAX_PAGINAS = 50; // trava de segurança contra loop infinito
 
+/**
+ * URL pública de um arquivo em /uploads. O banco guarda só o caminho
+ * ("/uploads/patrimonios/x.jpg"); o arquivo é servido pelo Express, não pelo
+ * Vite. Com a base da API relativa (Docker: "/api" + Nginx) o caminho já
+ * funciona na mesma origem; com a base absoluta (dev local) é preciso
+ * prefixar a origem do backend.
+ *
+ * O padrão da base TEM que ser o mesmo de services/api.js, senão em dev sem
+ * .env a API responde em localhost:3333 e a imagem seria pedida ao Vite.
+ */
+export function resolverUrlPublica(url) {
+  if (!url || !url.startsWith("/uploads/")) return url ?? "";
+  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api";
+  if (base.startsWith("/")) return url;
+  try {
+    const apiUrl = new URL(base);
+    return `${apiUrl.origin}${url}`;
+  } catch {
+    return url;
+  }
+}
+
 function avisarFallback(origem, err) {
   console.warn(
     `[fakeApi] Backend indisponível em "${origem}" (${err.message}). ` +
@@ -41,6 +63,19 @@ async function carregarMock() {
 }
 
 /**
+ * Decimal do Prisma chega como string ("-23.4543000"); null/undefined/"" não
+ * são coordenada (Number("") e Number(null) dariam 0). Devolve número finito
+ * ou null.
+ */
+function coordenadaParaNumero(valor) {
+  if (valor === null || valor === undefined) return null;
+  if (typeof valor === "string" && valor.trim() === "") return null;
+
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+/**
  * Formato do backend → formato que o resto do front espera. Se "p" já vier
  * achatado (mock local), devolve como está.
  */
@@ -48,17 +83,26 @@ export function normalizarPatrimonio(p) {
   if (!p) return p;
   if (typeof p.categoria === "string") return p;
 
-  const detalhes = [
-    p.historia && { icone: "historia", titulo: "História", texto: p.historia },
-    p.importanciaCultural && {
-      icone: "importancia",
-      titulo: "Importância cultural",
-      texto: p.importanciaCultural,
-    },
-  ].filter(Boolean);
+  const detalhesApi = Array.isArray(p.detalhes) ? p.detalhes : [];
+  const detalhes = detalhesApi.length
+    ? detalhesApi
+    : [
+        p.historia && {
+          icone: "historia",
+          titulo: "História",
+          texto: p.historia,
+        },
+        p.importanciaCultural && {
+          icone: "importancia",
+          titulo: "Importância cultural",
+          texto: p.importanciaCultural,
+        },
+      ].filter(Boolean);
 
   const adicionais = p.categoriasAdicionais ?? [];
   const loc = p.localizacao;
+  const lat = coordenadaParaNumero(loc?.latitude);
+  const lng = coordenadaParaNumero(loc?.longitude);
 
   return {
     id: p.slug,
@@ -82,12 +126,12 @@ export function normalizarPatrimonio(p) {
     descricao: p.descricao,
     historia: p.historia ?? "",
     importanciaCultural: p.importanciaCultural ?? "",
-    imagemPrincipal: p.imagens?.[0]?.url ?? "",
-    imagens: p.imagens ?? [],
-    localizacao:
-      loc?.latitude != null && loc?.longitude != null
-        ? { lat: Number(loc.latitude), lng: Number(loc.longitude) }
-        : null,
+    imagemPrincipal: resolverUrlPublica(p.imagens?.[0]?.url),
+    imagens: (p.imagens ?? []).map((imagem) => ({
+      ...imagem,
+      url: resolverUrlPublica(imagem.url),
+    })),
+    localizacao: lat !== null && lng !== null ? { lat, lng } : null,
     detalhes,
   };
 }
@@ -151,8 +195,9 @@ export function calcularEstatisticas(patrimonios) {
     totalBens: patrimonios.length,
     totalBairros: new Set(patrimonios.map((p) => p.bairro).filter(Boolean))
       .size,
-    totalCategorias: new Set(patrimonios.flatMap((p) => p.categorias ?? [p.categoria]))
-      .size,
+    totalCategorias: new Set(
+      patrimonios.flatMap((p) => p.categorias ?? [p.categoria]),
+    ).size,
     primeiroTombamento: 1988,
   };
 }

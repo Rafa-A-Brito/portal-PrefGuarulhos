@@ -9,23 +9,25 @@
  *  - resultados ficam em cache em memória durante a sessão;
  *  - falhas não entram no cache.
  *
- * MODO DEMONSTRAÇÃO (padrão): sem VITE_GEOCODING_ATIVO=true as coordenadas
- * são SIMULADAS perto do centro de Guarulhos, só para o fluxo funcionar sem
- * chave nem custo. Nada é enviado ao Google.
+ * MODO DEMONSTRAÇÃO (padrão): sem VITE_GEOCODING_ATIVO=true NADA é enviado
+ * ao Google e NENHUMA coordenada é inventada: geocodificarEndereco devolve
+ * null. Quem salva decide o que fazer com isso (o admin salva sem
+ * coordenadas e, se o endereço mudou, limpa as antigas).
  *
  * MODO REAL: usa google.maps.Geocoder (Maps JavaScript API), que permite
- * restringir a chave por domínio. Exige que o script do Google Maps já
- * esteja carregado na página. DECISÃO PENDENTE com o backend: geocodificar
- * no front (como aqui) ou numa rota do backend com chave de servidor, que é
- * o mais seguro. Não use a Geocoding REST com chave no navegador.
+ * restringir a chave por domínio. O script é carregado por
+ * hooks/useGoogleMaps.js (o mesmo do mapa público). Como o salvar pode ser
+ * clicado antes de o script terminar de carregar, a geocodificação espera
+ * (até um limite) o Geocoder existir em vez de falhar com "window.google
+ * ausente". DECISÃO PENDENTE com o backend: geocodificar no front (como
+ * aqui) ou numa rota do backend com chave de servidor, que é o mais seguro.
+ * Não use a Geocoding REST com chave no navegador.
  */
 import { ErroApp } from "../utils/erros";
 
 const GEOCODING_ATIVO = import.meta.env.VITE_GEOCODING_ATIVO === "true";
 
 export const GEOCODING_EM_MODO_DEMO = !GEOCODING_ATIVO;
-
-const CENTRO_GUARULHOS = { lat: -23.4543, lng: -46.5333 };
 
 // Caixa aproximada do município, só para barrar resultados de outra cidade.
 const LIMITES_GUARULHOS = {
@@ -75,40 +77,48 @@ function dentroDeGuarulhos({ lat, lng }) {
   );
 }
 
-function coordenadasDeDemonstracao(chave) {
-  let h = 0;
-  for (const caractere of chave) h = (h * 31 + caractere.charCodeAt(0)) >>> 0;
+const ESPERA_MAXIMA_MS = 10000; // quanto esperar o script do Maps carregar
+const INTERVALO_MS = 150;
 
-  const deslocLat = ((h % 600) - 300) / 10000; // até ±0,03°
-  const deslocLng = (((h >> 8) % 600) - 300) / 10000;
+/**
+ * Resolve quando google.maps.Geocoder existe; rejeita por tempo esgotado.
+ * Não faz requisição nenhuma: só olha se o script (carregado pelo
+ * useGoogleMaps) já terminou.
+ */
+function aguardarGeocoder() {
+  return new Promise((resolve, reject) => {
+    const inicio = Date.now();
 
-  return new Promise((resolve) =>
-    setTimeout(
-      () =>
-        resolve({
-          lat: CENTRO_GUARULHOS.lat + deslocLat,
-          lng: CENTRO_GUARULHOS.lng + deslocLng,
-        }),
-      500,
-    ),
-  );
+    const verificar = () => {
+      const Geocoder = window.google?.maps?.Geocoder;
+
+      if (Geocoder) {
+        resolve(Geocoder);
+        return;
+      }
+
+      if (Date.now() - inicio >= ESPERA_MAXIMA_MS) {
+        reject(
+          new ErroApp(
+            "ERR-GEO-INDISPONIVEL",
+            "O serviço de mapas não está disponível agora. Tente novamente em instantes.",
+            "google.maps.Geocoder não encontrado (script do Maps não carregou a tempo)",
+          ),
+        );
+        return;
+      }
+
+      setTimeout(verificar, INTERVALO_MS);
+    };
+
+    verificar();
+  });
 }
 
-function geocodificarComGoogle(consulta) {
+async function geocodificarComGoogle(consulta) {
+  const Geocoder = await aguardarGeocoder();
+
   return new Promise((resolve, reject) => {
-    const Geocoder = window.google?.maps?.Geocoder;
-
-    if (!Geocoder) {
-      reject(
-        new ErroApp(
-          "ERR-GEO-INDISPONIVEL",
-          "O serviço de mapas não está disponível agora. Tente novamente em instantes.",
-          "google.maps.Geocoder não encontrado (script do Maps não carregado?)",
-        ),
-      );
-      return;
-    }
-
     new Geocoder().geocode(
       {
         address: consulta,
@@ -146,16 +156,17 @@ function geocodificarComGoogle(consulta) {
 
 /**
  * @param {{cep: string, endereco: string, numero?: string, bairro: string}} local
- * @returns {Promise<{lat: number, lng: number}>}
+ * @returns {Promise<{lat: number, lng: number} | null>} null no modo
+ *   demonstração (geocodificação desligada): não há coordenadas a devolver.
  */
 export async function geocodificarEndereco(local) {
+  if (GEOCODING_EM_MODO_DEMO) return null;
+
   const chave = chaveEndereco(local);
 
   if (cache.has(chave)) return cache.get(chave);
 
-  const bruto = GEOCODING_ATIVO
-    ? await geocodificarComGoogle(montarEndereco(local))
-    : await coordenadasDeDemonstracao(chave);
+  const bruto = await geocodificarComGoogle(montarEndereco(local));
 
   const coordenadas = {
     lat: arredondar(bruto.lat),

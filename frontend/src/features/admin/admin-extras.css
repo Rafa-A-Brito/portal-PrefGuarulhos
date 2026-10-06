@@ -297,9 +297,18 @@
   font-size: 12px;
   font-weight: 600;
 }
-.admin-status--RASCUNHO { background: rgba(250, 183, 72, 0.26); color: #8a5a00; }
-.admin-status--PUBLICADO { background: rgba(28, 161, 65, 0.15); color: #11672a; }
-.admin-status--ARQUIVADO { background: rgba(91, 100, 114, 0.16); color: #4a5260; }
+.admin-status--RASCUNHO {
+  background: rgba(250, 183, 72, 0.26);
+  color: #8a5a00;
+}
+.admin-status--PUBLICADO {
+  background: rgba(28, 161, 65, 0.15);
+  color: #11672a;
+}
+.admin-status--ARQUIVADO {
+  background: rgba(91, 100, 114, 0.16);
+  color: #4a5260;
+}
 .admin-form-check-grid {
   display: flex;
   flex-wrap: wrap;
@@ -309,5 +318,64 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-weight: 400;
+}
+
+/* ---------- 6) Imagens do patrimônio (envio no formulário) ----------
+   Reaproveita .admin-upload-* e .admin-status do bloco 5. Para desfazer,
+   apague este bloco. */
+.admin-imagens-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  align-self: stretch;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-imagem-item {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-imagem-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--paper);
+}
+
+.admin-imagem-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+.admin-upload-remover:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-imagem-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: stretch;
+  margin-bottom: 10px;
+}
+
+/* .admin-form label é flex em coluna; o checkbox precisa ficar na linha */
+.admin-form .admin-imagem-capa {
+  flex-direction: row;
+  align-items: center;
   font-weight: 400;
 }
