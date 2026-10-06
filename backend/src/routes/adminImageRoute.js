@@ -14,7 +14,7 @@ router.use(authenticate, authorize("ADMIN", "EDITOR"));
 router.post(
     "/patrimonios/:id/imagens",
     validateParams(patrimonioIdParamsSchema),
-    uploadImagem,
+    uploadImagem("patrimonios"),
     upload
 );
 router.delete(

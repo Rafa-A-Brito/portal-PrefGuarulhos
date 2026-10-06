@@ -1,11 +1,11 @@
-import { criarImagemPatrimonio, removerImagemPatrimonio } from "../services/imagemService.js";
+import { criarImagemPatrimonio, removerImagemPatrimonio } from "../services/imageService.js";
 
 export async function upload(req, res) {
     const imagem = await criarImagemPatrimonio(
         req.validatedParams.id,
         req.file,
         req.body,
-        req.user,
+        req.user
     );
     res.status(201).json({ success: true, data: imagem });
 }
