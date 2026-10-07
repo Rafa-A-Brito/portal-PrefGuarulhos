@@ -7,6 +7,8 @@
  *   POST  /auth/login                     público
  *   PATCH /auth/senha                     ADMIN e EDITOR
  *   POST  /admins                         ADMIN
+ *   GET   /admins e /admins/:id           ADMIN
+ *   PATCH /admins/:id e /admins/:id/status ADMIN
  *   GET   /admin/patrimonios              ADMIN e EDITOR (todos os status)
  *   GET   /admin/patrimonios/:id          ADMIN e EDITOR (UUID)
  *   POST  /admin/patrimonios              ADMIN e EDITOR (nasce RASCUNHO)
@@ -19,7 +21,7 @@
  * Não há GET de imagens: elas vêm dentro do detalhe do patrimônio
  * (GET /admin/patrimonios/:id -> data.imagens).
  *
- * NÃO existem no backend: listar/editar/excluir usuários e excluir
+ * NÃO existem no backend: excluir usuários e excluir
  * patrimônio (só arquivar).
  */
 import api from "./api";
@@ -34,6 +36,26 @@ import {
 /** role: "ADMIN" | "EDITOR". A senha precisa ter 12+ caracteres. */
 export async function criarUsuario({ nome, email, role, password }) {
   const { data } = await api.post("/admins", { nome, email, role, password });
+  return data.data;
+}
+
+export async function listarUsuarios(params = {}, signal) {
+  const { data } = await api.get("/admins", { params, signal });
+  return data.data;
+}
+
+export async function buscarUsuario(id) {
+  const { data } = await api.get(`/admins/${id}`);
+  return data.data;
+}
+
+export async function atualizarUsuario(id, { nome, email, role }) {
+  const { data } = await api.patch(`/admins/${id}`, { nome, email, role });
+  return data.data;
+}
+
+export async function alterarStatusUsuario(id, ativo) {
+  const { data } = await api.patch(`/admins/${id}/status`, { ativo });
   return data.data;
 }
 

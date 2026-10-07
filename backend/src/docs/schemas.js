@@ -129,13 +129,15 @@ export const schemas = {
     },
     Admin: {
         type: "object",
-        required: ["id", "nome", "email", "role", "ativo"],
+        required: ["id", "nome", "email", "role", "ativo", "criadoEm", "atualizadoEm"],
         properties: {
             id: string("UUID", { format: "uuid" }),
             nome: { type: "string" },
             email: string("E-mail", { format: "email" }),
             role: ref("Role"),
-            ativo: { type: "boolean", enum: [true] },
+            ativo: { type: "boolean" },
+            criadoEm: { type: "string", format: "date-time" },
+            atualizadoEm: { type: "string", format: "date-time" },
         },
     },
     AdminResponse: {
@@ -767,3 +769,29 @@ for (const nome of ["Exposicao", "Novidade"]) {
 schemas.ConteudoExcluidoResponse = conteudoEnvelope({
     type: "object", required: ["id"], properties: { id: { type: "string", format: "uuid" } },
 });
+
+schemas.AdminPatch = {
+    type: "object", additionalProperties: false, minProperties: 1,
+    properties: {
+        nome: schemas.AdminRequest.properties.nome,
+        email: schemas.AdminRequest.properties.email,
+        role: ref("Role"),
+    },
+};
+schemas.AdminStatus = {
+    type: "object", additionalProperties: false, required: ["ativo"],
+    properties: { ativo: { type: "boolean" } },
+};
+schemas.AdminListaResponse = {
+    type: "object", required: ["success", "data"],
+    properties: {
+        success: { type: "boolean", enum: [true] },
+        data: {
+            type: "object", required: ["itens", "paginacao"],
+            properties: {
+                itens: { type: "array", items: ref("Admin") },
+                paginacao: ref("Paginacao"),
+            },
+        },
+    },
+};

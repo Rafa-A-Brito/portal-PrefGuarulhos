@@ -136,10 +136,12 @@ test("ADMIN cria contas ADMIN e EDITOR ativas, com hash e resposta sem senha", a
                 email: true,
                 role: true,
                 isActive: true,
+                createdAt: true,
+                updatedAt: true,
             });
             assert.equal(data.isActive, true);
             assert.equal("id" in data, false);
-            const stored = { id: randomUUID(), ...data };
+            const stored = { id: randomUUID(), ...data, createdAt: new Date("2026-01-01T00:00:00.000Z"), updatedAt: new Date("2026-01-01T00:00:00.000Z") };
             created.push(stored);
             return stored;
         },
@@ -165,6 +167,8 @@ test("ADMIN cria contas ADMIN e EDITOR ativas, com hash e resposta sem senha", a
                 email,
                 role,
                 ativo: true,
+                criadoEm: created.at(-1).createdAt.toISOString(),
+                atualizadoEm: created.at(-1).updatedAt.toISOString(),
             });
             assert.equal(created.at(-1).name, "Maria");
             assert.notEqual(created.at(-1).passwordHash, password);

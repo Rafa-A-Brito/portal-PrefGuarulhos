@@ -61,7 +61,7 @@ export const paths = {
             security: bearerAuth,
             requestBody: body("AdminRequest", { nome: "Maria Exemplo", email: "maria@example.org", role: "EDITOR", password: "SenhaFicticia123!" }),
             responses: {
-                201: response("Conta criada.", "AdminResponse", { success: true, data: { id: usuarioId, nome: "Maria Exemplo", email: "maria@example.org", role: "EDITOR", ativo: true } }),
+                201: response("Conta criada.", "AdminResponse", { success: true, data: { id: usuarioId, nome: "Maria Exemplo", email: "maria@example.org", role: "EDITOR", ativo: true, criadoEm: "2026-09-01T12:00:00.000Z", atualizadoEm: "2026-09-01T12:00:00.000Z" } }),
                 400: badRequest, 401: unauthorized, 403: forbidden,
                 409: error("E-mail já cadastrado (inclusive conflito simultâneo de unicidade).", "ADMIN_ALREADY_EXISTS", "Já existe um administrador cadastrado com este e-mail."),
                 413: tooLarge, 500: internal,
@@ -256,3 +256,49 @@ for (const [recurso, nome, tag] of [
         } };
     }
 }
+
+const adminId = {
+    in: "path", name: "id", required: true,
+    schema: { type: "string", format: "uuid" }, description: "UUID do usuário.",
+};
+const userResponses = {
+    200: response("Usuário sem credenciais.", "AdminResponse"),
+    400: badRequest, 401: unauthorized, 403: forbidden,
+    404: error("Usuário inexistente.", "NOT_FOUND", "Usuário não encontrado."),
+    500: internal,
+};
+paths["/api/admins"].get = {
+    tags: ["Administradores"], summary: "Lista usuários ADMIN e EDITOR",
+    description: "Somente ADMIN. Sem filtro ativo, inclui ativos e inativos. Busca nome/e-mail sem distinguir maiúsculas. Ordenação estável por nome e ID. Retorna itens e paginação mesmo quando vazio.",
+    security: bearerAuth,
+    parameters: [
+        { in: "query", name: "busca", schema: { type: "string", minLength: 1, maxLength: 254 } },
+        { in: "query", name: "role", schema: schema("Role") },
+        { in: "query", name: "ativo", schema: { type: "boolean" }, description: "Aceita true ou false; omitido inclui ambos." },
+        { in: "query", name: "pagina", schema: { type: "integer", minimum: 1, default: 1 } },
+        { in: "query", name: "limite", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+    ],
+    responses: { 200: response("Lista paginada de usuários.", "AdminListaResponse"), 400: badRequest, 401: unauthorized, 403: forbidden, 500: internal },
+};
+paths["/api/admins/{id}"] = {
+    get: {
+        tags: ["Administradores"], summary: "Consulta um usuário", description: "Somente ADMIN; inclui contas inativas.",
+        security: bearerAuth, parameters: [adminId], responses: userResponses,
+    },
+    patch: {
+        tags: ["Administradores"], summary: "Edita nome, e-mail ou perfil",
+        description: "Somente ADMIN. Exige ao menos um campo, preserva campos omitidos, normaliza e-mail para minúsculas e recusa campos desconhecidos. Não altera senha nem situação. Auto-rebaixamento retorna ADMIN_CANNOT_DEMOTE_SELF; remoção do último ADMIN ativo retorna LAST_ACTIVE_ADMIN (409). A proteção é transacional, incluindo requisições concorrentes. Não existe DELETE de usuários.",
+        security: bearerAuth, parameters: [adminId], requestBody: body("AdminPatch", { nome: "Novo nome" }),
+        responses: { ...userResponses, 413: tooLarge,
+            409: error("ADMIN_ALREADY_EXISTS, ADMIN_CANNOT_DEMOTE_SELF ou LAST_ACTIVE_ADMIN.", "ADMIN_CANNOT_DEMOTE_SELF", "Você não pode rebaixar a própria conta."),
+        },
+    },
+};
+paths["/api/admins/{id}/status"] = { patch: {
+    tags: ["Administradores"], summary: "Ativa ou desativa um usuário",
+    description: "Somente ADMIN. Aceita apenas ativo booleano. Repetir a situação atual não altera atualizadoEm. Auto-desativação retorna ADMIN_CANNOT_DEACTIVATE_SELF; desativar o último ADMIN ativo retorna LAST_ACTIVE_ADMIN (409). Verificação transacional protege contra concorrência. Conta inativa não pode fazer login nem usar JWT já emitido.",
+    security: bearerAuth, parameters: [adminId], requestBody: body("AdminStatus", { ativo: false }),
+    responses: { ...userResponses, 413: tooLarge,
+        409: error("ADMIN_CANNOT_DEACTIVATE_SELF ou LAST_ACTIVE_ADMIN.", "ADMIN_CANNOT_DEACTIVATE_SELF", "Você não pode desativar a própria conta."),
+    },
+} };

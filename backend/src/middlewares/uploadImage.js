@@ -5,17 +5,11 @@ import { randomUUID } from "node:crypto";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 
-const uploadDir =
-    process.env.UPLOAD_DIR || path.resolve(process.cwd(), "uploads");
+const uploadDir = process.env.UPLOAD_DIR || path.resolve(process.cwd(), "uploads");
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
-const TIPOS = new Set([
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-]);
+const TIPOS = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 const EXTENSOES = {
     "image/jpeg": ".jpg",
@@ -24,11 +18,7 @@ const EXTENSOES = {
     "image/gif": ".gif",
 };
 
-const PASTAS_PERMITIDAS = new Set([
-    "patrimonios",
-    "exposicoes",
-    "novidades",
-]);
+const PASTAS_PERMITIDAS = new Set(["patrimonios", "exposicoes", "novidades"]);
 
 function parseContentDisposition(value) {
     const out = {};
@@ -53,9 +43,7 @@ function parseHeaders(buffer) {
         const index = line.indexOf(":");
 
         if (index > 0) {
-            headers[
-                line.slice(0, index).trim().toLowerCase()
-            ] = line.slice(index + 1).trim();
+            headers[line.slice(0, index).trim().toLowerCase()] = line.slice(index + 1).trim();
         }
     }
 
@@ -64,9 +52,7 @@ function parseHeaders(buffer) {
 
 export function uploadImagem(pasta, { opcional = false } = {}) {
     if (!PASTAS_PERMITIDAS.has(pasta)) {
-        throw new Error(
-            `Pasta de upload inválida: ${pasta}`
-        );
+        throw new Error(`Pasta de upload inválida: ${pasta}`);
     }
 
     const destinoUploadDir = path.join(uploadDir, pasta);
@@ -74,22 +60,14 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
     return function uploadImagemMiddleware(req, _res, next) {
         const contentType = req.get("content-type") || "";
 
-        const match = contentType.match(
-            /^multipart\/form-data;\s*boundary=(?:"([^"]+)"|([^;]+))/i
-        );
+        const match = contentType.match(/^multipart\/form-data;\s*boundary=(?:"([^"]+)"|([^;]+))/i);
 
         if (!match) {
             if (opcional && !/^multipart\//i.test(contentType)) return next();
-            return next(
-                new BadRequestError(
-                    "Envie a imagem usando multipart/form-data."
-                )
-            );
+            return next(new BadRequestError("Envie a imagem usando multipart/form-data."));
         }
 
-        const boundary = Buffer.from(
-            `--${match[1] || match[2]}`
-        );
+        const boundary = Buffer.from(`--${match[1] || match[2]}`);
 
         const chunks = [];
 
@@ -108,12 +86,7 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
 
                 req.resume();
 
-                next(
-                    new BaseError(
-                        "O upload excede o limite de 10 MB.",
-                        413
-                    )
-                );
+                next(new BaseError("O upload excede o limite de 10 MB.", 413));
 
                 return;
             }
@@ -144,38 +117,25 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
                 while (pos !== -1) {
                     const start = pos + boundary.length;
 
-                    if (
-                        body
-                            .slice(start, start + 2)
-                            .toString() === "--"
-                    ) {
+                    if (body.slice(start, start + 2).toString() === "--") {
                         break;
                     }
 
                     const headerStart = start + 2;
 
-                    const headerEnd = body.indexOf(
-                        Buffer.from("\r\n\r\n"),
-                        headerStart
-                    );
+                    const headerEnd = body.indexOf(Buffer.from("\r\n\r\n"), headerStart);
 
                     if (headerEnd === -1) {
                         break;
                     }
 
-                    const headers = parseHeaders(
-                        body.slice(headerStart, headerEnd)
+                    const headers = parseHeaders(body.slice(headerStart, headerEnd));
+
+                    const disposition = parseContentDisposition(
+                        headers["content-disposition"] || ""
                     );
 
-                    const disposition =
-                        parseContentDisposition(
-                            headers["content-disposition"] || ""
-                        );
-
-                    const nextBoundary = body.indexOf(
-                        boundary,
-                        headerEnd + 4
-                    );
+                    const nextBoundary = body.indexOf(boundary, headerEnd + 4);
 
                     if (nextBoundary === -1) {
                         break;
@@ -183,10 +143,7 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
 
                     const contentEnd = nextBoundary - 2;
 
-                    const content = body.slice(
-                        headerEnd + 4,
-                        contentEnd
-                    );
+                    const content = body.slice(headerEnd + 4, contentEnd);
 
                     if (disposition.name === "imagem") {
                         if (opcional && !disposition.filename && content.length === 0) {
@@ -195,14 +152,10 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
                         }
                         if (file) throw new BadRequestError("Envie apenas uma imagem.");
                         if (!disposition.filename || content.length === 0) {
-                            throw new BadRequestError(
-                                "Envie um arquivo de imagem."
-                            );
+                            throw new BadRequestError("Envie um arquivo de imagem.");
                         }
 
-                        const mime = (
-                            headers["content-type"] || ""
-                        )
+                        const mime = (headers["content-type"] || "")
                             .split(";")[0]
                             .trim()
                             .toLowerCase();
@@ -214,56 +167,40 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
                         }
 
                         if (content.length > MAX_SIZE) {
-                            throw new BaseError(
-                                "A imagem deve ter no máximo 10 MB.",
-                                413
-                            );
+                            throw new BaseError("A imagem deve ter no máximo 10 MB.", 413);
                         }
 
                         fs.mkdirSync(destinoUploadDir, {
                             recursive: true,
                         });
 
-                        const filename =
-                            `${randomUUID()}${EXTENSOES[mime]}`;
+                        const filename = `${randomUUID()}${EXTENSOES[mime]}`;
 
-                        const filePath = path.join(
-                            destinoUploadDir,
-                            filename
-                        );
+                        const filePath = path.join(destinoUploadDir, filename);
 
-                        fs.writeFileSync(
-                            filePath,
-                            content
-                        );
+                        fs.writeFileSync(filePath, content);
 
                         file = req.file = {
                             filename,
-                            originalname:
-                                disposition.filename,
+                            originalname: disposition.filename,
                             mimetype: mime,
                             size: content.length,
 
                             // Caminho relativo dentro de uploads/
-                            relativePath:
-                                `${pasta}/${filename}`,
+                            relativePath: `${pasta}/${filename}`,
 
                             // URL pública que pode ser salva no banco
-                            url:
-                                `/uploads/${pasta}/${filename}`,
+                            url: `/uploads/${pasta}/${filename}`,
                         };
                     } else if (disposition.name) {
-                        req.body[disposition.name] =
-                            content.toString("utf8");
+                        req.body[disposition.name] = content.toString("utf8");
                     }
 
                     pos = nextBoundary;
                 }
 
                 if (!file && !opcional) {
-                    throw new BadRequestError(
-                        "Envie um arquivo no campo imagem."
-                    );
+                    throw new BadRequestError("Envie um arquivo no campo imagem.");
                 }
 
                 if (file) req.file = file;

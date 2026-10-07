@@ -144,6 +144,20 @@ export function AuthProvider({ children }) {
     setUsuario(null);
   }, []);
 
+  // Usa somente o DTO confirmado pela API e mantém o token e demais dados.
+  const atualizarUsuario = useCallback((atualizado) => {
+    const salva = JSON.parse(sessionStorage.getItem(CHAVE_SESSAO_MOCK) || "null");
+    if (!salva?.token || salva.user?.id !== atualizado.id) return;
+    const user = {
+      ...salva.user,
+      name: atualizado.nome,
+      email: atualizado.email,
+      role: atualizado.role,
+    };
+    sessionStorage.setItem(CHAVE_SESSAO_MOCK, JSON.stringify({ ...salva, user }));
+    setUsuario(paraUsuario(user));
+  }, []);
+
   const value = useMemo(
     () => ({
       usuario,
@@ -152,8 +166,9 @@ export function AuthProvider({ children }) {
       autenticado: !!usuario,
       login,
       logout,
+      atualizarUsuario,
     }),
-    [usuario, carregando, erro, login, logout],
+    [usuario, carregando, erro, login, logout, atualizarUsuario],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

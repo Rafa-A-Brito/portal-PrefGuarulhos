@@ -379,3 +379,12 @@
   align-items: center;
   font-weight: 400;
 }
+
+/* Gestão de usuários */
+.admin-usuarios-campos { border: 0; padding: 0; margin: 0; min-width: 0; }
+.admin-usuarios-tabela { overflow-x: auto; }
+.admin-usuarios-acoes, .admin-usuarios-paginacao { display: flex; align-items: center; gap: 10px; }
+.admin-usuarios-paginacao { flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+.admin-usuario-ativo { background: #dff3e4; color: #11672a; }
+.admin-usuario-inativo { background: #eee; color: #555; }
+.admin-usuarios button:disabled { opacity: 0.55; cursor: not-allowed; }

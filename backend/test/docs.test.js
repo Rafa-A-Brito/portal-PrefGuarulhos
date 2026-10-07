@@ -21,6 +21,10 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "POST /api/auth/login",
             "PATCH /api/auth/senha",
             "POST /api/admins",
+            "GET /api/admins",
+            "GET /api/admins/{id}",
+            "PATCH /api/admins/{id}",
+            "PATCH /api/admins/{id}/status",
             "GET /api/categorias",
             "GET /api/patrimonios",
             "GET /api/patrimonios/{slug}",
@@ -47,7 +51,7 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
         for (const operation of Object.values(methods)) {
             assert.equal(
                 Boolean(operation.security),
-                path === "/api/admins" ||
+                path.startsWith("/api/admins") ||
                     path === "/api/auth/senha" ||
                     path.startsWith("/api/admin/")
             );
@@ -135,5 +139,37 @@ test("OpenAPI documenta coordenadas nulas no PATCH e os contratos de Exposiçõe
         assert.equal(schemas[nome].properties.createdBy, undefined);
         assert.ok(schemas[`${nome}Admin`].properties.createdBy);
         assert.equal(schemas[`${nome}Patch`].properties.slug, undefined);
+    }
+});
+
+test("OpenAPI documenta gestão de usuários, DTO seguro e conflitos de negócio", () => {
+    const { schemas } = openapi.components;
+    assert.deepEqual(Object.keys(schemas.Admin.properties).sort(),
+        ["id", "nome", "email", "role", "ativo", "criadoEm", "atualizadoEm"].sort());
+    assert.deepEqual(schemas.Admin.required.slice().sort(), Object.keys(schemas.Admin.properties).sort());
+    assert.equal(schemas.Admin.properties.ativo.enum, undefined);
+    assert.deepEqual(Object.keys(schemas.AdminPatch.properties).sort(), ["email", "nome", "role"]);
+    assert.equal(schemas.AdminPatch.minProperties, 1);
+    assert.equal(schemas.AdminPatch.additionalProperties, false);
+    assert.equal(schemas.AdminStatus.additionalProperties, false);
+    assert.deepEqual(schemas.AdminStatus.required, ["ativo"]);
+    assert.equal(schemas.AdminStatus.properties.ativo.type, "boolean");
+    assert.deepEqual(openapi.paths["/api/admins"].get.parameters.map((item) => item.name),
+        ["busca", "role", "ativo", "pagina", "limite"]);
+    for (const path of ["/api/admins", "/api/admins/{id}", "/api/admins/{id}/status"]) {
+        assert.equal(openapi.paths[path].delete, undefined);
+        for (const operation of Object.values(openapi.paths[path])) {
+            assert.deepEqual(operation.security, [{ bearerAuth: [] }]);
+            assert.ok(operation.responses[401]);
+            assert.ok(operation.responses[403]);
+        }
+    }
+    for (const [path, code] of [
+        ["/api/admins/{id}", "ADMIN_CANNOT_DEMOTE_SELF"],
+        ["/api/admins/{id}/status", "ADMIN_CANNOT_DEACTIVATE_SELF"],
+    ]) {
+        const operation = openapi.paths[path].patch;
+        assert.match(operation.responses[409].description, new RegExp(code));
+        assert.match(operation.responses[409].description, /LAST_ACTIVE_ADMIN/);
     }
 });
