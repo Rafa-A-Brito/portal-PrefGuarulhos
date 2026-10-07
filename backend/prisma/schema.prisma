@@ -44,6 +44,10 @@ model User {
 
   patrimoniosCriados     Patrimonio[] @relation("PatrimonioCriadoPor")
   patrimoniosAtualizados Patrimonio[] @relation("PatrimonioAtualizadoPor")
+  exposicoesCriadas Exposicao[] @relation("ExposicaoCriadoPor")
+  exposicoesAtualizadas Exposicao[] @relation("ExposicaoAtualizadoPor")
+  novidadesCriadas Novidade[] @relation("NovidadeCriadoPor")
+  novidadesAtualizadas Novidade[] @relation("NovidadeAtualizadoPor")
   auditLogs              AuditLog[]
 
   @@map("users")
@@ -234,4 +238,73 @@ model PatrimonioCategoria {
   @@id([patrimonioId, categoriaId])
   @@index([categoriaId])
   @@map("patrimonio_categoria")
+}
+
+enum TipoNovidade {
+  NOTICIA
+  EVENTO
+
+  @@map("tipo_novidade")
+}
+
+model Exposicao {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug String @unique(map: "exposicao_slug_key") @db.VarChar(220)
+  titulo String @db.VarChar(200)
+  artista String @db.VarChar(200)
+  local String @db.VarChar(250)
+  periodo String @db.VarChar(200)
+  bio String @db.Text
+  imagemUrl String @map("imagem_url") @db.Text
+  ctaSaibaMais String? @map("cta_saiba_mais") @db.Text
+  status StatusPublicacao @default(RASCUNHO)
+  createdBy String @map("created_by") @db.Uuid
+  updatedBy String? @map("updated_by") @db.Uuid
+  publicadoEm DateTime? @map("published_at") @db.Timestamptz(3)
+  arquivadoEm DateTime? @map("arquivado_em") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  criadoPor User @relation("ExposicaoCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
+  atualizadoPor User? @relation("ExposicaoAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@index([status, publicadoEm])
+  @@index([createdBy])
+  @@index([updatedBy])
+  @@map("exposicao")
+}
+
+model Novidade {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug String @unique(map: "novidade_slug_key") @db.VarChar(220)
+  tipo TipoNovidade
+  tag String @db.VarChar(100)
+  data DateTime @db.Date
+  titulo String @db.VarChar(200)
+  resumo String? @db.VarChar(2000)
+  texto String @db.Text
+  quando String? @db.VarChar(250)
+  local String? @db.VarChar(250)
+  imagemUrl String? @map("imagem_url") @db.Text
+  blocoDia String? @map("bloco_dia") @db.VarChar(30)
+  blocoMes String? @map("bloco_mes") @db.VarChar(30)
+  blocoLegenda String? @map("bloco_legenda") @db.VarChar(150)
+  ctaRotulo String? @map("cta_rotulo") @db.VarChar(150)
+  ctaUrl String? @map("cta_url") @db.Text
+  fontes Json @default("[]") @db.JsonB
+  status StatusPublicacao @default(RASCUNHO)
+  createdBy String @map("created_by") @db.Uuid
+  updatedBy String? @map("updated_by") @db.Uuid
+  publicadoEm DateTime? @map("published_at") @db.Timestamptz(3)
+  arquivadoEm DateTime? @map("arquivado_em") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  criadoPor User @relation("NovidadeCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
+  atualizadoPor User? @relation("NovidadeAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@index([status, publicadoEm])
+  @@index([status, tipo, data])
+  @@index([status, data])
+  @@index([createdBy])
+  @@index([updatedBy])
+  @@map("novidade")
 }

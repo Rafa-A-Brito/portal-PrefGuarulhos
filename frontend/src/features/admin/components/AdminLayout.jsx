@@ -63,6 +63,12 @@ export default function AdminLayout() {
             <BuildingLibraryIcon width={18} height={18} />
             Patrimônios
           </NavLink>
+          <NavLink to="/admin/exposicoes" className={({ isActive }) => isActive ? "active" : ""}>
+            <BuildingLibraryIcon width={18} height={18} /> Exposições
+          </NavLink>
+          <NavLink to="/admin/novidades" className={({ isActive }) => isActive ? "active" : ""}>
+            <Squares2X2Icon width={18} height={18} /> Novidades
+          </NavLink>
         </nav>
 
         <div className="admin-sidebar-footer">

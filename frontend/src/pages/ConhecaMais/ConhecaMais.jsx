@@ -10,56 +10,11 @@ import {
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
-import {
-  noticiasSetembro,
-  eventosOutubro,
-} from "../../features/mocks/novidadesMock";
+import { listarExposicoes, listarNovidades } from "../../services/conteudoApi";
+import { useConteudoPublico } from "../../hooks/useConteudoPublico";
+import EstadoConteudo from "../../components/EstadoConteudo";
 
-/**
- * NOVIDADES E AGENDA
- * -------------------------------------------------------------------------
- * Os dados ficam em mocks/novidadesMock.js e são compartilhados com a página
- * ConhecaMaisDetalhes. Aqui só se decide o que aparece em cada posição:
- *   [0] destaque grande | [1] segundo destaque | [2..] linha de cards
- *   lateral: agenda de outubro
- * "Leia mais" abre a página de detalhes já rolando até o item (#id).
- */
-const PORTAL_PREFEITURA = "https://www.guarulhos.sp.gov.br";
 const ROTA_DETALHES = "/conheca-mais/detalhes";
-
-/**
- * EXPOSIÇÕES E ARTISTAS EM DESTAQUE
- * -------------------------------------------------------------------------
- * Conteúdo de exemplo/placeholder (mantido como estava). Antes de publicar,
- * troque "bio" e "imagem" pelo material real da Secretaria de Cultura.
- */
-const exposicoes = [
-  {
-    id: "expo-roberto-farias",
-    periodo: "Em cartaz",
-    titulo: "Mostra individual — Roberto Farias",
-    artista: "Roberto Faria",
-    local: "Centro Cultural de Guarulhos",
-    bio: "Artista convidado desta edição. [Substituir por biografia oficial fornecida pela Secretaria de Cultura.]",
-    imagem: "/src/assets/exposicoes/roberto_farias.jpg",
-    ctaSaibaMais: PORTAL_PREFEITURA,
-  },
-  {
-    id: "expo-coletiva-bairros",
-    periodo: "Próxima edição",
-    titulo: "Coletiva de artistas dos bairros",
-    artista: "Diversos artistas locais",
-    local: "A definir",
-    bio: "Mostra coletiva reunindo produção de artistas visuais ligados aos Pontos de Cultura do município. [Conteúdo de exemplo — atualizar com a programação real.]",
-    imagem: "/src/assets/exposicoes/coletiva_bairros.jpg",
-    ctaSaibaMais: PORTAL_PREFEITURA,
-  },
-];
-
-/**
- * E-mail de contato do CTA "Quero expor meu trabalho". Endereço ilustrativo:
- * troque pelo canal real da Secretaria de Cultura antes de publicar.
- */
 const EMAIL_CULTURA = "cultura@guarulhos.sp.gov.br";
 
 // "2025-05-16" -> "16 de maio de 2025". O "T12:00:00" evita que o fuso
@@ -78,6 +33,7 @@ function esconderImagemQuebrada(e) {
 }
 
 function NoticiaImagem({ noticia }) {
+  if (!noticia.imagem) return null;
   return (
     <figure className="noticia-figure">
       <img
@@ -115,7 +71,12 @@ export default function ConhecaMais() {
   const navigate = useNavigate();
   const { estatisticas, carregando } = usePatrimoniosContext();
 
-  const [destaque, segundo, ...demais] = noticiasSetembro;
+  const novidades = useConteudoPublico(listarNovidades);
+  const exposicoesEstado = useConteudoPublico(listarExposicoes);
+  const exposicoes = exposicoesEstado.itens;
+  const noticias = novidades.itens.filter((item) => item.tipo === "NOTICIA");
+  const eventos = novidades.itens.filter((item) => item.tipo === "EVENTO");
+  const [destaque, segundo, ...demais] = noticias;
 
   return (
     <div>
@@ -201,10 +162,11 @@ export default function ConhecaMais() {
             </div>
           </div>
 
+          <EstadoConteudo estado={novidades} nome="novidades" />
           <div className="noticias">
             <div className="noticias-main">
               <div className="noticias-top">
-                {[destaque, segundo].map((n) => (
+                {[destaque, segundo].filter(Boolean).map((n) => (
                   <article
                     key={n.id}
                     className="noticia-card noticia-card--destaque"
@@ -243,10 +205,10 @@ export default function ConhecaMais() {
               </div>
             </div>
 
-            <aside className="noticias-side" aria-label="Agenda de outubro">
-              <h3>Agenda de outubro</h3>
+            <aside className="noticias-side" aria-label="Agenda de eventos">
+              <h3>Agenda de eventos</h3>
               <ul>
-                {eventosOutubro.map((e) => (
+                {eventos.map((e) => (
                   <li key={e.id}>
                     <Link to={`${ROTA_DETALHES}#${e.id}`} className="ultima">
                       <span className="ultima-data">
@@ -261,7 +223,7 @@ export default function ConhecaMais() {
                   </li>
                 ))}
               </ul>
-              <Link className="noticias-todas" to={`${ROTA_DETALHES}#outubro`}>
+              <Link className="noticias-todas" to={ROTA_DETALHES}>
                 Ver agenda completa
                 <ArrowRightIcon width={14} height={14} />
               </Link>
@@ -289,6 +251,7 @@ export default function ConhecaMais() {
             </div>
           </div>
 
+          <EstadoConteudo estado={exposicoesEstado} nome="exposições" />
           <div className="expo-grid">
             {exposicoes.map((e) => (
               <article key={e.id} className="expo-card">
@@ -301,7 +264,7 @@ export default function ConhecaMais() {
                   <span className="artista">{e.artista}</span>
                   <span className="local">{e.local}</span>
                   <p>{e.bio}</p>
-                  <div className="expo-cta-row">
+                  {e.ctaSaibaMais && <div className="expo-cta-row">
                     <a
                       className="btn-solid"
                       href={e.ctaSaibaMais}
@@ -310,7 +273,7 @@ export default function ConhecaMais() {
                     >
                       Saiba mais
                     </a>
-                  </div>
+                  </div>}
                 </div>
               </article>
             ))}

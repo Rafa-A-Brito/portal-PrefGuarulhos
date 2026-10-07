@@ -28,7 +28,11 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         const originalSlug = patrimonio.slug;
         await assert.rejects(service.getPatrimonioBySlug(originalSlug), { statusCode: 404 });
         await service.updatePatrimonio(id, { nome: `${key} editado`, localizacao: { endereco: "Rua", bairro: "Centro", latitude: -23, longitude: -46 } }, user);
-        await service.updatePatrimonio(id, { localizacao: { latitude: -24 } }, user);
+        await assert.rejects(
+            service.updatePatrimonio(id, { localizacao: { latitude: -24 } }, user),
+            { statusCode: 400 }
+        );
+        await service.updatePatrimonio(id, { localizacao: { latitude: -24, longitude: -46 } }, user);
         const edited = await service.getAdminPatrimonio(id);
         assert.deepEqual(edited.categoriasAdicionais.map((item) => item.id), [categoriaAdicional.id]);
         assert.equal(edited.slug, originalSlug);

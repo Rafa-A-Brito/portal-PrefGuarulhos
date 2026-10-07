@@ -134,7 +134,7 @@ paths["/api/admin/patrimonios"].get = {
 paths["/api/admin/patrimonios/{id}"] = {
     get: { tags: ["Patrimônios administrativos"], summary: "Consulta detalhes para edição", description: "ADMIN e EDITOR podem consultar qualquer status, incluindo rascunhos e arquivados.", security: bearerAuth, parameters: [idParameter], responses: adminResponses },
     patch: { tags: ["Patrimônios administrativos"], summary: "Edita parcialmente um patrimônio",
-        description: "EDITOR edita somente RASCUNHO; ADMIN edita qualquer status. Preserva campos omitidos e slug, registra updatedBy. Permite alterar categoriasAdicionais preservando a regra de até 6 categorias distintas da principal. Recusa corpo vazio, campos desconhecidos, status, autoria, IDs do patrimônio, datas e mídias. Categoria inexistente retorna 400. Localização é criada ou atualizada em transação, validando as coordenadas finais.",
+        description: "EDITOR edita somente RASCUNHO; ADMIN edita qualquer status. Preserva campos omitidos e slug, registra updatedBy. Permite alterar categoriasAdicionais preservando a regra de até 6 categorias distintas da principal. Recusa corpo vazio, campos desconhecidos, status, autoria, IDs do patrimônio, datas e mídias. Categoria inexistente retorna 400. Localização é criada ou atualizada em transação. Latitude e longitude devem ser enviadas juntas: dois números atualizam, null/null limpa e ambas omitidas preservam a posição. Valida o estado final e rejeita pares incompletos.",
         security: bearerAuth, parameters: [idParameter], requestBody: body("PatrimonioPatch", { nome: "Novo nome", localizacao: { bairro: "Centro" } }), responses: { ...adminResponses, 413: tooLarge },
     },
 };
@@ -161,4 +161,98 @@ for (const [action, summary, description] of [
         security: bearerAuth, parameters: [idParameter], responses: { ...adminResponses, 413: tooLarge },
         requestBody: { required: false, content: { "application/json": { schema: { type: "object", additionalProperties: false }, example: {} } } },
     } };
+}
+
+const conteudoId = {
+    in: "path", name: "id", required: true,
+    schema: { type: "string", format: "uuid" }, description: "UUID do conteúdo.",
+};
+const conteudoFiltros = [
+    { in: "query", name: "busca", schema: { type: "string", minLength: 1, maxLength: 200 }, description: "Busca no título, sem diferenciar maiúsculas/minúsculas." },
+    { in: "query", name: "pagina", schema: { type: "integer", minimum: 1, default: 1 } },
+    { in: "query", name: "limite", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+];
+const conteudoErros = {
+    400: badRequest, 401: unauthorized, 403: forbidden,
+    404: error("Conteúdo inexistente.", "NOT_FOUND", "Conteúdo não encontrado."),
+    409: error("Conflito de unicidade.", "CONFLICT", "Já existe um registro com os dados únicos informados."),
+    413: error("JSON acima de 100 kb ou upload acima dos limites (imagem de até 10 MB).", "INTERNAL_ERROR", "Corpo da requisição muito grande."),
+    500: internal,
+};
+function conteudoBody(nome, multipart, novidade, required = true) {
+    const encoding = novidade ? Object.fromEntries(
+        ["bloco", "cta", "fontes", "imagemUrl"].filter((campo) => campo !== "imagemUrl" || nome.endsWith("Patch"))
+            .map((campo) => [campo, { contentType: "application/json" }])
+    ) : undefined;
+    return {
+        required,
+        description: "Use multipart/form-data para enviar imagem. Objetos bloco/cta e array fontes são serializados como JSON nos campos multipart.",
+        content: {
+            ...(nome !== "ExposicaoCreate" && { "application/json": { schema: schema(nome) } }),
+            "multipart/form-data": { schema: schema(multipart), ...(encoding && { encoding }) },
+        },
+    };
+}
+for (const [recurso, nome, tag] of [
+    ["exposicoes", "Exposicao", "Exposições"],
+    ["novidades", "Novidade", "Novidades"],
+]) {
+    const novidade = recurso === "novidades";
+    const publico = `/api/${recurso}`;
+    const admin = `/api/admin/${recurso}`;
+    const parametros = [
+        ...conteudoFiltros,
+        ...(novidade ? [{ in: "query", name: "tipo", schema: schema("TipoNovidade") }] : []),
+    ];
+    const respostas = { ...conteudoErros, 200: response("Conteúdo administrativo.", `${nome}AdminResponse`) };
+    paths[publico] = { get: {
+        tags: [tag], summary: `Lista ${recurso} publicados`,
+        description: `Pública, somente PUBLICADO. Não aceita filtro de status. ${novidade ? "Ordena por data decrescente e ID; data usa YYYY-MM-DD." : "Ordena por publicação decrescente, criação decrescente e ID."} Retorna itens e paginação, inclusive quando vazio.`,
+        parameters: parametros,
+        responses: { 200: response("Lista pública paginada.", `${nome}ListaResponse`), 400: badRequest, 500: internal },
+    } };
+    paths[admin] = {
+        get: {
+            tags: [tag], summary: `Lista ${recurso} de todos os status`,
+            description: "ADMIN e EDITOR. Sem filtro de status inclui rascunhos, publicados e arquivados.",
+            security: bearerAuth,
+            parameters: [...parametros, { in: "query", name: "status", schema: schema("StatusPublicacao") }],
+            responses: { 200: response("Lista administrativa paginada.", `${nome}AdminListaResponse`), 400: badRequest, 401: unauthorized, 403: forbidden, 500: internal },
+        },
+        post: {
+            tags: [tag], summary: `Cria ${novidade ? "novidade" : "exposição"}`,
+            description: `ADMIN e EDITOR; EDITOR cria somente RASCUNHO. Slug gerado no POST e imutável. ${novidade ? "Imagem opcional; data obrigatória e resumo obrigatório para NOTICIA." : "Imagem obrigatória no campo imagem (multipart/form-data)."}`,
+            security: bearerAuth,
+            requestBody: conteudoBody(`${nome}Create`, `${nome}CreateMultipart`, novidade),
+            responses: { ...conteudoErros, 201: response("Conteúdo criado.", `${nome}AdminResponse`) },
+        },
+    };
+    paths[`${admin}/{id}`] = {
+        get: {
+            tags: [tag], summary: "Consulta conteúdo para edição", security: bearerAuth,
+            description: "ADMIN e EDITOR consultam qualquer status.",
+            parameters: [conteudoId], responses: respostas,
+        },
+        patch: {
+            tags: [tag], summary: "Edita conteúdo parcialmente", security: bearerAuth,
+            description: `EDITOR edita somente RASCUNHO e não pode publicar/arquivar. ADMIN edita qualquer status. Preserva slug e campos omitidos. Aceita JSON ou multipart sem trocar imagem. ${novidade ? "imagemUrl: null remove a imagem; se o resultado for NOTICIA, resumo é obrigatório." : "Não permite remover a imagem da exposição."} A troca salva o banco antes de apagar a imagem antiga.`,
+            parameters: [conteudoId],
+            requestBody: conteudoBody(`${nome}Patch`, `${nome}PatchMultipart`, novidade),
+            responses: respostas,
+        },
+        delete: {
+            tags: [tag], summary: "Exclui conteúdo", security: bearerAuth,
+            description: "Somente ADMIN, inclusive para PUBLICADO. Remove o registro e depois o arquivo de imagem.",
+            parameters: [conteudoId],
+            responses: { ...conteudoErros, 200: response("Conteúdo excluído.", "ConteudoExcluidoResponse") },
+        },
+    };
+    for (const [acao, resumo] of [["publicar", "Publica ou republica conteúdo"], ["arquivar", "Arquiva conteúdo"]]) {
+        paths[`${admin}/{id}/${acao}`] = { patch: {
+            tags: [tag], summary: resumo, security: bearerAuth,
+            description: "Somente ADMIN. Atualiza status e autoria; muda a visibilidade na API pública. Define o timestamp quando há mudança de status.",
+            parameters: [conteudoId], responses: respostas,
+            requestBody: { required: false, content: { "application/json": { schema: { type: "object", additionalProperties: false }, example: {} } } },
+        } };
+    }
 }

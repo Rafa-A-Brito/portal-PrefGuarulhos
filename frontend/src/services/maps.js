@@ -11,7 +11,7 @@
  *
  * MODO DEMONSTRAÇÃO (padrão): sem VITE_GEOCODING_ATIVO=true NADA é enviado
  * ao Google e NENHUMA coordenada é inventada: geocodificarEndereco devolve
- * null. Quem salva decide o que fazer com isso (o admin salva sem
+ * null. Quem salva decide o que fazer com isso (o admn salva sem
  * coordenadas e, se o endereço mudou, limpa as antigas).
  *
  * MODO REAL: usa google.maps.Geocoder (Maps JavaScript API), que permite

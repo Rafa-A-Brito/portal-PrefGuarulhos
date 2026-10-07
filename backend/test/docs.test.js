@@ -1,19 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import SwaggerParser from "@apidevtools/swagger-parser";
-<<<<<<< HEAD
-import openapi from "../docs/openApi.js";
-=======
 import openapi from "../src/docs/openapi.js";
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
 
 test("especificação OpenAPI válida, com referências, rotas e autenticação corretas", async () => {
-    await SwaggerParser.validate(openapi);
+    await SwaggerParser.validate(structuredClone(openapi));
     assert.equal(openapi.openapi, "3.0.3");
     assert.deepEqual(openapi.servers, [{ url: "/" }]);
 
     const operations = Object.entries(openapi.paths).flatMap(([path, methods]) =>
-<<<<<<< HEAD
         Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)
     );
     assert.deepEqual(
@@ -26,6 +21,7 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "POST /api/auth/login",
             "PATCH /api/auth/senha",
             "POST /api/admins",
+            "GET /api/categorias",
             "GET /api/patrimonios",
             "GET /api/patrimonios/{slug}",
             "POST /api/admin/patrimonios",
@@ -34,6 +30,16 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "PATCH /api/admin/patrimonios/{id}",
             "PATCH /api/admin/patrimonios/{id}/publicar",
             "PATCH /api/admin/patrimonios/{id}/arquivar",
+            ...["exposicoes", "novidades"].flatMap((recurso) => [
+                `GET /api/${recurso}`,
+                `GET /api/admin/${recurso}`,
+                `POST /api/admin/${recurso}`,
+                `GET /api/admin/${recurso}/{id}`,
+                `PATCH /api/admin/${recurso}/{id}`,
+                `PATCH /api/admin/${recurso}/{id}/publicar`,
+                `PATCH /api/admin/${recurso}/{id}/arquivar`,
+                `DELETE /api/admin/${recurso}/{id}`,
+            ]),
         ].sort()
     );
 
@@ -43,35 +49,16 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
                 Boolean(operation.security),
                 path === "/api/admins" ||
                     path === "/api/auth/senha" ||
-                    path.startsWith("/api/admin/patrimonios")
+                    path.startsWith("/api/admin/")
             );
-=======
-        Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`));
-    assert.deepEqual(operations.sort(), [
-        "GET /api", "GET /api/health", "GET /api/docs", "GET /api/docs.json",
-        "POST /api/auth/login", "PATCH /api/auth/senha", "POST /api/admins", "GET /api/patrimonios",
-        "GET /api/patrimonios/{slug}", "POST /api/admin/patrimonios",
-        "GET /api/admin/patrimonios", "GET /api/admin/patrimonios/{id}",
-        "PATCH /api/admin/patrimonios/{id}", "PATCH /api/admin/patrimonios/{id}/publicar",
-        "PATCH /api/admin/patrimonios/{id}/arquivar",
-    ].sort());
-
-    for (const [path, methods] of Object.entries(openapi.paths)) {
-        for (const operation of Object.values(methods)) {
-            assert.equal(Boolean(operation.security), path === "/api/admins" || path === "/api/auth/senha" || path.startsWith("/api/admin/patrimonios"));
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
         }
     }
     assert.equal(openapi.components.schemas.AdminRequest.properties.password.writeOnly, true);
     assert.equal(openapi.components.schemas.LoginRequest.properties.password.writeOnly, true);
-<<<<<<< HEAD
     assert.equal(
         openapi.components.schemas.ChangePasswordRequest.properties.novaSenha.writeOnly,
         true
     );
-=======
-    assert.equal(openapi.components.schemas.ChangePasswordRequest.properties.novaSenha.writeOnly, true);
->>>>>>> 8f80d6bcedb0b22b49adffb83b6fa999d0463237
     assert.equal(JSON.stringify(openapi).includes("passwordHash"), false);
     assert.equal(openapi.components.schemas.PatrimonioResumo.properties.imagens.maxItems, 1);
 });
@@ -102,5 +89,51 @@ test("Swagger UI e JSON respondem sem consultar o banco", async () => {
         assert.match(await initResponse.text(), /persistAuthorization/);
     } finally {
         await new Promise((resolve) => server.close(resolve));
+    }
+});
+
+test("OpenAPI documenta coordenadas nulas no PATCH e os contratos de Exposições/Novidades", () => {
+    const schemas = openapi.components.schemas;
+    for (const campo of ["latitude", "longitude"]) {
+        assert.equal(schemas.LocalizacaoPatch.properties[campo].nullable, true);
+        assert.notEqual(schemas.LocalizacaoRequest.properties[campo].nullable, true);
+    }
+    assert.match(schemas.LocalizacaoPatch.description, /juntas/);
+    assert.match(schemas.LocalizacaoPatch.description, /null/);
+
+    const expoPost = openapi.paths["/api/admin/exposicoes"].post.requestBody.content;
+    assert.deepEqual(Object.keys(expoPost), ["multipart/form-data"]);
+    assert.ok(schemas.ExposicaoCreateMultipart.required.includes("imagem"));
+    assert.equal(schemas.ExposicaoCreateMultipart.properties.imagem.format, "binary");
+    assert.equal(schemas.ExposicaoPatch.required, undefined);
+    assert.equal(schemas.ExposicaoPatch.properties.imagemUrl, undefined);
+
+    const novidadePost = openapi.paths["/api/admin/novidades"].post.requestBody.content;
+    assert.ok(novidadePost["application/json"]);
+    assert.ok(novidadePost["multipart/form-data"]);
+    assert.ok(schemas.NovidadeCreate.required.includes("data"));
+    assert.equal(schemas.NovidadeCreate.properties.data.format, "date");
+    assert.equal(schemas.Novidade.properties.data.format, "date");
+    assert.equal(schemas.NovidadeCreateMultipart.required.includes("imagem"), false);
+    assert.ok(schemas.NovidadeCreate.oneOf[0].required.includes("resumo"));
+    assert.equal(schemas.NovidadePatch.properties.imagemUrl.nullable, true);
+    assert.deepEqual(schemas.NovidadePatch.properties.imagemUrl.enum, [null]);
+
+    for (const recurso of ["exposicoes", "novidades"]) {
+        const publico = openapi.paths[`/api/${recurso}`].get;
+        assert.equal(publico.security, undefined);
+        assert.equal(publico.parameters.some((param) => param.name === "status"), false);
+        const admin = openapi.paths[`/api/admin/${recurso}`];
+        assert.ok(admin.get.parameters.some((param) => param.name === "status"));
+        const detalhe = openapi.paths[`/api/admin/${recurso}/{id}`];
+        assert.equal(detalhe.get.parameters[0].schema.format, "uuid");
+        assert.ok(detalhe.patch.requestBody.content["application/json"]);
+        assert.ok(detalhe.patch.requestBody.content["multipart/form-data"]);
+        assert.match(detalhe.delete.description, /ADMIN.*PUBLICADO/);
+    }
+    for (const nome of ["Exposicao", "Novidade"]) {
+        assert.equal(schemas[nome].properties.createdBy, undefined);
+        assert.ok(schemas[`${nome}Admin`].properties.createdBy);
+        assert.equal(schemas[`${nome}Patch`].properties.slug, undefined);
     }
 });

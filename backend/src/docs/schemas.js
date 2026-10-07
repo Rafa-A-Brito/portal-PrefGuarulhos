@@ -487,11 +487,13 @@ schemas.LocalizacaoPatch = {
     required: undefined,
     minProperties: 1,
     description:
-        "Atualização parcial. Campos omitidos são preservados. Ao criar, endereco e bairro são obrigatórios; cidade/uf assumem Guarulhos/SP. O estado final deve ter ambas as coordenadas ou nenhuma.",
+        "Atualização parcial. Campos omitidos são preservados. Ao criar, endereco e bairro são obrigatórios; cidade/uf assumem Guarulhos/SP. Latitude e longitude devem ser enviadas juntas: dois números atualizam a posição, null/null limpa as coordenadas e ambas omitidas preservam a posição. Misturar null e número é inválido.",
     properties: {
         ...schemas.LocalizacaoRequest.properties,
         cidade: { ...schemas.LocalizacaoRequest.properties.cidade, default: undefined },
         uf: { ...schemas.LocalizacaoRequest.properties.uf, default: undefined },
+        latitude: { ...schemas.LocalizacaoRequest.properties.latitude, nullable: true },
+        longitude: { ...schemas.LocalizacaoRequest.properties.longitude, nullable: true },
     },
 };
 schemas.ChangePasswordRequest = {
@@ -626,3 +628,142 @@ schemas.CategoriasResponse = {
         },
     },
 };
+
+const conteudoTexto = (maxLength, minLength = 1) => ({ type: "string", minLength, maxLength });
+const conteudoUrl = { type: "string", format: "uri", pattern: "^https?://" };
+const conteudoStatus = {
+    ...schemas.StatusPublicacao,
+    description: "Omitido no POST: RASCUNHO. EDITOR aceita somente RASCUNHO; ADMIN pode alterar o status.",
+};
+const conteudoImagem = {
+    type: "string", format: "binary",
+    description: "Arquivo JPG, PNG, WEBP ou GIF, até 10 MB, no campo imagem.",
+};
+const exposicaoCampos = {
+    titulo: conteudoTexto(200), artista: conteudoTexto(200), local: conteudoTexto(250),
+    periodo: conteudoTexto(200), bio: conteudoTexto(20000),
+    ctaSaibaMais: { type: "string", nullable: true, pattern: "^(https?://.*|)$", description: "URL HTTP/HTTPS, texto vazio ou null." },
+    status: conteudoStatus,
+};
+schemas.TipoNovidade = { type: "string", enum: ["NOTICIA", "EVENTO"] };
+schemas.NovidadeBloco = {
+    type: "object", nullable: true, additionalProperties: false,
+    properties: {
+        dia: nullable(conteudoTexto(30, 0)),
+        mes: nullable(conteudoTexto(30, 0)),
+        legenda: nullable(conteudoTexto(150, 0)),
+    },
+};
+schemas.NovidadeCta = {
+    type: "object", nullable: true, additionalProperties: false, required: ["rotulo", "url"],
+    properties: { rotulo: conteudoTexto(150), url: conteudoUrl },
+};
+schemas.NovidadeFonte = {
+    type: "object", additionalProperties: false, required: ["veiculo", "url"],
+    properties: {
+        veiculo: conteudoTexto(200), assunto: nullable(conteudoTexto(500, 0)), url: conteudoUrl,
+    },
+};
+const novidadeCampos = {
+    tipo: ref("TipoNovidade"), tag: conteudoTexto(100),
+    data: { type: "string", format: "date", example: "2026-10-06", description: "Data obrigatória, YYYY-MM-DD, sem horário ou conversão de fuso." },
+    titulo: conteudoTexto(200),
+    resumo: { ...nullable(conteudoTexto(2000, 0)), description: "Obrigatório e não vazio para NOTICIA. No PATCH, valida o tipo e o resumo resultantes." },
+    texto: conteudoTexto(20000),
+    quando: nullable(conteudoTexto(250, 0)), local: nullable(conteudoTexto(250, 0)),
+    bloco: ref("NovidadeBloco"), cta: ref("NovidadeCta"),
+    fontes: { type: "array", maxItems: 50, items: ref("NovidadeFonte") },
+    status: conteudoStatus,
+};
+schemas.ExposicaoCreateMultipart = {
+    type: "object", additionalProperties: false,
+    required: ["titulo", "artista", "local", "periodo", "bio", "imagem"],
+    properties: { ...exposicaoCampos, imagem: conteudoImagem },
+};
+schemas.ExposicaoPatch = {
+    type: "object", additionalProperties: false, minProperties: 1,
+    description: "Campos omitidos e slug são preservados. A imagem não pode ser removida.",
+    properties: exposicaoCampos,
+};
+schemas.ExposicaoPatchMultipart = {
+    ...schemas.ExposicaoPatch,
+    properties: { ...exposicaoCampos, imagem: conteudoImagem },
+};
+schemas.NovidadeCreate = {
+    type: "object", additionalProperties: false,
+    required: ["tipo", "tag", "data", "titulo", "texto"],
+    properties: novidadeCampos,
+    oneOf: [
+        { required: ["resumo"], properties: { tipo: { enum: ["NOTICIA"] }, resumo: conteudoTexto(2000) } },
+        { properties: { tipo: { enum: ["EVENTO"] } } },
+    ],
+};
+schemas.NovidadeCreateMultipart = {
+    ...schemas.NovidadeCreate,
+    properties: { ...novidadeCampos, imagem: conteudoImagem },
+};
+schemas.NovidadePatch = {
+    type: "object", additionalProperties: false, minProperties: 1,
+    description: "Campos omitidos e slug são preservados. imagemUrl aceita exclusivamente null para remover a imagem. Não combine remoção e novo upload.",
+    properties: {
+        ...novidadeCampos,
+        imagemUrl: { type: "string", nullable: true, enum: [null], description: "Somente null: remove a imagem atual. Omitir preserva a imagem." },
+    },
+};
+schemas.NovidadePatchMultipart = {
+    ...schemas.NovidadePatch,
+    properties: { ...schemas.NovidadePatch.properties, imagem: conteudoImagem },
+};
+const conteudoMetadados = {
+    id: { type: "string", format: "uuid" }, slug: { type: "string", maxLength: 220 },
+    status: ref("StatusPublicacao"),
+    publicadoEm: { type: "string", format: "date-time", nullable: true },
+    arquivadoEm: { type: "string", format: "date-time", nullable: true },
+    createdAt: { type: "string", format: "date-time" },
+    updatedAt: { type: "string", format: "date-time" },
+};
+schemas.Exposicao = {
+    type: "object",
+    properties: {
+        ...exposicaoCampos, ...conteudoMetadados,
+        imagemUrl: { type: "string", example: "/uploads/exposicoes/arquivo.png" },
+    },
+};
+schemas.Novidade = {
+    type: "object",
+    properties: {
+        ...novidadeCampos, ...conteudoMetadados,
+        imagemUrl: { type: "string", nullable: true, example: "/uploads/novidades/arquivo.png" },
+        bloco: { ...schemas.NovidadeBloco, nullable: false, required: ["dia", "mes", "legenda"] },
+    },
+};
+const conteudoEnvelope = (data) => ({
+    type: "object", required: ["success", "data"],
+    properties: { success: { type: "boolean", enum: [true] }, data },
+});
+for (const nome of ["Exposicao", "Novidade"]) {
+    schemas[nome].required = Object.keys(schemas[nome].properties);
+    schemas[`${nome}Admin`] = {
+        ...schemas[nome],
+        required: [...schemas[nome].required, "createdBy", "updatedBy"],
+        properties: {
+            ...schemas[nome].properties,
+            createdBy: { type: "string", format: "uuid" },
+            updatedBy: { type: "string", format: "uuid", nullable: true },
+        },
+    };
+    for (const sufixo of ["", "Admin"]) {
+        const item = `${nome}${sufixo}`;
+        schemas[`${item}Response`] = conteudoEnvelope(ref(item));
+        schemas[`${item}ListaResponse`] = conteudoEnvelope({
+            type: "object", required: ["itens", "paginacao"],
+            properties: {
+                itens: { type: "array", items: ref(item) },
+                paginacao: ref("Paginacao"),
+            },
+        });
+    }
+}
+schemas.ConteudoExcluidoResponse = conteudoEnvelope({
+    type: "object", required: ["id"], properties: { id: { type: "string", format: "uuid" } },
+});

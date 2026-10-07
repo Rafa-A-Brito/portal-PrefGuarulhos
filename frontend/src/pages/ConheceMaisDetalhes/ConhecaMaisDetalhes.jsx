@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   AcademicCapIcon,
@@ -23,35 +23,11 @@ import {
   TrophyIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import {
-  ATUALIZADO_EM,
-  noticiasSetembro,
-  eventosOutubro,
-  eventosNovembro,
-  eventosDezembro,
-  referenciasGerais,
-  listarFontes,
-} from "../../features/mocks/novidadesMock";
+import { listarNovidades } from "../../services/conteudoApi";
+import { useConteudoPublico } from "../../hooks/useConteudoPublico";
+import EstadoConteudo from "../../components/EstadoConteudo";
 
-/**
- * NOTÍCIAS E EVENTOS RECENTES — página de detalhes de "Conheça mais"
- * -------------------------------------------------------------------------
- * Estrutura pensada em torno de CTAs (chamadas para ação):
- *   1. Topo: dois caminhos claros ("Ver agenda de outubro" / "Ver fontes").
- *   2. Cada item: UMA ação principal (botão azul) + fontes como links
- *      secundários. Nada de vários botões competindo.
- *   3. Rodapé da página: próximos passos (explorar acervo, mapa, contato).
- *
- * Os dados vêm de mocks/novidadesMock.js, o mesmo usado na página
- * ConhecaMais, então as duas sempre mostram o mesmo conteúdo.
- *
- * ÍNDICE LATERAL ("Nesta página")
- *   - Desktop (>= 1100px): coluna fixa (sticky) ao lado do conteúdo.
- *   - Mobile/tablet: uma aba na borda direita aparece após a rolagem, mostra
- *     o ícone e o mês do item atual e abre um painel com a lista completa.
- *   - O item ativo acompanha a rolagem (IntersectionObserver).
- *   - Os nomes curtos vêm do campo "rotulo" de cada item no mock.
- */
+
 
 // Ícone de cada item no índice (chave = id do item)
 const ICONES = {
@@ -76,77 +52,29 @@ const ICONES = {
   fontes: DocumentTextIcon,
 };
 
-// "Set · 28", "Out · 17–18", "Out · várias datas"
-function dataCurta(item, mes) {
-  const dia = item.bloco.dia.replace(/^0/, "");
-  return /^\d/.test(dia) ? `${mes} · ${dia}` : `${mes} · ${item.bloco.legenda}`;
+function agruparNovidades(itens) {
+  const mapa = new Map();
+  for (const item of itens) {
+    const chave = item.data.slice(0, 7);
+    if (!mapa.has(chave)) {
+      const data = new Date(`${chave}-01T12:00:00`);
+      mapa.set(chave, {
+        id: `mes-${chave}`,
+        titulo: data.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
+        sigla: data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
+        itens: [],
+      });
+    }
+    mapa.get(chave).itens.push(item);
+  }
+  return [...mapa.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([, grupo]) => grupo);
 }
 
-const GRUPOS = [
-  {
-    id: "setembro",
-    titulo: "Setembro",
-    sigla: "SET",
-    itens: noticiasSetembro.map((i) => ({
-      id: i.id,
-      titulo: i.rotulo,
-      data: dataCurta(i, "Set"),
-    })),
-  },
-  {
-    id: "outubro",
-    titulo: "Outubro",
-    sigla: "OUT",
-    itens: eventosOutubro.map((i) => ({
-      id: i.id,
-      titulo: i.rotulo,
-      data: dataCurta(i, "Out"),
-    })),
-  },
-  {
-    id: "novembro",
-    titulo: "Novembro",
-    sigla: "NOV",
-    itens: eventosNovembro.map((i) => ({
-      id: i.id,
-      titulo: i.rotulo,
-      data: dataCurta(i, "Nov"),
-    })),
-  },
-  {
-    id: "dezembro",
-    titulo: "Dezembro",
-    sigla: "DEZ",
-    itens: eventosDezembro.map((i) => ({
-      id: i.id,
-      titulo: i.rotulo,
-      data: dataCurta(i, "Dez"),
-    })),
-  },
-  {
-    id: "referencias",
-    titulo: "Referências",
-    sigla: "FONTES",
-    itens: [
-      {
-        id: "fontes",
-        titulo: "Fontes e referências",
-        data: `${listarFontes().length} fontes`,
-      },
-    ],
-  },
-];
-
-const TODOS_ITENS = GRUPOS.flatMap((g) =>
-  g.itens.map((i) => ({ ...i, sigla: g.sigla })),
-);
-const IDS = TODOS_ITENS.map((i) => i.id);
-
 // Lista de links do índice (usada na coluna do desktop e no painel do mobile)
-function IndicePagina({ ativo, onEscolher }) {
+function IndicePagina({ ativo, onEscolher, grupos }) {
   return (
     <nav className="detalhes-indice" aria-label="Nesta página">
-      {GRUPOS.map((g) => (
+      {grupos.map((g) => (
         <div key={g.id} className={`indice-grupo indice-grupo--${g.id}`}>
           <p className="indice-grupo-titulo">{g.titulo}</p>
           <ul>
@@ -180,7 +108,7 @@ function IndicePagina({ ativo, onEscolher }) {
 
 // Um item da lista (serve para notícia e para evento)
 function ItemLinha({ item }) {
-  const ehEvento = item.tipo === "evento";
+  const ehEvento = item.tipo === "EVENTO";
 
   return (
     <article
@@ -218,18 +146,19 @@ function ItemLinha({ item }) {
           </ul>
         )}
 
+        {item.imagemUrl && <img src={item.imagemUrl} alt="" loading="lazy" style={{ maxWidth: "100%", maxHeight: 360, objectFit: "contain" }} />}
         <p>{item.texto}</p>
 
         <div className="detalhes-cta">
-          <a
+          {item.cta?.url && <a
             className="btn-solid"
             href={item.cta.url}
             target="_blank"
             rel="noopener noreferrer"
           >
             {item.cta.rotulo} →
-          </a>
-          <p className="detalhes-fontes">
+          </a>}
+          {item.fontes.length > 0 && <p className="detalhes-fontes">
             Fontes:{" "}
             {item.fontes.map((f, i) => (
               <span key={f.url}>
@@ -239,7 +168,7 @@ function ItemLinha({ item }) {
                 </a>
               </span>
             ))}
-          </p>
+          </p>}
         </div>
       </div>
     </article>
@@ -248,7 +177,16 @@ function ItemLinha({ item }) {
 
 export default function ConhecaMaisDetalhes() {
   const { hash } = useLocation();
-  const [ativo, setAtivo] = useState(IDS[0]);
+  const novidades = useConteudoPublico(listarNovidades);
+  const grupos = useMemo(() => agruparNovidades(novidades.itens), [novidades.itens]);
+  const fontesNoticias = useMemo(() => [...new Map(novidades.itens.flatMap((item) => item.fontes).map((fonte) => [fonte.url, fonte])).values()], [novidades.itens]);
+  const gruposIndice = useMemo(() => [
+    ...grupos,
+    ...(fontesNoticias.length ? [{ id: "referencias", titulo: "Referências", sigla: "FONTES", itens: [{ id: "fontes", titulo: "Fontes e referências", data: `${fontesNoticias.length} fontes` }] }] : []),
+  ], [grupos, fontesNoticias]);
+  const todosItens = useMemo(() => gruposIndice.flatMap((g) => g.itens.map((item) => ({ ...item, sigla: g.sigla }))), [gruposIndice]);
+  const ids = useMemo(() => todosItens.map((item) => item.id), [todosItens]);
+  const [ativo, setAtivo] = useState("");
   const [painelAberto, setPainelAberto] = useState(false);
   const [mostrarAtalho, setMostrarAtalho] = useState(false);
   // Enquanto a página rola após um clique no índice, o observador espera,
@@ -272,10 +210,10 @@ export default function ConhecaMaisDetalhes() {
       behavior: reduzir ? "auto" : "smooth",
       block: "start",
     });
-  }, [hash]);
+  }, [hash, ids]);
 
   // Scrollspy: marca como ativo o item que cruza a faixa entre 20% e 30% da
-  // altura da tela. Os elementos são fixos (IDS), então roda uma vez ([]).
+  // altura da tela. O observador acompanha os itens carregados da API.
   useEffect(() => {
     const observador = new IntersectionObserver(
       (entradas) => {
@@ -289,12 +227,12 @@ export default function ConhecaMaisDetalhes() {
       },
       { rootMargin: "-20% 0px -70% 0px" },
     );
-    IDS.forEach((id) => {
+    ids.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observador.observe(el);
     });
     return () => observador.disconnect();
-  }, []);
+  }, [ids]);
 
   // A aba do mobile só aparece depois de sair do topo da página.
   useEffect(() => {
@@ -331,10 +269,10 @@ export default function ConhecaMaisDetalhes() {
     setPainelAberto(false);
   }, []);
 
-  const itemAtivo = TODOS_ITENS.find((i) => i.id === ativo) ?? TODOS_ITENS[0];
+  const itemAtivo = todosItens.find((i) => i.id === ativo) ?? todosItens[0] ?? { id: "", titulo: "Conteúdo", sigla: "ÍNDICE" };
   const IconeAtivo = ICONES[itemAtivo.id] ?? ListBulletIcon;
 
-  const fontesNoticias = listarFontes();
+
 
   return (
     <div>
@@ -347,12 +285,11 @@ export default function ConhecaMaisDetalhes() {
         <h1>Notícias e eventos recentes</h1>
         <p>
           O que está acontecendo agora nos patrimônios e nas comunidades que
-          fazem parte da história de Guarulhos: as notícias de setembro e a
-          programação já divulgada para outubro de 2026.
+          fazem parte da história de Guarulhos.
         </p>
         <div className="detalhes-hero-cta">
-          <Link className="btn-solid" to="#outubro" replace>
-            Ver agenda de outubro
+          <Link className="btn-solid" to={grupos.length ? `#${grupos[0].id}` : "#conteudo-novidades"} replace>
+            Ver notícias e agenda
           </Link>
           <Link className="detalhes-link-sec" to="#fontes" replace>
             Ver fontes
@@ -364,83 +301,19 @@ export default function ConhecaMaisDetalhes() {
       <div className="detalhes-layout">
         <aside className="detalhes-rail">
           <p className="detalhes-rail-titulo">Nesta página</p>
-          <IndicePagina ativo={ativo} onEscolher={escolher} />
+          <IndicePagina ativo={ativo} onEscolher={escolher} grupos={gruposIndice} />
         </aside>
 
-        <div className="detalhes-conteudo">
-          {/* ===== Setembro ===== */}
-          <section id="setembro" className="detalhes-secao">
-            <div>
-              <div className="section-head">
-                <div>
-                  <h2>Setembro de 2026</h2>
-                  <p className="sub">Notícias e atividades recentes.</p>
-                </div>
-              </div>
+        <div className="detalhes-conteudo" id="conteudo-novidades">
+          <EstadoConteudo estado={novidades} nome="novidades" />
+          {grupos.map((grupo) => (
+            <section id={grupo.id} className="detalhes-secao" key={grupo.id}>
+              <div className="section-head"><div><h2>{grupo.titulo}</h2></div></div>
               <div className="detalhes-lista">
-                {noticiasSetembro.map((n) => (
-                  <ItemLinha key={n.id} item={n} />
-                ))}
+                {grupo.itens.map((item) => <ItemLinha key={item.id} item={item} />)}
               </div>
-            </div>
-          </section>
-
-          {/* ===== Outubro ===== */}
-          <section id="outubro" className="detalhes-secao">
-            <div>
-              <div className="section-head">
-                <div>
-                  <h2>Outubro de 2026</h2>
-                  <p className="sub">Eventos já anunciados.</p>
-                </div>
-              </div>
-              <p className="detalhes-aviso">
-                Esta é a programação divulgada até {ATUALIZADO_EM}. Como outubro
-                ainda não começou, ela é uma previsão e pode sofrer alterações
-                pelos organizadores. Confirme datas e horários na fonte antes de
-                ir.
-              </p>
-              <div className="detalhes-lista">
-                {eventosOutubro.map((e) => (
-                  <ItemLinha key={e.id} item={e} />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ===== Novembro ===== */}
-          <section id="novembro" className="detalhes-secao">
-            <div>
-              <div className="section-head">
-                <div>
-                  <h2>Novembro de 2026</h2>
-                  <p className="sub">Programação já divulgada.</p>
-                </div>
-              </div>
-              <div className="detalhes-lista">
-                {eventosNovembro.map((e) => (
-                  <ItemLinha key={e.id} item={e} />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ===== Dezembro ===== */}
-          <section id="dezembro" className="detalhes-secao">
-            <div>
-              <div className="section-head">
-                <div>
-                  <h2>Dezembro de 2026</h2>
-                  <p className="sub">Programação já divulgada.</p>
-                </div>
-              </div>
-              <div className="detalhes-lista">
-                {eventosDezembro.map((e) => (
-                  <ItemLinha key={e.id} item={e} />
-                ))}
-              </div>
-            </div>
-          </section>
+            </section>
+          ))}
 
           {/* ===== Fontes e referências ===== */}
           <section id="fontes" className="detalhes-secao">
@@ -449,8 +322,7 @@ export default function ConhecaMaisDetalhes() {
                 <div>
                   <h2>Fontes e referências</h2>
                   <p className="sub">
-                    Pesquisa realizada em {ATUALIZADO_EM}. Todos os links abrem
-                    o site original.
+                    Fontes dos conteúdos publicados. Todos os links abrem o site original.
                   </p>
                 </div>
               </div>
@@ -467,21 +339,7 @@ export default function ConhecaMaisDetalhes() {
                 ))}
               </ul>
 
-              <h3 className="detalhes-refs-titulo">Referências gerais</h3>
-              <ul className="detalhes-refs">
-                {referenciasGerais.map((r) => (
-                  <li key={r.assunto}>
-                    {r.url ? (
-                      <a href={r.url} target="_blank" rel="noopener noreferrer">
-                        {r.veiculo}
-                      </a>
-                    ) : (
-                      <span className="detalhes-ref-nome">{r.veiculo}</span>
-                    )}{" "}
-                    — {r.assunto}
-                  </li>
-                ))}
-              </ul>
+
             </div>
           </section>
         </div>
@@ -550,7 +408,7 @@ export default function ConhecaMaisDetalhes() {
                 <XMarkIcon width={18} height={18} />
               </button>
             </div>
-            <IndicePagina ativo={ativo} onEscolher={escolher} />
+            <IndicePagina ativo={ativo} onEscolher={escolher} grupos={gruposIndice} />
           </aside>
         </div>
       )}

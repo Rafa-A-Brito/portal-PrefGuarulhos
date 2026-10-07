@@ -1,44 +1,44 @@
-import ESTACAO_IMG from "../../assets/estacao_ferroviaria.png";
-import BOSQUE_MAIA_IMG from "../../assets/bosque_maia.jpg";
-import CATEDRAL_IMG from "../../assets/catedral_conceicao.png";
-import SANATORIO_IMG from "../../assets/sanatorio_padre_bento.jpg";
-import PARQUE_TIETE_IMG from "../../assets/parque_eco_tiete.png";
-import CAPELA_BONSUCESSO_IMG from "../../assets/capela_bonsucesso.png";
-import FESTA_BONSUCESSO_IMG from "../../assets/festa_bonsucesso.jpg";
+import ESTACAO_IMG from "../../assets/patrimonios/estacao_ferroviaria.png";
+import BOSQUE_MAIA_IMG from "../../assets/patrimonios/bosque_maia.jpg";
+import CATEDRAL_IMG from "../../assets/patrimonios/catedral_conceicao.png";
+import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
+import PARQUE_TIETE_IMG from "../../assets/patrimonios/parque_eco_tiete.png";
+import CAPELA_BONSUCESSO_IMG from "../../assets/patrimonios/capela_bonsucesso.png";
+import FESTA_BONSUCESSO_IMG from "../../assets/patrimonios/festa_bonsucesso.jpg";
 
 // Novas imagens para os patrimônios adicionados
-import CANDINHA_IMG from "../../assets/casa_da_candinha.jpg";
-import CASA_MAURICIO_IMG from "../../assets/casa_jose_mauricio.jpg";
-import CASA_AMARELA_IMG from "../../assets/casa_amarela.jpg";
-import PACO_MUNICIPAL_IMG from "../../assets/antigo_paco_municipal.jpg";
-import ADAMASTOR_IMG from "../../assets/centro_adamastor.jpg";
-import CASARAO_HISTORIA_IMG from "../../assets/casarao_nossa_historia.jpg";
-import CRISPINIANO_IMG from "../../assets/escola_crispiniano.jpg";
-import CAPISTRANO_IMG from "../../assets/escola_capistrano.jpg";
-import DULCE_BREVES_IMG from "../../assets/escola_dulce_breves.jpg";
-import IGREJA_ROSARIO_IMG from "../../assets/igreja_rosario_pretos.jpg";
-import BOM_JESUS_CABECA_IMG from "../../assets/igreja_bom_jesus_cabeca.jpg";
-import CAPELA_MACEDO_IMG from "../../assets/capela_macedo.jpg";
-import MARIA_FUMACA_IMG from "../../assets/locomotiva_maria_fumaca.jpg";
-import CARPICAO_IMG from "../../assets/dia_da_carpicao.jpg";
-import BANDA_LIRA_IMG from "../../assets/banda_lira_guarulhos.jpg";
-import INDIGENAS_IMG from "../../assets/cultura_indigena_guarulhos.jpg"; // Wassu
-import GETULIO_VARGAS_IMG from "../../assets/praca_getulio_vargas.jpg";
-import CEMITERIO_IMG from "../../assets/cemiterio_sao_joao_batista.jpg";
-import CABUCU_IMG from "../../assets/reserva_cabucu.jpg";
-import CASARAO_LIMA_IMG from "../../assets/casarao_jorge_lima.jpg";
+import CANDINHA_IMG from "../../assets/patrimonios/casa_da_candinha.jpg";
+import CASA_MAURICIO_IMG from "../../assets/patrimonios/casa_jose_mauricio.jpg";
+import CASA_AMARELA_IMG from "../../assets/patrimonios/casa_amarela.jpg";
+import PACO_MUNICIPAL_IMG from "../../assets/patrimonios/antigo_paco_municipal.jpg";
+import ADAMASTOR_IMG from "../../assets/patrimonios/centro_adamastor.jpg";
+import CASARAO_HISTORIA_IMG from "../../assets/patrimonios/casarao_nossa_historia.jpg";
+import CRISPINIANO_IMG from "../../assets/patrimonios/escola_crispiniano.jpg";
+import CAPISTRANO_IMG from "../../assets/patrimonios/escola_capistrano.jpg";
+import DULCE_BREVES_IMG from "../../assets/patrimonios/escola_dulce_breves.jpg";
+import IGREJA_ROSARIO_IMG from "../../assets/patrimonios/igreja_rosario_pretos.jpg";
+import BOM_JESUS_CABECA_IMG from "../../assets/patrimonios/igreja_bom_jesus_cabeca.jpg";
+import CAPELA_MACEDO_IMG from "../../assets/patrimonios/capela_macedo.jpg";
+import MARIA_FUMACA_IMG from "../../assets/patrimonios/locomotiva_maria_fumaca.jpg";
+import CARPICAO_IMG from "../../assets/patrimonios/dia_da_carpicao.jpg";
+import BANDA_LIRA_IMG from "../../assets/patrimonios/banda_lira_guarulhos.jpg";
+import INDIGENAS_IMG from "../../assets/patrimonios/cultura_indigena_guarulhos.jpg"; // Wassu
+import GETULIO_VARGAS_IMG from "../../assets/patrimonios/praca_getulio_vargas.jpg";
+import CEMITERIO_IMG from "../../assets/patrimonios/cemiterio_sao_joao_batista.jpg";
+import CABUCU_IMG from "../../assets/patrimonios/reserva_cabucu.jpg";
+import CASARAO_LIMA_IMG from "../../assets/patrimonios/casarao_jorge_lima.jpg";
 
-// TODO: estes 3 arquivos ainda precisam existir em src/assets (nomes sugeridos).
+// TODO: estes 3 arquivos ainda precisam existir em src/assets/patrimonios (nomes sugeridos).
 // Se preferir, comente o import e o item correspondente até ter a imagem.
-import LAVRAS_IMG from "../../assets/sitio_lavras_velhas.png";
-import LAGO_PATOS_IMG from "../../assets/complexo_lago_dos_patos.jpg";
-import POCO_MUNICIPAL_IMG from "../../assets/antigo_poco_municipal.jpg";
+import LAVRAS_IMG from "../../assets/patrimonios/sitio_lavras_velhas.png";
+import LAGO_PATOS_IMG from "../../assets/patrimonios/complexo_lago_dos_patos.jpg";
+import POCO_MUNICIPAL_IMG from "../../assets/patrimonios/antigo_poco_municipal.jpg";
 
 // Imagens de patrimônios históricos demolidos
-import CASARAO_SARACENI_IMG from "../../assets/casarao_saraceni_demolido.jpg";
-import CASARAO_ALBERTIS_IMG from "../../assets/casarao_albertis_demolido.jpg";
-import CARBONELL_IMG from "../../assets/antiga_carbonell_demolida.jpg";
-import MATRIZ_COLONIAL_IMG from "../../assets/matriz_colonial_demolida.jpg"; // TODO: criar
+import CASARAO_SARACENI_IMG from "../../assets/patrimonios/casarao_saraceni_demolido.jpg";
+import CASARAO_ALBERTIS_IMG from "../../assets/patrimonios/casarao_albertis_demolido.jpg";
+import CARBONELL_IMG from "../../assets/patrimonios/antiga_carbonell_demolida.jpg";
+import MATRIZ_COLONIAL_IMG from "../../assets/patrimonios/matriz_colonial_demolida.jpg"; // TODO: criar
 
 /*
   Estrutura de cada item:

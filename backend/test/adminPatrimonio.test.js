@@ -225,9 +225,20 @@ test("localização pode ser criada e atualizada parcialmente, validando coorden
     assert.equal(db.state().localizacao.cidade, "Guarulhos");
     assert.equal(db.state().localizacao.uf, "SP");
     await service.updatePatrimonio(id, { localizacao: { cidade: "Outra", uf: "RJ" } }, admin);
+    // O contrato atual exige o par no PATCH, mesmo com coordenadas já salvas.
+    const antes = db.writes.length;
+    await assert.rejects(
+        service.updatePatrimonio(
+            id,
+            schemas.updatePatrimonioSchema.parse({ localizacao: { latitude: 3 } }),
+            admin
+        ),
+        { statusCode: 400, message: "Informe latitude e longitude juntas." }
+    );
+    assert.equal(db.writes.length, antes);
     await service.updatePatrimonio(
         id,
-        schemas.updatePatrimonioSchema.parse({ localizacao: { latitude: 3 } }),
+        schemas.updatePatrimonioSchema.parse({ localizacao: { latitude: 3, longitude: 2 } }),
         admin
     );
     assert.deepEqual(db.state().localizacao, {
@@ -403,4 +414,49 @@ test("falhas internas do Prisma não expõem mensagens do banco", async (t) => {
     assert.equal(result.status, 500);
     assert.equal(result.body.error.code, "INTERNAL_ERROR");
     assert.equal(JSON.stringify(result.body).includes("secreto"), false);
+});
+
+test("PATCH preserva coordenadas omitidas, limpa null/null e aceita zero sem alterar o contrato", async (t) => {
+    const db = database(t, record({
+        localizacao: {
+            endereco: "Rua", bairro: "Centro", cidade: "Guarulhos", uf: "SP",
+            latitude: -23.4628, longitude: -46.5333,
+        },
+    }));
+    const url = `/admin/patrimonios/${db.state().id}`;
+    const patch = (localizacao) => request(url, { user: editor, method: "PATCH", body: { localizacao } });
+
+    assert.equal((await patch({ bairro: "Outro" })).status, 200);
+    assert.equal(db.state().localizacao.latitude, -23.4628);
+    assert.equal(db.state().localizacao.longitude, -46.5333);
+    assert.deepEqual(db.writes.at(-1).localizacao, { update: { bairro: "Outro" } });
+
+    assert.equal((await patch({ endereco: "Rua nova", latitude: null, longitude: null })).status, 200);
+    assert.equal(db.state().localizacao.latitude, null);
+    assert.equal(db.state().localizacao.longitude, null);
+    assert.deepEqual(db.writes.at(-1).localizacao, {
+        update: { endereco: "Rua nova", latitude: null, longitude: null },
+    });
+    assert.equal((await patch({ bairro: "Centro" })).status, 200);
+    assert.equal(db.state().localizacao.latitude, null);
+    assert.equal(db.state().localizacao.longitude, null);
+
+    assert.equal((await patch({ latitude: 0, longitude: 0 })).status, 200);
+    assert.equal(db.state().localizacao.latitude, 0);
+    assert.equal(db.state().localizacao.longitude, 0);
+
+    const antes = db.writes.length;
+    for (const localizacao of [
+        { latitude: 1 }, { longitude: 1 }, { latitude: null }, { longitude: null },
+        { latitude: null, longitude: 2 }, { latitude: 1, longitude: null },
+        { latitude: 91, longitude: 2 }, { latitude: 1, longitude: -181 },
+    ]) {
+        assert.equal((await patch(localizacao)).status, 400, JSON.stringify(localizacao));
+    }
+    assert.equal(db.writes.length, antes);
+    assert.equal(db.state().localizacao.latitude, 0);
+    assert.equal(db.state().localizacao.longitude, 0);
+    assert.equal(schemas.localizacaoSchema.safeParse({
+        endereco: "Rua", bairro: "Centro", latitude: null, longitude: null,
+    }).success, false, "null continua proibido no cadastro");
 });

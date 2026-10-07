@@ -5,7 +5,16 @@ import adminPatrimonioRoutes from "./adminPatrimonioRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
 import categoriaRoutes from "./configRoutes.js";
 
+import exposicaoRoutes from "./exposicaoRoute.js";
+import novidadeRoutes from "./novidadeRoute.js";
+import adminExposicaoRoutes from "./adminExposicaoRoute.js";
+import adminNovidadeRoutes from "./adminNovidadeRoute.js";
+
 const router = Router();
+router.use("/exposicoes", exposicaoRoutes);
+router.use("/novidades", novidadeRoutes);
+router.use("/admin/exposicoes", adminExposicaoRoutes);
+router.use("/admin/novidades", adminNovidadeRoutes);
 
 router.get("/", (_req, res) => {
     res.json({

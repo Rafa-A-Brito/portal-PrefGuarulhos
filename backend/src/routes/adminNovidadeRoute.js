@@ -1,23 +1,20 @@
 import { Router } from "express";
-
 import authenticate from "../middlewares/authenticate.js";
 import authorize from "../middlewares/authorize.js";
+import validate, { validateParams, validateQuery } from "../middlewares/validate.js";
 import { uploadImagem } from "../middlewares/uploadImage.js";
-
-import { list, detail, create, update, remove } from "../controllers/adminNovidadeController.js";
+import descartarUploadEmFalha from "../middlewares/descartarUploadEmFalha.js";
+import { createNovidadeSchema, updateNovidadeSchema, adminListNovidadesQuerySchema, conteudoIdParamsSchema, statusConteudoSchema } from "../schemas/novidadeSchema.js";
+import { list, detail, create, update, publish, archive, remove } from "../controllers/adminNovidadeController.js";
 
 const router = Router();
-
 router.use(authenticate, authorize("ADMIN", "EDITOR"));
-
-router.get("/", list);
-
-router.get("/:id", detail);
-
-router.post("/", uploadImagem("novidades"), create);
-
-router.patch("/:id", uploadImagem("novidades"), update);
-
-router.delete("/:id", authorize("ADMIN"), remove);
-
+router.get("/", validateQuery(adminListNovidadesQuerySchema), list);
+router.get("/:id", validateParams(conteudoIdParamsSchema), detail);
+router.post("/", uploadImagem("novidades", { opcional: true }), validate(createNovidadeSchema), create);
+router.patch("/:id", validateParams(conteudoIdParamsSchema), uploadImagem("novidades", { opcional: true }), validate(updateNovidadeSchema), update);
+router.patch("/:id/publicar", authorize("ADMIN"), validateParams(conteudoIdParamsSchema), validate(statusConteudoSchema), publish);
+router.patch("/:id/arquivar", authorize("ADMIN"), validateParams(conteudoIdParamsSchema), validate(statusConteudoSchema), archive);
+router.delete("/:id", authorize("ADMIN"), validateParams(conteudoIdParamsSchema), remove);
+router.use(descartarUploadEmFalha);
 export default router;

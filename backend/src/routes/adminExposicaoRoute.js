@@ -1,23 +1,20 @@
 import { Router } from "express";
-
 import authenticate from "../middlewares/authenticate.js";
 import authorize from "../middlewares/authorize.js";
+import validate, { validateParams, validateQuery } from "../middlewares/validate.js";
 import { uploadImagem } from "../middlewares/uploadImage.js";
-
-import { list, detail, create, update, remove } from "../controllers/adminExposicaoController.js";
+import descartarUploadEmFalha from "../middlewares/descartarUploadEmFalha.js";
+import { createExposicaoSchema, updateExposicaoSchema, adminListExposicoesQuerySchema, conteudoIdParamsSchema, statusConteudoSchema } from "../schemas/exposicaoSchema.js";
+import { list, detail, create, update, publish, archive, remove } from "../controllers/adminExposicaoController.js";
 
 const router = Router();
-
 router.use(authenticate, authorize("ADMIN", "EDITOR"));
-
-router.get("/", list);
-
-router.get("/:id", detail);
-
-router.post("/", uploadImagem("exposicoes"), create);
-
-router.patch("/:id", uploadImagem("exposicoes"), update);
-
-router.delete("/:id", authorize("ADMIN"), remove);
-
+router.get("/", validateQuery(adminListExposicoesQuerySchema), list);
+router.get("/:id", validateParams(conteudoIdParamsSchema), detail);
+router.post("/", uploadImagem("exposicoes"), validate(createExposicaoSchema), create);
+router.patch("/:id", validateParams(conteudoIdParamsSchema), uploadImagem("exposicoes", { opcional: true }), validate(updateExposicaoSchema), update);
+router.patch("/:id/publicar", authorize("ADMIN"), validateParams(conteudoIdParamsSchema), validate(statusConteudoSchema), publish);
+router.patch("/:id/arquivar", authorize("ADMIN"), validateParams(conteudoIdParamsSchema), validate(statusConteudoSchema), archive);
+router.delete("/:id", authorize("ADMIN"), validateParams(conteudoIdParamsSchema), remove);
+router.use(descartarUploadEmFalha);
 export default router;

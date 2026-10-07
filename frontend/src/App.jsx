@@ -24,6 +24,8 @@ import LoginAdmin from "./features/admin/pages/LoginAdmin";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import AdminUsuarios from "./features/admin/pages/AdminUsuarios";
 import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
+import AdminExposicoes from "./features/admin/pages/AdminExposicoes";
+import AdminNovidades from "./features/admin/pages/AdminNovidades";
 import ConhecaMaisDetalhes from "./pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
 
 // Tempo mínimo de cada etapa da transição, só para a tela não "piscar" quando
@@ -183,6 +185,8 @@ function AppRoutes() {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/patrimonios" element={<AdminPatrimonios />} />
+          <Route path="/admin/exposicoes" element={<AdminExposicoes />} />
+          <Route path="/admin/novidades" element={<AdminNovidades />} />
 
           <Route element={<RotaProtegida permissoes={["ADMIN"]} />}>
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />

@@ -62,7 +62,7 @@ function parseHeaders(buffer) {
     return headers;
 }
 
-export function uploadImagem(pasta) {
+export function uploadImagem(pasta, { opcional = false } = {}) {
     if (!PASTAS_PERMITIDAS.has(pasta)) {
         throw new Error(
             `Pasta de upload inválida: ${pasta}`
@@ -79,6 +79,7 @@ export function uploadImagem(pasta) {
         );
 
         if (!match) {
+            if (opcional && !/^multipart\//i.test(contentType)) return next();
             return next(
                 new BadRequestError(
                     "Envie a imagem usando multipart/form-data."
@@ -188,7 +189,12 @@ export function uploadImagem(pasta) {
                     );
 
                     if (disposition.name === "imagem") {
-                        if (!disposition.filename) {
+                        if (opcional && !disposition.filename && content.length === 0) {
+                            pos = nextBoundary;
+                            continue;
+                        }
+                        if (file) throw new BadRequestError("Envie apenas uma imagem.");
+                        if (!disposition.filename || content.length === 0) {
                             throw new BadRequestError(
                                 "Envie um arquivo de imagem."
                             );
@@ -231,7 +237,7 @@ export function uploadImagem(pasta) {
                             content
                         );
 
-                        file = {
+                        file = req.file = {
                             filename,
                             originalname:
                                 disposition.filename,
@@ -254,13 +260,13 @@ export function uploadImagem(pasta) {
                     pos = nextBoundary;
                 }
 
-                if (!file) {
+                if (!file && !opcional) {
                     throw new BadRequestError(
                         "Envie um arquivo no campo imagem."
                     );
                 }
 
-                req.file = file;
+                if (file) req.file = file;
 
                 finalizado = true;
 
