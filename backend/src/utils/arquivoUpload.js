@@ -1,12 +1,13 @@
 import path from "node:path";
 import { promises as fs } from "node:fs";
 
-const raizUpload = path.resolve(process.env.UPLOAD_DIR || path.resolve(process.cwd(), "uploads"));
+import { UPLOAD_DIR as raizUpload, UPLOAD_FOLDERS } from "../config/uploadDir.js";
+const uploadPattern = new RegExp("^/uploads/(" + UPLOAD_FOLDERS.join("|") + ")/[a-zA-Z0-9_-]+\\.(jpg|jpeg|png|webp|gif)$");
 
-// Somente arquivos diretamente nas duas pastas deste lote. Não aceita URLs,
+// Somente arquivos diretamente nas pastas de upload permitidas. Não aceita URLs,
 // percent-encoding, separadores extras, "." ou "..", nem caminhos absolutos.
 export function caminhoArquivoUpload(url) {
-    if (typeof url !== "string" || !/^\/uploads\/(exposicoes|novidades)\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|gif)$/.test(url)) return null;
+    if (typeof url !== "string" || !uploadPattern.test(url)) return null;
     const destino = path.resolve(raizUpload, url.slice("/uploads/".length));
     const relativo = path.relative(raizUpload, destino);
     return relativo.startsWith("..") || path.isAbsolute(relativo) ? null : destino;

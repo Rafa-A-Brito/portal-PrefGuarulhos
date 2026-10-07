@@ -2,17 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 
+import { integrationDatabaseAvailable } from "../scripts/assert-test-db.js";
 const testUrl = process.env.TEST_DATABASE_URL;
-let databaseName;
-try {
-    databaseName = decodeURIComponent(new URL(testUrl).pathname.slice(1));
-} catch {
-    /* Configuração ausente. */
-}
-const safeDatabase =
-    process.env.TEST_DATABASE_EXCLUSIVE === "1" &&
-    /(?:^test_|_test$)/i.test(databaseName ?? "") &&
-    testUrl !== process.env.DATABASE_URL;
+const safeDatabase = integrationDatabaseAvailable();
 
 test(
     "PostgreSQL: troca real de senha preserva login e não expõe hash",

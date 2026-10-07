@@ -215,7 +215,7 @@ test("DELETE apaga registro publicado e depois a imagem", async (t) => {
 });
 
 test("Limpeza recusa traversal, URLs externas e pastas fora do lote", async () => {
-    for (const url of ["/uploads/exposicoes/../segredo.png", "/uploads/novidades/%2e%2e/segredo.png", "/uploads/patrimonios/a.png", "https://example.com/uploads/novidades/a.png", "/uploads/exposicoes/a/../../a.png", "/uploads/novidades/..\\a.png"]) {
+    for (const url of ["/uploads/exposicoes/../segredo.png", "/uploads/novidades/%2e%2e/segredo.png", "/uploads/desconhecida/a.png", "https://example.com/uploads/novidades/a.png", "/uploads/exposicoes/a/../../a.png", "/uploads/novidades/..\\a.png"]) {
         assert.equal(caminhoArquivoUpload(url), null);
         assert.equal(await removerArquivoUpload(url), false);
     }

@@ -17,7 +17,7 @@
     "scripts": {
         "dev": "nodemon src/server.js",
         "start": "node src/server.js",
-        "test": "node --test",
+        "test": "node scripts/run-suite.js",
         "prisma:format": "prisma format",
         "prisma:validate": "prisma validate",
         "prisma:generate": "prisma generate",
@@ -25,7 +25,14 @@
         "prisma:migrate:deploy": "prisma migrate deploy",
         "prisma:status": "prisma migrate status",
         "prisma:seed": "prisma db seed",
-        "admin:create": "node prisma/create-admin.js"
+        "admin:create": "node prisma/create-admin.js",
+        "test:integration": "node scripts/test-db.js test",
+        "test:db:assert": "node scripts/assert-test-db.js",
+        "test:db:migrate": "node scripts/test-db.js migrate",
+        "test:db:status": "node scripts/test-db.js status",
+        "test:db:integrity": "node scripts/test-db.js integrity",
+        "import:patrimonios": "node prisma/import-patrimonios.js",
+        "test:uploads:e2e": "node scripts/upload-e2e.js"
     },
     "dependencies": {
         "@prisma/adapter-pg": "7.10.0",

@@ -1,4 +1,3 @@
-// [API DESATIVADA TEMPORARIAMENTE] dados em texto puro (db.json) só para visualizar a tela.
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   PlusIcon,

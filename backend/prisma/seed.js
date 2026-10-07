@@ -14,7 +14,7 @@ if (!process.env.DATABASE_URL) {
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
-const uploadDir = process.env.UPLOAD_DIR || path.resolve(process.cwd(), "uploads");
+import { UPLOAD_DIR as uploadDir } from "../src/config/uploadDir.js";
 const sourceUploads = path.resolve(process.cwd(), "src", "uploads");
 
 const CATEGORIAS = [

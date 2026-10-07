@@ -7,6 +7,7 @@ export async function upload(req, res) {
         req.body,
         req.user
     );
+    req.uploadPersistido = true;
     res.status(201).json({ success: true, data: imagem });
 }
 

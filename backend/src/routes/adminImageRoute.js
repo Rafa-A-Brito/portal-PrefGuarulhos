@@ -1,4 +1,5 @@
 import { Router } from "express";
+import descartarUploadEmFalha from "../middlewares/descartarUploadEmFalha.js";
 import authenticate from "../middlewares/authenticate.js";
 import authorize from "../middlewares/authorize.js";
 import { validateParams } from "../middlewares/validate.js";
@@ -23,5 +24,7 @@ router.delete(
     validateParams(imagemParamsSchema),
     remove
 );
+
+router.use(descartarUploadEmFalha);
 
 export default router;

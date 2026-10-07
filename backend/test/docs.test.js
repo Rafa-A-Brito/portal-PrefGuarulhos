@@ -30,6 +30,8 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "GET /api/patrimonios/{slug}",
             "POST /api/admin/patrimonios",
             "GET /api/admin/patrimonios",
+            "POST /api/admin/patrimonios/{id}/imagens",
+            "DELETE /api/admin/patrimonios/imagens/{imagemId}",
             "GET /api/admin/patrimonios/{id}",
             "PATCH /api/admin/patrimonios/{id}",
             "PATCH /api/admin/patrimonios/{id}/publicar",

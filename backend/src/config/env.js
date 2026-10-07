@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { UPLOAD_DIR } from "./uploadDir.js";
 import { z } from "zod";
 
 const result = z.object({
@@ -14,4 +15,4 @@ if (!result.success) {
     throw new Error(`Variáveis de ambiente inválidas: ${fields.join(", ")}.`);
 }
 
-export default result.data;
+export default { ...result.data, UPLOAD_DIR };

@@ -302,3 +302,42 @@ paths["/api/admins/{id}/status"] = { patch: {
         409: error("ADMIN_CANNOT_DEACTIVATE_SELF ou LAST_ACTIVE_ADMIN.", "ADMIN_CANNOT_DEACTIVATE_SELF", "Você não pode desativar a própria conta."),
     },
 } };
+const imageIdParameter = { name: "imagemId", in: "path", required: true, schema: { type: "string", format: "uuid" } };
+paths["/api/admin/patrimonios/{id}/imagens"] = {
+    post: {
+        tags: ["Patrimônios administrativos"], summary: "Adiciona imagem ao patrimônio",
+        description: "ADMIN e EDITOR. Campo imagem obrigatório, JPG/PNG/WEBP/GIF até 10 MB. Falhas descartam somente o upload novo.",
+        security: bearerAuth,
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: { required: true, content: { "multipart/form-data": { schema: {
+            type: "object", required: ["imagem"], properties: {
+                imagem: { type: "string", format: "binary" },
+                titulo: { type: "string", maxLength: 200 },
+                textoAlternativo: { type: "string", maxLength: 300 },
+                credito: { type: "string", maxLength: 200 },
+                fonte: { type: "string", maxLength: 500 },
+                ordem: { type: "integer", minimum: 0, default: 0 },
+                principal: { type: "boolean", default: false },
+            },
+        } } } },
+        responses: {
+            201: response("Imagem criada.", "PatrimonioImagemResponse"),
+            400: badRequest, 401: unauthorized, 403: forbidden,
+            404: error("Patrimônio inexistente.", "PATRIMONIO_NOT_FOUND", "Patrimônio não encontrado."),
+            413: error("Imagem acima de 10 MB ou multipart acima de 11 MB.", "INTERNAL_ERROR", "O upload excede o limite de 10 MB."),
+            500: internal,
+        },
+    },
+};
+paths["/api/admin/patrimonios/imagens/{imagemId}"] = {
+    delete: {
+        tags: ["Patrimônios administrativos"], summary: "Remove imagem do patrimônio",
+        description: "Somente ADMIN. Remove registro e tenta limpar o arquivo local após a exclusão.",
+        security: bearerAuth, parameters: [imageIdParameter],
+        responses: {
+            200: response("Imagem removida.", "PatrimonioImagemRemovidaResponse"),
+            400: badRequest, 401: unauthorized, 403: forbidden,
+            404: error("Imagem inexistente.", "IMAGEM_NOT_FOUND", "Imagem não encontrada."), 500: internal,
+        },
+    },
+};

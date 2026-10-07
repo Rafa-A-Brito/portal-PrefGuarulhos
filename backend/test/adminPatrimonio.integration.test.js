@@ -2,13 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 
+import { integrationDatabaseAvailable } from "../scripts/assert-test-db.js";
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
-let databaseName;
-try {
-    databaseName = decodeURIComponent(new URL(testDatabaseUrl).pathname.slice(1));
-} catch { /* Sem banco de teste configurado. */ }
-const safeDatabase = process.env.TEST_DATABASE_EXCLUSIVE === "1" &&
-    /(?:^test_|_test$)/i.test(databaseName ?? "") && testDatabaseUrl !== process.env.DATABASE_URL;
+const safeDatabase = integrationDatabaseAvailable();
 
 test("PostgreSQL: edição, localização, transições concorrentes e visibilidade pública", {
     skip: !safeDatabase && "Configure TEST_DATABASE_URL para um banco exclusivo *_test e TEST_DATABASE_EXCLUSIVE=1.",

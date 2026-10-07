@@ -795,3 +795,18 @@ schemas.AdminListaResponse = {
         },
     },
 };
+schemas.PatrimonioImagemResponse = {
+    type: "object", required: ["success", "data"],
+    properties: { success: { type: "boolean", enum: [true] }, data: {
+        allOf: [ref("ImagemDetalhe"), { type: "object", properties: {
+            patrimonioId: { type: "string", format: "uuid" },
+            createdAt: { type: "string", format: "date-time" },
+        } }],
+    } },
+};
+schemas.PatrimonioImagemRemovidaResponse = {
+    type: "object", required: ["success", "data"],
+    properties: { success: { type: "boolean", enum: [true] }, data: {
+        type: "object", required: ["id"], properties: { id: { type: "string", format: "uuid" } },
+    } },
+};

@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 
-const uploadDir = process.env.UPLOAD_DIR || path.resolve(process.cwd(), "uploads");
+import { UPLOAD_DIR as uploadDir, UPLOAD_FOLDERS } from "../config/uploadDir.js";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -18,7 +18,7 @@ const EXTENSOES = {
     "image/gif": ".gif",
 };
 
-const PASTAS_PERMITIDAS = new Set(["patrimonios", "exposicoes", "novidades"]);
+const PASTAS_PERMITIDAS = new Set(UPLOAD_FOLDERS);
 
 function parseContentDisposition(value) {
     const out = {};
@@ -178,7 +178,7 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
 
                         const filePath = path.join(destinoUploadDir, filename);
 
-                        fs.writeFileSync(filePath, content);
+                        fs.writeFileSync(filePath, content, { flag: "wx" });
 
                         file = req.file = {
                             filename,

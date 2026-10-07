@@ -1,21 +1,7 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
-import env from "../config/env.js";
+import { removerArquivoUpload } from "../utils/arquivoUpload.js";
 import prisma from "../config/prisma.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import BadRequestError from "../errors/BadRequestError.js";
-
-const uploadDir = env.UPLOAD_DIR;
-
-// Apaga do disco um arquivo que o middleware de upload já gravou. Nunca lança:
-// a limpeza é "melhor esforço" e não pode mascarar o erro original.
-async function apagarArquivoUpload(url) {
-    if (!url?.startsWith("/uploads/")) return;
-
-    const relativePath = url.replace(/^\/uploads\//, "");
-    await fs.unlink(path.join(uploadDir, relativePath)).catch(() => {});
-}
 
 // Limites das colunas em patrimonio_imagens (schema.prisma). Validar aqui
 // devolve 400 com mensagem clara em vez de estourar no banco como 500.
@@ -84,7 +70,7 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
             });
         });
     } catch (error) {
-        await apagarArquivoUpload(file.url);
+        await removerArquivoUpload(file.url);
         throw error;
     }
 }
@@ -104,7 +90,7 @@ export async function removerImagemPatrimonio(id) {
         where: { id },
     });
 
-    await apagarArquivoUpload(imagem.url);
+    await removerArquivoUpload(imagem.url);
 
     return {
         id: imagem.id,

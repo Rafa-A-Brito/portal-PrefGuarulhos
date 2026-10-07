@@ -2,23 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 
+import { integrationDatabaseAvailable } from "../scripts/assert-test-db.js";
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
-const exclusive = process.env.TEST_DATABASE_EXCLUSIVE === "1";
-let testDatabaseName;
-
-if (testDatabaseUrl) {
-    try {
-        testDatabaseName = decodeURIComponent(new URL(testDatabaseUrl).pathname.slice(1));
-    } catch {
-        // A configuração inválida é recusada abaixo, antes de qualquer conexão.
-    }
-}
-
-const safeTestDatabase =
-    exclusive &&
-    testDatabaseName &&
-    /(?:^test_|_test$)/i.test(testDatabaseName) &&
-    testDatabaseUrl !== process.env.DATABASE_URL;
+const safeTestDatabase = integrationDatabaseAvailable();
 
 test(
     "PostgreSQL: cadastro, gestão, status concorrente e bloqueio de JWT após desativação",

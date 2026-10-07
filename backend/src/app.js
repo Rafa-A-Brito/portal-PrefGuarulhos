@@ -1,4 +1,5 @@
 import express from "express";
+import { UPLOAD_DIR, UPLOAD_FOLDERS } from "./config/uploadDir.js";
 import path from "node:path";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
@@ -12,9 +13,8 @@ const app = express();
 
 app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json({ limit: "100kb" }));
-const uploadDir = path.resolve(process.env.UPLOAD_DIR || path.resolve(process.cwd(), "uploads"));
-for (const pasta of ["exposicoes", "novidades"]) {
-    app.use(`/uploads/${pasta}`, express.static(path.join(uploadDir, pasta), {
+for (const pasta of UPLOAD_FOLDERS) {
+    app.use(`/uploads/${pasta}`, express.static(path.join(UPLOAD_DIR, pasta), {
         dotfiles: "deny",
         index: false,
         setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff"),
