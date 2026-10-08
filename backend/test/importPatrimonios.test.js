@@ -5,6 +5,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { importPatrimonios, parseArgs } from "../prisma/import-patrimonios.js";
+import { PATRIMONIOS_SEED } from "../prisma/patrimonioSeedData.js";
+import { slugify } from "../src/utils/slug.js";
 
 const category = { id: randomUUID(), nome: "Histórico" };
 const author = { id: randomUUID(), isActive: true, role: "ADMIN" };
@@ -137,4 +139,118 @@ test("falha de compensação mantém erro original e identifica possível órfã
     });
     assert.equal(report.erros[0].motivo, "erro-original");
     assert.ok(report.warnings.some(w => w.arquivoOrfao && w.motivo === "limpeza-negada"));
+});
+
+const legacyAliases = [
+    ["centro-municipal-de-educacao-adamastor","antiga-fabrica-adamastor"],
+    ["antiga-igreja-matriz-colonial-de-n-sra-da-conceicao-demolida","antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao"],
+    ["parque-bosque-maia","bosque-maia"],
+    ["casarao-da-familia-albertis-demolido-em-2023","casarao-da-familia-albertis"],
+    ["casarao-lima-demolido-em-2026","casarao-lima"],
+    ["casarao-saraceni-demolido-em-2010","casarao-saraceni"],
+    ["e-e-capistrano-de-abreu","escola-estadual-capistrano-de-abreu"],
+    ["e-e-conselheiro-crispiniano","escola-estadual-conselheiro-crispiniano"],
+    ["estacao-ferroviaria-de-guarulhos","estacao-ferroviaria-central-de-guarulhos"],
+    ["igreja-de-nossa-senhora-de-bonsucesso","igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico"],
+    ["igreja-de-n-sra-do-rosario-dos-homens-pretos","igreja-de-nossa-senhora-do-rosario-dos-homens-pretos"],
+    ["locomotiva-maria-fumaca-n-33-e-vagao","locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua"],
+    ["reserva-e-represa-do-cabucu","represa-do-cabucu"],
+    ["complexo-sanatorio-padre-bento","sanatorio-padre-bento"],
+];
+
+for (const [sourceSlug, legacySlug] of legacyAliases) {
+    test(`alias legado ${sourceSlug} é ignorado sem escrita ou alteração`, async () => {
+        const sourceItem = PATRIMONIOS_SEED.find(p => slugify(p.nome) === sourceSlug);
+        assert.ok(sourceItem, "Alias deve corresponder a um item real da fonte");
+        const existing = [{
+            id: randomUUID(), slug: legacySlug, nome: "Nome administrativo preservado",
+            status: "PUBLICADO", descricao: "Descrição administrativa preservada",
+        }];
+        const before = structuredClone(existing);
+        const prisma = fake({ existing });
+        prisma.$transaction = async () => assert.fail("Alias existente não deve iniciar transação");
+        const io = new Proxy({}, { get: () => assert.fail("Alias existente não deve acessar imagens") });
+        const report = await importPatrimonios({
+            prisma, databaseUrl: url, source: [sourceItem], io,
+            options: parseArgs(["--dry-run"]),
+        });
+        assert.equal(report.fonte, 1);
+        assert.equal(report.existentes, 1);
+        assert.equal(report.ignorar, 1);
+        assert.equal(report.criar, 0);
+        assert.equal(report.criados, 0);
+        assert.deepEqual(report.conflitos, []);
+        assert.deepEqual(report.erros, []);
+        assert.deepEqual(report.itens, [{ nome: sourceItem.nome, slug: sourceSlug, acao: "IGNORAR" }]);
+        assert.deepEqual(prisma.created, []);
+        assert.deepEqual(existing, before);
+    });
+}
+
+test("alias sem destino cadastrado mantém criação prevista e slug da fonte", async () => {
+    const prisma = fake();
+    const report = await importPatrimonios({
+        prisma, databaseUrl: url,
+        source: legacyAliases.map(([slug]) => ({ ...item, nome: slug })),
+    });
+    assert.equal(report.criar, legacyAliases.length);
+    assert.equal(report.existentes, 0);
+    assert.equal(report.ignorar, 0);
+    assert.equal(report.criados, 0);
+    assert.deepEqual(report.conflitos, []);
+    assert.deepEqual(report.erros, []);
+    assert.deepEqual(report.itens.map(p => [p.slug, p.acao]), legacyAliases.map(([slug]) => [slug, "CRIAR"]));
+    assert.deepEqual(prisma.created, []);
+});
+
+test("slug exato continua sendo ignorado mesmo sem o destino legado", async () => {
+    const source = legacyAliases.map(([slug]) => ({ ...item, nome: slug }));
+    const prisma = fake({ existing: source.map(p => ({ slug: p.nome, nome: "Outro nome" })) });
+    const report = await importPatrimonios({ prisma, databaseUrl: url, source });
+    assert.equal(report.ignorar, source.length);
+    assert.equal(report.existentes, source.length);
+    assert.equal(report.criar, 0);
+    assert.deepEqual(report.conflitos, []);
+    assert.deepEqual(report.erros, []);
+});
+
+test("aliases são exatos e não incluem variantes nem equivalências inversas", async () => {
+    const [sourceSlug, legacySlug] = legacyAliases[0];
+    const prisma = fake({ existing: [
+        { slug: sourceSlug, nome: "Nome fonte preservado" },
+        { slug: legacySlug, nome: "Nome legado preservado" },
+    ] });
+    const similar = await importPatrimonios({
+        prisma, databaseUrl: url, source: [{ ...item, nome: sourceSlug + "-novo" }],
+    });
+    assert.equal(similar.criar, 1);
+    assert.equal(similar.ignorar, 0);
+    assert.deepEqual(similar.erros, []);
+    const reverse = await importPatrimonios({
+        prisma: fake({ existing: [{ slug: sourceSlug, nome: "Nome fonte preservado" }] }),
+        databaseUrl: url, source: [{ ...item, nome: legacySlug }],
+    });
+    assert.equal(reverse.criar, 1);
+    assert.equal(reverse.ignorar, 0);
+    assert.deepEqual(reverse.erros, []);
+});
+
+test("alias surgido na releitura transacional impede duplicata", async () => {
+    const [sourceSlug, legacySlug] = legacyAliases[0];
+    const existing = [];
+    const prisma = fake({ existing });
+    const transaction = prisma.$transaction;
+    prisma.$transaction = async callback => {
+        existing.push({ slug: legacySlug, nome: "Registro criado concorrentemente", status: "PUBLICADO" });
+        return transaction(callback);
+    };
+    // Apenas Prisma simulado: nenhuma conexão ou aplicação no banco real.
+    const report = await importPatrimonios({
+        prisma, databaseUrl: url, options: apply(), source: [{ ...item, nome: sourceSlug }],
+    });
+    assert.equal(report.criados, 0);
+    assert.equal(report.erros.length, 1);
+    assert.match(report.erros[0].motivo, /apareceu durante a importação/);
+    assert.deepEqual(prisma.created, []);
+    assert.deepEqual(existing, [{ slug: legacySlug, nome: "Registro criado concorrentemente", status: "PUBLICADO" }]);
 });
