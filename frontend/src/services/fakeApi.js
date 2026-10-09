@@ -118,6 +118,8 @@ export function normalizarPatrimonio(p) {
     situacao: p.situacao,
     status: p.status, // só vem nas rotas /admin
     bairro: loc?.bairro ?? "",
+    cidade: loc?.cidade ?? "Guarulhos",
+    uf: loc?.uf ?? "SP",
     endereco: loc?.endereco ?? "",
     numero: loc?.numero ?? "",
     complemento: loc?.complemento ?? "",

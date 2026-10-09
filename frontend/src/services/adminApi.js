@@ -176,6 +176,15 @@ export function extrairMensagemDeErro(err) {
     return corpo.details.map((d) => d.message).join(" ");
   }
   if (corpo?.message) return corpo.message;
+  if (corpo?.error?.message) return corpo.error.message;
+  const mensagens = {
+    400: "Confira os dados enviados.",
+    401: "Sua sessão expirou. Entre novamente para continuar.",
+    403: "Você não tem permissão para esta ação.",
+    404: "Patrimônio não encontrado. Recarregue a lista.",
+    409: "Os dados entram em conflito. Recarregue a lista e tente novamente.",
+  };
+  if (mensagens[err.response?.status]) return mensagens[err.response.status];
   if (!err.response) return "Não foi possível falar com o servidor.";
 
   return "Algo deu errado. Tente novamente.";

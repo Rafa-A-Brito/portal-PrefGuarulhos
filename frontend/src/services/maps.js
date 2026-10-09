@@ -47,16 +47,16 @@ function normalizar(valor) {
 }
 
 /** Chave estável do endereço: serve de cache e para saber se ele mudou. */
-export function chaveEndereco({ cep, endereco, numero, bairro }) {
+export function chaveEndereco({ cep, endereco, numero, bairro, cidade = "Guarulhos", uf = "SP" }) {
   const cepNumeros = String(cep ?? "").replace(/\D/g, "");
-  return [cepNumeros, endereco, numero, bairro].map(normalizar).join("|");
+  return [cepNumeros, endereco, numero, bairro, cidade, uf].map(normalizar).join("|");
 }
 
-export function montarEndereco({ endereco, numero, bairro, cep }) {
+export function montarEndereco({ endereco, numero, bairro, cep, cidade = "Guarulhos", uf = "SP" }) {
   return [
     [endereco, numero].filter(Boolean).join(", "),
     bairro,
-    "Guarulhos - SP",
+    `${cidade} - ${uf}`,
     cep,
     "Brasil",
   ]
@@ -115,7 +115,7 @@ function aguardarGeocoder() {
   });
 }
 
-async function geocodificarComGoogle(consulta) {
+async function geocodificarComGoogle(consulta, { cidade = "Guarulhos", uf = "SP" }) {
   const Geocoder = await aguardarGeocoder();
 
   return new Promise((resolve, reject) => {
@@ -124,8 +124,8 @@ async function geocodificarComGoogle(consulta) {
         address: consulta,
         componentRestrictions: {
           country: "BR",
-          administrativeArea: "SP",
-          locality: "Guarulhos",
+          administrativeArea: uf,
+          locality: cidade,
         },
       },
       (resultados, status) => {
@@ -166,7 +166,7 @@ export async function geocodificarEndereco(local) {
 
   if (cache.has(chave)) return cache.get(chave);
 
-  const bruto = await geocodificarComGoogle(montarEndereco(local));
+  const bruto = await geocodificarComGoogle(montarEndereco(local), local);
 
   const coordenadas = {
     lat: arredondar(bruto.lat),

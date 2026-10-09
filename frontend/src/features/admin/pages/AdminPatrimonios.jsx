@@ -63,6 +63,8 @@ const FORMULARIO_VAZIO = {
   numero: "",
   complemento: "",
   bairro: "",
+  cidade: "Guarulhos",
+  uf: "SP",
   modoResumo: "escrever", // "escrever" | "arquivo"
   resumo: "",
   historia: "",
@@ -117,6 +119,8 @@ function paraFormulario(patrimonio) {
     numero: patrimonio.numero || "",
     complemento: patrimonio.complemento || "",
     bairro: patrimonio.bairro || "",
+    cidade: patrimonio.cidade || "Guarulhos",
+    uf: patrimonio.uf || "SP",
     resumo: patrimonio.descricao || patrimonio.resumo || "",
     historia: patrimonio.historia || "",
     importanciaCultural: patrimonio.importanciaCultural || "",
@@ -127,6 +131,7 @@ export default function AdminPatrimonios() {
   const { usuario } = useAuth();
   const { mostrarErro } = useErroModal();
   const eAdmin = usuario?.perfil === "ADMIN";
+  const podeEditar = (p) => eAdmin || (usuario?.perfil === "EDITOR" && p.status === "RASCUNHO");
 
   // Mesmo loader do mapa público (um script só). Aqui ele serve ao geocoding:
   // o geocodificarEndereco espera o Geocoder existir, e este "erro" só avisa
@@ -140,6 +145,11 @@ export default function AdminPatrimonios() {
 
   // null = formulário fechado; "novo" = criando; senão, UUID do patrimônio.
   const [editandoId, setEditandoId] = useState(null);
+  const [carregandoEdicao, setCarregandoEdicao] = useState(null);
+  const [originalEdicao, setOriginalEdicao] = useState(null);
+  const [erroAcao, setErroAcao] = useState(null);
+  const formularioRef = useRef(null);
+  const pedidoEdicaoRef = useRef(0);
   const [formulario, setFormulario] = useState(FORMULARIO_VAZIO);
   const [erroFormulario, setErroFormulario] = useState(null);
   const [salvando, setSalvando] = useState(false);
@@ -170,6 +180,16 @@ export default function AdminPatrimonios() {
 
   const inputImagemRef = useRef(null);
   const operandoImagem = enviandoImagem || removendoImagemId !== null;
+  const ocupado = salvando || operandoImagem || gerando || carregandoEdicao !== null || acaoEmAndamento !== null;
+
+  useEffect(() => {
+    if (editandoId && !carregandoEdicao) {
+      formularioRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+      formularioRef.current?.querySelector("input")?.focus({ preventScroll: true });
+    }
+  }, [editandoId, carregandoEdicao]);
+
+  useEffect(() => () => { pedidoEdicaoRef.current++; }, []);
 
   const contagemPorCategoria = useMemo(
     () =>
@@ -224,6 +244,10 @@ export default function AdminPatrimonios() {
   }
 
   function abrirNovo() {
+    if (ocupado) return;
+    pedidoEdicaoRef.current++;
+    setErroAcao(null);
+    setOriginalEdicao(null);
     reiniciarEstadosAuxiliares();
     setFormulario({
       ...FORMULARIO_VAZIO,
@@ -237,23 +261,44 @@ export default function AdminPatrimonios() {
   // A listagem não traz descricao/historia, então a edição busca o detalhe.
   // Devolve true quando o formulário abriu em modo edição.
   async function abrirEdicao(resumo) {
-    reiniciarEstadosAuxiliares();
+    // Também é chamada após criar, quando salvar ainda está finalizando.
+    if (carregandoEdicao) return false;
+    if (resumo.status && !podeEditar(resumo)) {
+      setErroAcao("Editores só podem editar patrimônios em rascunho.");
+      return false;
+    }
+    const pedido = ++pedidoEdicaoRef.current;
+    setCarregandoEdicao(resumo.uuid);
+    setErroAcao(null);
 
     try {
       const detalhe = await adminApi.buscarPatrimonioAdmin(resumo.uuid);
+      if (pedido !== pedidoEdicaoRef.current) return false;
+      if (!podeEditar(detalhe)) {
+        setErroAcao("Este patrimônio não está mais em rascunho. Somente ADMIN pode editá-lo.");
+        return false;
+      }
+      reiniciarEstadosAuxiliares();
       setFormulario(paraFormulario(detalhe));
+      setOriginalEdicao(detalhe);
       setImagens(detalhe.imagens ?? []);
       setCoordenadas(detalhe.localizacao ?? null);
       setChaveOriginal(chaveEndereco(detalhe));
       setEditandoId(detalhe.uuid);
       return true;
     } catch (err) {
+      if (pedido !== pedidoEdicaoRef.current) return false;
+      setErroAcao(adminApi.extrairMensagemDeErro(err));
       mostrarErro(err, { origem: "AdminPatrimonios › abrirEdicao" });
       return false;
+    } finally {
+      if (pedido === pedidoEdicaoRef.current) setCarregandoEdicao(null);
     }
   }
 
   function fecharFormulario() {
+    pedidoEdicaoRef.current++;
+    setOriginalEdicao(null);
     reiniciarEstadosAuxiliares();
     setEditandoId(null);
     setFormulario(FORMULARIO_VAZIO);
@@ -320,7 +365,7 @@ export default function AdminPatrimonios() {
   }
 
   async function gerarResumo() {
-    if (!arquivoResumo || gerando) return;
+    if (!arquivoResumo || ocupado) return;
 
     setGerando(true);
     setErroFormulario(null);
@@ -344,6 +389,7 @@ export default function AdminPatrimonios() {
 
   async function salvar(e) {
     e.preventDefault();
+    if (ocupado || !editandoId) return;
     setErroFormulario(null);
 
     const cepNumeros = formulario.cep.replace(/\D/g, "");
@@ -367,7 +413,9 @@ export default function AdminPatrimonios() {
       return;
     }
 
-    if (!GEOCODING_EM_MODO_DEMO && erroMaps) {
+    const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
+    const precisaGeocodificar = editandoId === "novo" || !coordenadas || enderecoMudou;
+    if (!GEOCODING_EM_MODO_DEMO && precisaGeocodificar && erroMaps) {
       setErroFormulario(
         "Não foi possível carregar o Google Maps para localizar o endereço. Verifique a chave da API e a conexão e recarregue a página.",
       );
@@ -386,12 +434,11 @@ export default function AdminPatrimonios() {
       //    silêncio. Endereço igual: nada é enviado e o banco mantém o que tem.
       let latitude;
       let longitude;
-      const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
 
       if (!GEOCODING_EM_MODO_DEMO) {
         let ponto = coordenadas;
 
-        if (editandoId === "novo" || !ponto || enderecoMudou) {
+        if (precisaGeocodificar) {
           setEtapaSalvando("Localizando o endereço no mapa…");
           ponto = await geocodificarEndereco(formulario);
         }
@@ -416,7 +463,9 @@ export default function AdminPatrimonios() {
       const dados = {
         nome: formulario.nome.trim(),
         descricao: resumo,
-        descricaoResumida: resumoCurto(resumo),
+        descricaoResumida: originalEdicao && resumo === originalEdicao.descricao?.trim()
+          ? originalEdicao.resumo
+          : resumoCurto(resumo),
         categoriaId: formulario.categoriaId,
         categoriasAdicionais: formulario.categoriasAdicionais,
         situacao: formulario.situacao,
@@ -458,14 +507,9 @@ export default function AdminPatrimonios() {
       fecharFormulario();
       await carregarPatrimonios();
     } catch (err) {
-      // 400 = dado recusado pelo backend: mensagem específica no formulário.
-      if (err.response?.status === 400) {
-        setErroFormulario(adminApi.extrairMensagemDeErro(err));
-      } else {
-        mostrarErro(err, {
-          origem: "AdminPatrimonios › salvar",
-          mensagem: "Não foi possível salvar o patrimônio.",
-        });
+      setErroFormulario(adminApi.extrairMensagemDeErro(err));
+      if (![400, 401, 403, 404, 409].includes(err.response?.status)) {
+        mostrarErro(err, { origem: "AdminPatrimonios › salvar" });
       }
     } finally {
       setSalvando(false);
@@ -519,7 +563,7 @@ export default function AdminPatrimonios() {
   }
 
   async function enviarImagem() {
-    if (!imagemSelecionada || operandoImagem) return;
+    if (!imagemSelecionada || ocupado) return;
     if (!editandoId || editandoId === "novo") return;
 
     setEnviandoImagem(true);
@@ -553,7 +597,7 @@ export default function AdminPatrimonios() {
   }
 
   async function removerImagem(imagem) {
-    if (!eAdmin || operandoImagem) return;
+    if (!eAdmin || ocupado) return;
 
     const confirmou = window.confirm(
       "Remover esta imagem? O arquivo também será apagado do servidor.",
@@ -580,6 +624,7 @@ export default function AdminPatrimonios() {
   // ===== Publicar / arquivar (somente ADMIN) =====
 
   async function mudarStatus(patrimonio, acao) {
+    if (!eAdmin || ocupado) return;
     const publicar = acao === "publicar";
     const confirmou = window.confirm(
       publicar
@@ -594,6 +639,7 @@ export default function AdminPatrimonios() {
       if (publicar) await adminApi.publicarPatrimonio(patrimonio.uuid);
       else await adminApi.arquivarPatrimonio(patrimonio.uuid);
 
+      if (editandoId === patrimonio.uuid) fecharFormulario();
       await carregarPatrimonios();
     } catch (err) {
       mostrarErro(err, {
@@ -607,8 +653,6 @@ export default function AdminPatrimonios() {
     }
   }
 
-  // EDITOR só edita rascunho; ADMIN edita qualquer status.
-  const podeEditar = (p) => eAdmin || p.status === "RASCUNHO";
 
   const modoArquivo = formulario.modoResumo === "arquivo";
 
@@ -623,14 +667,16 @@ export default function AdminPatrimonios() {
           </p>
         </div>
 
-        <button type="button" className="btn-solid" onClick={abrirNovo}>
+        <button type="button" className="btn-solid" disabled={ocupado || carregando} onClick={abrirNovo}>
           <PlusIcon width={16} height={16} />
           Novo patrimônio
         </button>
       </div>
 
+      {carregandoEdicao && <p role="status">Carregando patrimônio para edição…</p>}
+      {erroAcao && <p className="admin-form-erro" role="alert">{erroAcao}</p>}
       {editandoId && (
-        <form className="admin-form" onSubmit={salvar}>
+        <form ref={formularioRef} className="admin-form" onSubmit={salvar} aria-busy={ocupado} inert={ocupado}>
           <h2>
             {editandoId === "novo" ? "Novo patrimônio" : "Editar patrimônio"}
           </h2>
@@ -693,6 +739,7 @@ export default function AdminPatrimonios() {
                     <input
                       type="checkbox"
                       checked={formulario.categoriasAdicionais.includes(c.id)}
+                      disabled={!formulario.categoriasAdicionais.includes(c.id) && formulario.categoriasAdicionais.length >= MAX_CATEGORIAS_ADICIONAIS}
                       onChange={() => alternarCategoriaAdicional(c.id)}
                     />
                     {c.nome}
@@ -753,7 +800,7 @@ export default function AdminPatrimonios() {
             <p className="admin-ajuda admin-form-col-2">
               <MapPinIcon width={16} height={16} />
               <span>
-                Cidade: Guarulhos — SP. A posição no mapa é calculada
+                Cidade: {formulario.cidade} — {formulario.uf}. A posição no mapa é calculada
                 automaticamente a partir do endereço quando você salva; não
                 precisa informar latitude nem longitude.
                 {GEOCODING_EM_MODO_DEMO &&
@@ -804,7 +851,7 @@ export default function AdminPatrimonios() {
                               className="admin-upload-remover"
                               aria-label={`Remover imagem: ${img.textoAlternativo || "sem descrição"}`}
                               title="Remover imagem"
-                              disabled={operandoImagem}
+                              disabled={ocupado}
                               onClick={() => removerImagem(img)}
                             >
                               {removendoImagemId === img.id ? (
@@ -836,7 +883,7 @@ export default function AdminPatrimonios() {
                   <button
                     type="button"
                     className="btn-outline"
-                    disabled={operandoImagem}
+                    disabled={ocupado}
                     onClick={() => inputImagemRef.current?.click()}
                   >
                     <PhotoIcon width={16} height={16} />
@@ -894,7 +941,7 @@ export default function AdminPatrimonios() {
                       <button
                         type="button"
                         className="btn-solid"
-                        disabled={operandoImagem}
+                        disabled={ocupado}
                         onClick={enviarImagem}
                       >
                         {enviandoImagem ? (
@@ -1062,14 +1109,14 @@ export default function AdminPatrimonios() {
           </div>
 
           {erroFormulario && (
-            <p className="admin-form-erro">{erroFormulario}</p>
+            <p className="admin-form-erro" role="alert">{erroFormulario}</p>
           )}
 
           <div className="admin-form-acoes">
             <button
               type="submit"
               className="btn-solid"
-              disabled={salvando || operandoImagem}
+              disabled={ocupado}
             >
               {salvando ? (
                 <>
@@ -1083,7 +1130,7 @@ export default function AdminPatrimonios() {
             <button
               type="button"
               className="btn-outline"
-              disabled={salvando || operandoImagem}
+              disabled={ocupado}
               onClick={cancelarFormulario}
             >
               Cancelar
@@ -1139,16 +1186,18 @@ export default function AdminPatrimonios() {
                 <td className="admin-table-acoes">
                   <button
                     type="button"
-                    aria-label={`Editar ${p.nome}`}
+                    aria-label={podeEditar(p) ? `Editar ${p.nome}` : `Editar ${p.nome}: editores só podem editar rascunhos`}
                     title={
                       podeEditar(p)
-                        ? undefined
+                        ? "Editar"
                         : "Editores só podem editar rascunhos"
                     }
-                    disabled={!podeEditar(p)}
+                    disabled={!podeEditar(p) || ocupado}
                     onClick={() => abrirEdicao(p)}
                   >
-                    <PencilIcon width={16} height={16} />
+                    {carregandoEdicao === p.uuid
+                      ? <ArrowPathIcon width={16} height={16} className="icon-spin" />
+                      : <PencilIcon width={16} height={16} />}
                   </button>
 
                   {eAdmin && p.status !== "PUBLICADO" && (
@@ -1156,7 +1205,7 @@ export default function AdminPatrimonios() {
                       type="button"
                       aria-label={`Publicar ${p.nome}`}
                       title="Publicar"
-                      disabled={acaoEmAndamento === p.uuid}
+                      disabled={ocupado}
                       onClick={() => mudarStatus(p, "publicar")}
                     >
                       <CheckBadgeIcon width={16} height={16} />
@@ -1168,7 +1217,7 @@ export default function AdminPatrimonios() {
                       type="button"
                       aria-label={`Arquivar ${p.nome}`}
                       title="Arquivar"
-                      disabled={acaoEmAndamento === p.uuid}
+                      disabled={ocupado}
                       onClick={() => mudarStatus(p, "arquivar")}
                     >
                       <ArchiveBoxArrowDownIcon width={16} height={16} />

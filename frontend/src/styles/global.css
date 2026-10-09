@@ -2249,6 +2249,21 @@ input:focus-visible {
 .destaque-badge.cat-documental::before {
   background: var(--olive);
 }
+.destaque-badge.cat-historico::before {
+  background: var(--orange-dark);
+}
+.destaque-badge.cat-ambiental::before {
+  background: var(--green);
+}
+.destaque-badge.cat-ferroviario::before {
+  background: var(--indigo);
+}
+.destaque-badge.cat-educacional::before {
+  background: var(--paper);
+}
+.destaque-badge.cat-industrial::before {
+  background: var(--accent-dark);
+}
 .destaque-body {
   padding: 12px 14px 15px;
 }
@@ -2579,16 +2594,25 @@ input:focus-visible {
   background: #424039;
 }
 .legenda-dot.cat-imaterial {
-  background: #c6780c;
+  background: #fca428;
 }
-.legenda-dot.cat-natural {
+.legenda-dot.cat-ambiental {
   background: #32e313;
 }
-.legenda-dot.cat-documental {
-  background: #4cc4b0;
+.legenda-dot.cat-ferroviario {
+  background: #2b2d2a;
 }
-.legenda-dot.cat-demolido {
-  background: #ff0202;
+.legenda-dot.cat-industrial {
+  background: #9c9c9c;
+}
+.legenda-dot.cat-documental {
+  background: #32625a;
+}
+.legenda-dot.cat-historico {
+  background: #aa8d3c;
+}
+.legenda-dot.cat-educacional {
+  background: #28d8cd;
 }
 
 /* ---- Painel de detalhe (sobe ao selecionar) ---- */
