@@ -276,7 +276,7 @@ test("location omits absent optional fields and preserves zero coordinates", asy
         clean(report);
         assert.deepEqual(db.state()[0].localizacao, {
             id: "location-1", patrimonioId: base.id, endereco: "Rua", bairro: "Centro",
-            cidade: "Guarulhos", uf: "SP", ...coords,
+            cidade: "Other", uf: "RJ", ...coords,
         });
     }
 });

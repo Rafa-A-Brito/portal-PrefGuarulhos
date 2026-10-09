@@ -1,0 +1,713 @@
+{
+  "testes": 157,
+  "unitarios": 151,
+  "integracoes_postgresql": 6,
+  "ignorados": 0,
+  "prisma_validate": "aprovado",
+  "localizacoes_completas": 34,
+  "campos_obrigatorios": [
+    "endereco",
+    "numero",
+    "bairro",
+    "cep",
+    "latitude",
+    "longitude",
+    "cidade",
+    "uf"
+  ],
+  "seed_sha256": "f21bc1dc263d9717068d570e4f0fa2fa65f1c681077112365d44ee2833d5d7ec",
+  "schema_sha256": "a7c275e5ddee1335d7ee799b499746ab4115168a3e1aa940bf7e667f42f8f77a",
+  "diff_dry_run_inalterado": true,
+  "banco_real_alterado": false,
+  "escopo": "Sync: locationCreate completo, location parcial e validação prévia de todos os canônicos; testes e relatórios. Seed, dados pesquisados, schema e merges preservados.",
+  "localizacoes": [
+    {
+      "id": "9fc99478-48b8-4f0f-9c42-11950d840dfd",
+      "nome": "Estação Ferroviária de Guarulhos",
+      "location": {
+        "numero": "s/n",
+        "cep": "07011-040",
+        "latitude": -23.4543,
+        "longitude": -46.5333
+      },
+      "locationCreate": {
+        "endereco": "Praça IV Centenário",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07011-040",
+        "latitude": -23.4543,
+        "longitude": -46.5333
+      }
+    },
+    {
+      "id": "3784cdc5-92e6-4670-8e09-22dbb4e4ce23",
+      "nome": "Parque Bosque Maia",
+      "location": {
+        "endereco": "Avenida Paulo Faccini",
+        "numero": "s/n",
+        "bairro": "Centro / Jardim Maia",
+        "cep": "07115-260",
+        "longitude": -46.5262
+      },
+      "locationCreate": {
+        "endereco": "Avenida Paulo Faccini",
+        "numero": "s/n",
+        "bairro": "Centro / Jardim Maia",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07115-260",
+        "latitude": -23.4565,
+        "longitude": -46.5262
+      }
+    },
+    {
+      "id": "097bf643-7695-410c-8e82-d19c5625ceb1",
+      "nome": "Catedral Nossa Senhora da Conceição",
+      "location": {
+        "endereco": "Praça Tereza Cristina",
+        "numero": "1",
+        "cep": "07011-010",
+        "latitude": -23.4688,
+        "longitude": -46.5317
+      },
+      "locationCreate": {
+        "endereco": "Praça Tereza Cristina",
+        "numero": "1",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07011-010",
+        "latitude": -23.4688,
+        "longitude": -46.5317
+      }
+    },
+    {
+      "id": "6a50c931-026b-43bb-bdc7-f1ed16ee445c",
+      "nome": "Complexo Sanatório Padre Bento",
+      "location": {
+        "endereco": "Avenida Emílio Ribas",
+        "numero": "1819",
+        "bairro": "Gopouva",
+        "cep": "07051-000",
+        "latitude": -23.4735,
+        "longitude": -46.5451
+      },
+      "locationCreate": {
+        "endereco": "Avenida Emílio Ribas",
+        "numero": "1819",
+        "bairro": "Gopouva",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07051-000",
+        "latitude": -23.4735,
+        "longitude": -46.5451
+      }
+    },
+    {
+      "id": "7061ac85-5251-4f58-b2b3-ca4e6b533b7e",
+      "nome": "Parque Ecológico do Tietê",
+      "location": {
+        "endereco": "Rodovia Parque",
+        "numero": "8055",
+        "bairro": "Vila Santo Henrique / Engenheiro Goulart",
+        "cep": "03719-000",
+        "latitude": -23.48914,
+        "longitude": -46.52093,
+        "cidade": "São Paulo"
+      },
+      "locationCreate": {
+        "endereco": "Rodovia Parque",
+        "numero": "8055",
+        "bairro": "Vila Santo Henrique / Engenheiro Goulart",
+        "cidade": "São Paulo",
+        "uf": "SP",
+        "cep": "03719-000",
+        "latitude": -23.48914,
+        "longitude": -46.52093
+      }
+    },
+    {
+      "id": "8cb89b3f-4099-4d06-81d8-3f744bf40b9a",
+      "nome": "Igreja de Nossa Senhora de Bonsucesso",
+      "location": {
+        "endereco": "Rua Dona Catharina Maria de Jesus",
+        "numero": "99",
+        "bairro": "Bonsucesso / Pimentas",
+        "cep": "07175-500",
+        "latitude": -23.4243,
+        "longitude": -46.3982
+      },
+      "locationCreate": {
+        "endereco": "Rua Dona Catharina Maria de Jesus",
+        "numero": "99",
+        "bairro": "Bonsucesso / Pimentas",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07175-500",
+        "latitude": -23.4243,
+        "longitude": -46.3982
+      }
+    },
+    {
+      "id": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "nome": "Festa de Nossa Senhora de Bonsucesso",
+      "location": {
+        "endereco": "Rua Silva Bueno",
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Rua Silva Bueno",
+        "numero": "s/n",
+        "bairro": "Bonsucesso",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07162-160",
+        "latitude": -23.419,
+        "longitude": -46.4105
+      }
+    },
+    {
+      "id": "1674b067-4f80-4d9b-a195-6f9aba028bf6",
+      "nome": "Sítio da Candinha (Casa da Candinha)",
+      "location": {
+        "endereco": "Estrada do Bananal",
+        "numero": "s/n",
+        "bairro": "Jardim Bananal / Parque do Bananal",
+        "cep": "07152-000",
+        "latitude": -23.3616,
+        "longitude": -46.5309
+      },
+      "locationCreate": {
+        "endereco": "Estrada do Bananal",
+        "numero": "s/n",
+        "bairro": "Jardim Bananal / Parque do Bananal",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07152-000",
+        "latitude": -23.3616,
+        "longitude": -46.5309
+      }
+    },
+    {
+      "id": "b5ea73fa-79ad-4ac3-a883-0ebd84b451ca",
+      "nome": "Casa José Maurício",
+      "location": {
+        "numero": "150",
+        "cep": "07012-070",
+        "latitude": -23.4682,
+        "longitude": -46.5298
+      },
+      "locationCreate": {
+        "endereco": "Rua Sete de Setembro",
+        "numero": "150",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07012-070",
+        "latitude": -23.4682,
+        "longitude": -46.5298
+      }
+    },
+    {
+      "id": "30b81008-d041-4e73-a3de-feef49e0728d",
+      "nome": "Casa Amarela (Casa do Chefe da Estação)",
+      "location": {
+        "endereco": "Avenida Antônio de Souza",
+        "numero": "186",
+        "bairro": "Jardim Santa Francisca",
+        "cep": "07013-090",
+        "latitude": -23.4731,
+        "longitude": -46.5273
+      },
+      "locationCreate": {
+        "endereco": "Avenida Antônio de Souza",
+        "numero": "186",
+        "bairro": "Jardim Santa Francisca",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07013-090",
+        "latitude": -23.4731,
+        "longitude": -46.5273
+      }
+    },
+    {
+      "id": "da393d15-dc94-4321-bacd-274d6633be04",
+      "nome": "Antigo Paço Municipal",
+      "location": {
+        "endereco": "Rua Sete de Setembro",
+        "numero": "164",
+        "cep": "07012-070",
+        "latitude": -23.468,
+        "longitude": -46.5296
+      },
+      "locationCreate": {
+        "endereco": "Rua Sete de Setembro",
+        "numero": "164",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07012-070",
+        "latitude": -23.468,
+        "longitude": -46.5296
+      }
+    },
+    {
+      "id": "1635fa98-0c15-4622-83bb-450aede5f51a",
+      "nome": "Centro Municipal de Educação Adamastor",
+      "location": {
+        "endereco": "Avenida Monteiro Lobato",
+        "numero": "734",
+        "latitude": -23.4668,
+        "longitude": -46.5222
+      },
+      "locationCreate": {
+        "endereco": "Avenida Monteiro Lobato",
+        "numero": "734",
+        "bairro": "Macedo",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07112-000",
+        "latitude": -23.4668,
+        "longitude": -46.5222
+      }
+    },
+    {
+      "id": "1cbfd08a-4f53-4043-a8e2-2d305ed8cfc6",
+      "nome": "E.E. Conselheiro Crispiniano",
+      "location": {
+        "endereco": "Rua Arminda de Lima",
+        "numero": "57",
+        "cep": "07095-010",
+        "latitude": -23.4649,
+        "longitude": -46.5338
+      },
+      "locationCreate": {
+        "endereco": "Rua Arminda de Lima",
+        "numero": "57",
+        "bairro": "Vila Progresso",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07095-010",
+        "latitude": -23.4649,
+        "longitude": -46.5338
+      }
+    },
+    {
+      "id": "70c26f92-2f28-49b9-9590-156fd4e4a5df",
+      "nome": "E.E. Capistrano de Abreu",
+      "location": {
+        "endereco": "Rua Capitão Gabriel",
+        "numero": "393",
+        "latitude": -23.4658,
+        "longitude": -46.5304
+      },
+      "locationCreate": {
+        "endereco": "Rua Capitão Gabriel",
+        "numero": "393",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07011-010",
+        "latitude": -23.4658,
+        "longitude": -46.5304
+      }
+    },
+    {
+      "id": "6d8a1066-7fdf-4393-8cd2-6c9d891ed005",
+      "nome": "E.E. Dulce Breves Neves",
+      "location": {
+        "endereco": "Rua Orixá",
+        "numero": "1",
+        "bairro": "Jardim dos Afonsos / Cocaia",
+        "cep": "07131-410",
+        "latitude": -23.4326,
+        "longitude": -46.5204
+      },
+      "locationCreate": {
+        "endereco": "Rua Orixá",
+        "numero": "1",
+        "bairro": "Jardim dos Afonsos / Cocaia",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07131-410",
+        "latitude": -23.4326,
+        "longitude": -46.5204
+      }
+    },
+    {
+      "id": "f6dc84b2-7876-48b6-beaa-26e68bdb1f3f",
+      "nome": "Igreja de N. Sra. do Rosário dos Homens Pretos",
+      "location": {
+        "numero": "s/n",
+        "cep": "07010-015",
+        "latitude": -23.4673,
+        "longitude": -46.5292
+      },
+      "locationCreate": {
+        "endereco": "Praça do Rosário",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07010-015",
+        "latitude": -23.4673,
+        "longitude": -46.5292
+      }
+    },
+    {
+      "id": "5e955358-0cf7-490e-b96b-120bb6798085",
+      "nome": "Igreja do Bom Jesus da Cabeça",
+      "location": {
+        "endereco": "Rua Hans Heitel Hohl",
+        "numero": "53",
+        "cep": "07144-287",
+        "latitude": -23.4093,
+        "longitude": -46.5398
+      },
+      "locationCreate": {
+        "endereco": "Rua Hans Heitel Hohl",
+        "numero": "53",
+        "bairro": "Cabuçu",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07144-287",
+        "latitude": -23.4093,
+        "longitude": -46.5398
+      }
+    },
+    {
+      "id": "bf3a1eda-cace-420d-8498-632ce8d786a0",
+      "nome": "Capela do Bom Jesus do Macedo",
+      "location": {
+        "endereco": "Avenida Monteiro Lobato",
+        "numero": "898",
+        "latitude": -23.4659,
+        "longitude": -46.5211
+      },
+      "locationCreate": {
+        "endereco": "Avenida Monteiro Lobato",
+        "numero": "898",
+        "bairro": "Macedo",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07112-000",
+        "latitude": -23.4659,
+        "longitude": -46.5211
+      }
+    },
+    {
+      "id": "77a15464-b001-4daf-9f61-7b25be4f90a6",
+      "nome": "Locomotiva Maria Fumaça (Nº 33) e Vagão",
+      "location": {
+        "numero": "s/n",
+        "cep": "07011-040",
+        "latitude": -23.4544,
+        "longitude": -46.5328
+      },
+      "locationCreate": {
+        "endereco": "Praça IV Centenário",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07011-040",
+        "latitude": -23.4544,
+        "longitude": -46.5328
+      }
+    },
+    {
+      "id": "e2c31ddc-113e-48c4-a65d-b52671af4f5b",
+      "nome": "Dia da Carpição",
+      "location": {
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Entorno da Igreja de Bonsucesso",
+        "numero": "s/n",
+        "bairro": "Bonsucesso",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07162-160",
+        "latitude": -23.4182,
+        "longitude": -46.4111
+      }
+    },
+    {
+      "id": "76088bd7-3dd9-4964-97dc-f903dd2272d6",
+      "nome": "Corporação Musical Banda Lira de Guarulhos",
+      "location": {
+        "endereco": "Praça Getúlio Vargas",
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Praça Getúlio Vargas",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07011-000",
+        "latitude": -23.466,
+        "longitude": -46.531
+      }
+    },
+    {
+      "id": "322b6f30-533b-4dde-b1b0-4ddada7f2228",
+      "nome": "Cultura e Presença Indígena (Wassu Cocal e Krenak/Pankararu)",
+      "location": {
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Aldeias e territórios urbanos de Guarulhos",
+        "numero": "s/n",
+        "bairro": "Cabuçu",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07084-000",
+        "latitude": -23.41,
+        "longitude": -46.54
+      }
+    },
+    {
+      "id": "0b3ce18c-8eed-4366-927c-88593b775306",
+      "nome": "Praça Getúlio Vargas",
+      "location": {
+        "endereco": "Praça Presidente Getúlio Vargas / Av. Tiradentes",
+        "numero": "s/n",
+        "cep": "07010-000"
+      },
+      "locationCreate": {
+        "endereco": "Praça Presidente Getúlio Vargas / Av. Tiradentes",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07010-000",
+        "latitude": -23.466,
+        "longitude": -46.531
+      }
+    },
+    {
+      "id": "abf4351a-b8e3-4d73-8349-bdfc71bf1edc",
+      "nome": "Cemitério São João Batista",
+      "location": {
+        "endereco": "Rua Felício Marcondes",
+        "numero": "320",
+        "latitude": -23.4646,
+        "longitude": -46.5292
+      },
+      "locationCreate": {
+        "endereco": "Rua Felício Marcondes",
+        "numero": "320",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07010-030",
+        "latitude": -23.4646,
+        "longitude": -46.5292
+      }
+    },
+    {
+      "id": "aa70b9e0-cc00-4c2b-a12e-b70eaacc2d61",
+      "nome": "Reserva e Represa do Cabuçu",
+      "location": {
+        "endereco": "Avenida Pedro de Souza Lopes",
+        "numero": "7903",
+        "bairro": "Jardim São Luís / Cabuçu",
+        "cep": "07075-170",
+        "latitude": -23.4021,
+        "longitude": -46.5273
+      },
+      "locationCreate": {
+        "endereco": "Avenida Pedro de Souza Lopes",
+        "numero": "7903",
+        "bairro": "Jardim São Luís / Cabuçu",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07075-170",
+        "latitude": -23.4021,
+        "longitude": -46.5273
+      }
+    },
+    {
+      "id": "455ea7a1-af41-46a5-8837-bbc6a2be6e83",
+      "nome": "Sítios Arqueológicos das Lavras Velhas do Geraldo",
+      "location": {
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Bairro das Lavras",
+        "numero": "s/n",
+        "bairro": "Lavras",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07150-000",
+        "latitude": -23.42,
+        "longitude": -46.45
+      }
+    },
+    {
+      "id": "4d40a562-4a68-49a7-8b78-b19efe0b4038",
+      "nome": "Complexo do Lago dos Patos",
+      "location": {
+        "endereco": "Avenida Francisco Conde",
+        "numero": "723",
+        "bairro": "Vila Rosália / Vila Galvão",
+        "cep": "07074-030",
+        "latitude": -23.4568,
+        "longitude": -46.554
+      },
+      "locationCreate": {
+        "endereco": "Avenida Francisco Conde",
+        "numero": "723",
+        "bairro": "Vila Rosália / Vila Galvão",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07074-030",
+        "latitude": -23.4568,
+        "longitude": -46.554
+      }
+    },
+    {
+      "id": "0d5d972f-ce0e-495b-91d4-07cfeafe79d5",
+      "nome": "Antigo Poço Municipal",
+      "location": {
+        "endereco": "Entorno da Praça Presidente Getúlio Vargas",
+        "numero": "s/n",
+        "cep": "07010-000"
+      },
+      "locationCreate": {
+        "endereco": "Entorno da Praça Presidente Getúlio Vargas",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07010-000",
+        "latitude": -23.4655,
+        "longitude": -46.5318
+      }
+    },
+    {
+      "id": "e6a6ecf1-73fe-4bd0-b3a6-210015577384",
+      "nome": "Casarão Saraceni (Demolido em 2010)",
+      "location": {
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Antiga Chácara Saraceni (Anexo ao Internacional Shopping)",
+        "numero": "s/n",
+        "bairro": "Itapegica",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07042-040",
+        "latitude": -23.479,
+        "longitude": -46.545
+      }
+    },
+    {
+      "id": "bec0a64f-95f1-46a0-af89-f79f65ab32a6",
+      "nome": "Casarão Lima (Demolido em 2026)",
+      "location": {
+        "endereco": "Av. Monteiro Lobato",
+        "cep": "07112-000",
+        "latitude": -23.4668,
+        "longitude": -46.529
+      },
+      "locationCreate": {
+        "endereco": "Av. Monteiro Lobato",
+        "numero": "136",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07112-000",
+        "latitude": -23.4668,
+        "longitude": -46.529
+      }
+    },
+    {
+      "id": "8a87d1b0-66c0-43e2-906c-1dbc94e76d92",
+      "nome": "Casarão da Família Albertis (Demolido em 2023)",
+      "location": {
+        "endereco": "Rua Zumbi dos Palmares",
+        "numero": "s/n",
+        "bairro": "Ponte Alta",
+        "cep": "07179-330",
+        "latitude": -23.4115,
+        "longitude": -46.4285
+      },
+      "locationCreate": {
+        "endereco": "Rua Zumbi dos Palmares",
+        "numero": "s/n",
+        "bairro": "Ponte Alta",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07179-330",
+        "latitude": -23.4115,
+        "longitude": -46.4285
+      }
+    },
+    {
+      "id": "e578c50a-15a9-46b9-8542-f7d21c521a19",
+      "nome": "Antiga Carbonell Fiação e Tecelagem e Casarões Gêmeos (Demolidos)",
+      "location": {
+        "endereco": "Rua Força Pública",
+        "numero": "292",
+        "cep": "07012-030",
+        "latitude": -23.47254,
+        "longitude": -46.53156
+      },
+      "locationCreate": {
+        "endereco": "Rua Força Pública",
+        "numero": "292",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07012-030",
+        "latitude": -23.47254,
+        "longitude": -46.53156
+      }
+    },
+    {
+      "id": "e3bf1831-a531-4850-8546-c6677d074c35",
+      "nome": "Antiga Igreja Matriz Colonial de N. Sra. da Conceição (Demolida)",
+      "location": {
+        "numero": "s/n"
+      },
+      "locationCreate": {
+        "endereco": "Praça Tereza Cristina (atual Catedral)",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07011-040",
+        "latitude": -23.455,
+        "longitude": -46.5325
+      }
+    },
+    {
+      "id": "558965e3-a5af-4682-9b45-3526eb49c838",
+      "nome": "Primitiva Igreja de Nossa Senhora do Rosário dos Homens Pretos (1717)",
+      "location": {
+        "endereco": "Calçadão da Rua Dom Pedro II / Praça Conselheiro Crispiniano",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cep": "07010-003",
+        "latitude": -23.4671,
+        "longitude": -46.5312,
+        "cidade": "Guarulhos",
+        "uf": "SP"
+      },
+      "locationCreate": {
+        "endereco": "Calçadão da Rua Dom Pedro II / Praça Conselheiro Crispiniano",
+        "numero": "s/n",
+        "bairro": "Centro",
+        "cidade": "Guarulhos",
+        "uf": "SP",
+        "cep": "07010-003",
+        "latitude": -23.4671,
+        "longitude": -46.5312
+      }
+    }
+  ]
+}

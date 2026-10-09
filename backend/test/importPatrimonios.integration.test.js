@@ -47,19 +47,19 @@ test("PostgreSQL: importador dry-run, apply, idempotência, preservação e roll
         const applyFlags = ["--apply", "--confirm-db=" + options.confirmDb, "--created-by-email=" + author.email];
         const before = await prisma.patrimonio.count();
         const dry = cli(["--dry-run"]);
-        assert.equal(dry.criar, 35);
+        assert.equal(dry.criar, 33);
         assert.equal(dry.ignorar, 1);
         assert.deepEqual(dry.erros, []);
         assert.equal(await prisma.patrimonio.count(), before);
         await assert.rejects(fs.access(uploadDir), { code: "ENOENT" });
         const applied = cli(applyFlags);
         assert.deepEqual(applied.erros, []);
-        assert.equal(applied.criados, 35);
+        assert.equal(applied.criados, 33);
         const all = await prisma.patrimonio.findMany({ where: { createdBy: author.id }, include: { imagens: true, detalhes: true, localizacao: true }, orderBy: { id: "asc" } });
-        assert.equal(all.filter(p => p.status === "RASCUNHO").length, 35);
+        assert.equal(all.filter(p => p.status === "RASCUNHO").length, 33);
         const repeat = cli(applyFlags);
         assert.equal(repeat.criados, 0);
-        assert.equal(repeat.ignorar, 36);
+        assert.equal(repeat.ignorar, 34);
         assert.deepEqual(await prisma.patrimonio.findUnique({ where: { id: preserved.id } }), preserved);
         assert.deepEqual(await prisma.patrimonio.findMany({ where: { createdBy: author.id }, include: { imagens: true, detalhes: true, localizacao: true }, orderBy: { id: "asc" } }), all);
         const sourceDir = path.join(root, "source");
@@ -77,9 +77,9 @@ test("PostgreSQL: importador dry-run, apply, idempotência, preservação e roll
             source: [{ ...PATRIMONIOS_SEED[0], nome: "Teste rollback " + randomUUID(), imagem: "rollback.png" }],
         });
         assert.equal(rollback.erros[0].motivo, "rollback-real");
-        assert.equal(await prisma.patrimonio.count(), before + 35);
+        assert.equal(await prisma.patrimonio.count(), before + 33);
         await assert.rejects(fs.access(path.join(uploadDir, "patrimonios", "rollback.png")), { code: "ENOENT" });
-        console.log("Importador: dry-run 35 criar/1 ignorar; apply 35 criados; repetição 36 ignorados; rollback real aprovado.");
+        console.log("Importador: dry-run 33 criar/1 ignorar; apply 33 criados; repetição 34 ignorados; rollback real aprovado.");
     } finally {
         if (author) {
             for (const p of await prisma.patrimonio.findMany({ where: { createdBy: author.id }, select: { id: true } })) {

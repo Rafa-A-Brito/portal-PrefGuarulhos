@@ -311,12 +311,10 @@ export async function updatePatrimonio(id, data, user) {
     });
 }
 
-export async function changePatrimonioStatus(id, status, user, { transaction, dryRun = false } = {}) {
+export async function changePatrimonioStatus(id, status, user) {
     if (user.role !== "ADMIN") throw new ForbiddenError();
-    const change = async (transaction) => {
-        const current = dryRun
-            ? await getAdminPatrimonio(id, transaction)
-            : await lockPatrimonio(transaction, id);
+    return prisma.$transaction(async (transaction) => {
+        const current = await lockPatrimonio(transaction, id);
         if (current.status === status) return current;
         if (status === StatusPublicacao.PUBLICADO) {
             createPatrimonioSchema.parse({
@@ -333,7 +331,6 @@ export async function changePatrimonioStatus(id, status, user, { transaction, dr
         } else if (status !== StatusPublicacao.ARQUIVADO) {
             throw new BadRequestError("Transição de status inválida.");
         }
-        if (dryRun) return current;
         const updated = await transaction.patrimonio.update({
             where: { id },
             data: {
@@ -346,9 +343,7 @@ export async function changePatrimonioStatus(id, status, user, { transaction, dr
             include: adminInclude,
         });
         return achatarCategorias(updated);
-    };
-    // A API mantém sua transação; operações em lote reutilizam a transação recebida.
-    return transaction ? change(transaction) : prisma.$transaction(change);
+    });
 }
 
 export async function getPatrimonioBySlug(slug) {

@@ -17,7 +17,7 @@ const SOURCE_DIR = fileURLToPath(new URL("../src/uploads/patrimonios/", import.m
 
 // Equivalências explícitas: slug da fonte -> slug legado já cadastrado.
 // Só ignora quando o destino existe; nunca renomeia nem altera o registro legado.
-const LEGACY_SLUG_ALIASES = new Map([
+export const LEGACY_SLUG_ALIASES = new Map([
     ["centro-municipal-de-educacao-adamastor", "antiga-fabrica-adamastor"],
     [
         "antiga-igreja-matriz-colonial-de-n-sra-da-conceicao-demolida",
@@ -56,7 +56,7 @@ const hash = (buffer) => createHash("sha256").update(buffer).digest("hex");
 const errorText = (error) =>
     error?.code ? String(error.code) : String(error?.message || error).slice(0, 500);
 
-const detailSchema = z.array(
+export const detailSchema = z.array(
     z.object({
         icone: z.string().nullable().optional(),
         titulo: z.string().trim().min(1),
@@ -65,8 +65,8 @@ const detailSchema = z.array(
 );
 
 function validarModosBackfill(options) {
-    if ([options.backfillImages, options.backfillLocation, options.backfillDetails].filter(Boolean).length > 1) {
-        throw new Error("Use apenas um modo de backfill por execução.");
+    if ([options.syncPatrimonios, options.backfillImages, options.backfillLocation, options.backfillDetails].filter(Boolean).length > 1) {
+        throw new Error("Use apenas um modo de backfill ou sync por execução.");
     }
 }
 
@@ -92,11 +92,12 @@ export function parseArgs(args) {
         const value = parts.join("=");
 
         if (
-            ["--apply", "--dry-run", "--json", "--backfill-images", "--backfill-location", "--backfill-details"].includes(key) &&
+            ["--apply", "--dry-run", "--json", "--sync-patrimonios", "--backfill-images", "--backfill-location", "--backfill-details"].includes(key) &&
             !parts.length
         ) {
             if (key === "--apply") options.apply = true;
             if (key === "--json") options.json = true;
+            if (key === "--sync-patrimonios") options.syncPatrimonios = true;
             if (key === "--backfill-location") options.backfillLocation = true;
             if (key === "--backfill-details") options.backfillDetails = true;
             if (key === "--backfill-images") {
@@ -131,11 +132,12 @@ export function parseArgs(args) {
     }
 
     validarModosBackfill(options);
+    if (options.syncPatrimonios && seen.has("--status")) throw new Error("Sync preserva status; não aceita --status.");
 
     return options;
 }
 
-function repararTexto(texto) {
+export function repararTexto(texto) {
     if (typeof texto !== "string" || !/[ÃÂ]/.test(texto)) {
         return texto;
     }
@@ -145,7 +147,7 @@ function repararTexto(texto) {
     return fixed.includes("\uFFFD") ? texto : fixed;
 }
 
-async function validarImagem(nome, sourceDir, destinationDir, io) {
+export async function validarImagem(nome, sourceDir, destinationDir, io) {
     if (!nome) return null;
 
     if (!/^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|gif)$/.test(nome)) {
@@ -202,6 +204,11 @@ export async function importPatrimonios({
     io = fs,
 }) {
     validarModosBackfill(options);
+
+    if (options.syncPatrimonios) {
+        const { syncPatrimonios } = await import("./sync-patrimonios.js");
+        return syncPatrimonios({ prisma, databaseUrl, options, source, sourceDir, uploadDir, io });
+    }
 
     const target = databaseIdentity(databaseUrl);
 
@@ -389,8 +396,8 @@ export async function importPatrimonios({
                     const localizacao = {
                         endereco: item.endereco,
                         bairro: item.bairro,
-                        cidade: "Guarulhos",
-                        uf: "SP",
+                        cidade: item.cidade ?? "Guarulhos",
+                        uf: item.uf ?? "SP",
                     };
                     for (const field of ["numero", "cep", "latitude", "longitude"]) {
                         if (item[field] != null) localizacao[field] = item[field];
@@ -667,6 +674,10 @@ export async function importPatrimonios({
                 throw new Error("Slug inválido.");
             }
 
+            if (normalizarNome(item.nome) === "antigo poco municipal" && options.status === "PUBLICADO") {
+                throw new Error("Antigo Poço Municipal deve permanecer RASCUNHO até confirmação documental.");
+            }
+
             const category = categories.find(
                 (c) => normalizarNome(c.nome) === normalizarNome(item.categoria)
             );
@@ -697,8 +708,8 @@ export async function importPatrimonios({
                 localizacao = {
                     endereco: item.endereco,
                     bairro: item.bairro,
-                    cidade: "Guarulhos",
-                    uf: "SP",
+                    cidade: item.cidade ?? "Guarulhos",
+                    uf: item.uf ?? "SP",
                 };
 
                 for (const field of ["numero", "cep", "latitude", "longitude"]) {

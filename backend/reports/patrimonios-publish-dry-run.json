@@ -1,0 +1,208 @@
+{
+  "banco": "patrimonio_guarulhos",
+  "modo": "dry-run",
+  "responsavel": "admin@exemplo.com",
+  "selecionados": 14,
+  "aplicados": 0,
+  "antes": {
+    "PUBLICADO": 19,
+    "RASCUNHO": 15,
+    "ARQUIVADO": 2
+  },
+  "previsto": {
+    "PUBLICADO": 33,
+    "RASCUNHO": 1,
+    "ARQUIVADO": 2
+  },
+  "poco": {
+    "slug": "antigo-poco-municipal",
+    "status": "RASCUNHO"
+  },
+  "auditoria": "O service atual não registra AuditLog de publicação; atualiza updatedBy e publicadoEm.",
+  "itens": [
+    {
+      "id": "e578c50a-15a9-46b9-8542-f7d21c521a19",
+      "slug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "bf3a1eda-cace-420d-8498-632ce8d786a0",
+      "slug": "capela-do-bom-jesus-do-macedo",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "097bf643-7695-410c-8e82-d19c5625ceb1",
+      "slug": "catedral-nossa-senhora-da-conceicao",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "abf4351a-b8e3-4d73-8349-bdfc71bf1edc",
+      "slug": "cemiterio-sao-joao-batista",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "4d40a562-4a68-49a7-8b78-b19efe0b4038",
+      "slug": "complexo-do-lago-dos-patos",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "76088bd7-3dd9-4964-97dc-f903dd2272d6",
+      "slug": "corporacao-musical-banda-lira-de-guarulhos",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "322b6f30-533b-4dde-b1b0-4ddada7f2228",
+      "slug": "cultura-e-presenca-indigena-wassu-cocal-e-krenak-pankararu",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "e2c31ddc-113e-48c4-a65d-b52671af4f5b",
+      "slug": "dia-da-carpicao",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "6d8a1066-7fdf-4393-8cd2-6c9d891ed005",
+      "slug": "e-e-dulce-breves-neves",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "slug": "festa-de-nossa-senhora-de-bonsucesso",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "7061ac85-5251-4f58-b2b3-ca4e6b533b7e",
+      "slug": "parque-ecologico-do-tiete",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "0b3ce18c-8eed-4366-927c-88593b775306",
+      "slug": "praca-getulio-vargas",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "558965e3-a5af-4682-9b45-3526eb49c838",
+      "slug": "primitiva-igreja-de-nossa-senhora-do-rosario-dos-homens-pretos-1717",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    },
+    {
+      "id": "455ea7a1-af41-46a5-8837-bbc6a2be6e83",
+      "slug": "sitios-arqueologicos-das-lavras-velhas-do-geraldo",
+      "atual": "RASCUNHO",
+      "novo": "PUBLICADO",
+      "publicadoEmAtual": null
+    }
+  ],
+  "validacao": {
+    "data": "2026-10-09",
+    "testes": 160,
+    "unitarios": 153,
+    "integracoes_postgresql": 7,
+    "ignorados": 0,
+    "prisma_validate": "aprovado",
+    "verificacao_banco": "Prisma, conexão somente leitura",
+    "antes": {
+      "patrimonio": {
+        "registros": 36,
+        "sha256": "ba06689ee51f11ad8e8190213fa561f0829204094db80ded8973ec9a9a43a4bc"
+      },
+      "localizacao": {
+        "registros": 35,
+        "sha256": "ebd158be228fbb49b8fff461b9b357fd97cd2925b058e0e064fafee72e3182e9"
+      },
+      "patrimonioDetalhe": {
+        "registros": 173,
+        "sha256": "23bba9d9cdd5f98919631c7adef2c5d6602b8e47eefc92de94d42fa2af95448d"
+      },
+      "patrimonioImagem": {
+        "registros": 36,
+        "sha256": "80cb402aa56028758fa01d6ab9465715a3963694345cc81da170511ff78a97ee"
+      },
+      "patrimonioDocumento": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "rotaPatrimonio": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "patrimonioCategoria": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "auditLog": {
+        "registros": 34,
+        "sha256": "22dcc9235265eca4ae093ef9794cee0b1c62dc21e8112255a17ba77400bbaef2"
+      },
+      "siteHero": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "depois": {
+      "patrimonio": {
+        "registros": 36,
+        "sha256": "ba06689ee51f11ad8e8190213fa561f0829204094db80ded8973ec9a9a43a4bc"
+      },
+      "localizacao": {
+        "registros": 35,
+        "sha256": "ebd158be228fbb49b8fff461b9b357fd97cd2925b058e0e064fafee72e3182e9"
+      },
+      "patrimonioDetalhe": {
+        "registros": 173,
+        "sha256": "23bba9d9cdd5f98919631c7adef2c5d6602b8e47eefc92de94d42fa2af95448d"
+      },
+      "patrimonioImagem": {
+        "registros": 36,
+        "sha256": "80cb402aa56028758fa01d6ab9465715a3963694345cc81da170511ff78a97ee"
+      },
+      "patrimonioDocumento": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "rotaPatrimonio": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "patrimonioCategoria": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "auditLog": {
+        "registros": 34,
+        "sha256": "22dcc9235265eca4ae093ef9794cee0b1c62dc21e8112255a17ba77400bbaef2"
+      },
+      "siteHero": {
+        "registros": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "banco_real_inalterado": true
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "data": "2026-10-08",
+  "fonte_canonica": 34,
+  "descricao": 34,
+  "descricaoResumida": 34,
+  "historia": 34,
+  "importanciaCultural": 34,
+  "localizacoes": 34,
+  "ceps": 34,
+  "pares_coordenadas": 34,
+  "numeros": 34,
+  "detalhes_nao_vazios": 34,
+  "imagens_locais": 34,
+  "nomes_unicos": 34,
+  "seed_sha256": "f21bc1dc263d9717068d570e4f0fa2fa65f1c681077112365d44ee2833d5d7ec",
+  "validacao": {
+    "unitarios": 150,
+    "integracoes": 5,
+    "total": 155,
+    "ignorados": 0,
+    "lint": "aprovado (frontend; backend sem script)",
+    "build_frontend": "aprovado com avisos não bloqueantes de bundle e plugins",
+    "prisma_validate": "aprovado",
+    "schema_alterado": false,
+    "banco_real_alterado": false,
+    "escopo": "Somente quatro patrimônios; 30 inalterados; sync, schema e testes byte a byte intactos"
+  },
+  "observacao_imagem": "Imagem local adicionada durante a tarefa preservada em cópia de nome ASCII; placeholder neutro também disponível.",
+  "revisao_quatro": {
+    "data": "2026-10-08",
+    "ressalvas": [
+      "Casa Amarela: número 186 e coordenadas mantidos da pesquisa Maps; número não confirmado independentemente na documentação."
+    ],
+    "merges_planejados": 2,
+    "updates_planejados": 34,
+    "erros": 0,
+    "conflitos": 0
+  }
+}
