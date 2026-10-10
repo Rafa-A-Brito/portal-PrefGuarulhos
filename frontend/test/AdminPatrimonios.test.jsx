@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminPatrimonios from "../src/features/admin/pages/AdminPatrimonios";
 import api from "../src/services/api";
@@ -11,7 +11,10 @@ import { CHAVE_SESSAO_MOCK } from "../src/context/authConstants";
 
 const flags = vi.hoisted(() => ({
   perfil: "ADMIN", autenticado: true, demo: false, erroMaps: null,
-  mostrarErro: vi.fn(), geo: vi.fn(), gerar: vi.fn(),
+  mostrarErro: vi.fn(), geo: vi.fn(), gerar: vi.fn(), cep: vi.fn(),
+}));
+vi.mock("../src/services/cepApi", async importOriginal => ({
+  ...await importOriginal(), consultarCep: flags.cep,
 }));
 vi.mock("../src/hooks/useAuth", () => ({ useAuth: () => ({ usuario: { perfil: flags.perfil }, autenticado: flags.autenticado, carregando: false }) }));
 vi.mock("../src/hooks/useGoogleMaps", () => ({ useGoogleMaps: () => ({ erro: flags.erroMaps }) }));
@@ -50,6 +53,7 @@ function rejectApi(config, status, message) {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  flags.cep.mockReset().mockResolvedValue(postal);
   flags.perfil = "ADMIN"; flags.autenticado = true; flags.demo = false; flags.erroMaps = null;
   flags.geo.mockResolvedValue({ lat: -23.46, lng: -46.54 });
   flags.gerar.mockResolvedValue("Resumo gerado para revisão.");
@@ -148,7 +152,7 @@ test("edição usa PATCH, preserva resumo editorial e imagens, normaliza Decimal
     nome: "Estação revisada", descricao: records[0].descricao, descricaoResumida: "Resumo editorial próprio.",
     categoriaId: cats[0].id, categoriasAdicionais: [cats[1].id], situacao: "PRESERVADO",
     historia: "História completa atual.", importanciaCultural: "Importância atual.",
-    localizacao: { endereco: "Rua Teste", numero: "393", complemento: "Acesso lateral", bairro: "Centro", cep: "07010-000", latitude: -23.4543, longitude: -46.5333 },
+    localizacao: { endereco: "Rua Teste", numero: "393", complemento: "Acesso lateral", bairro: "Centro", cidade: "São Paulo", uf: "SP", cep: "07010-000", latitude: -23.4543, longitude: -46.5333 },
   });
   expect(calls.filter(c => c.method === "post")).toHaveLength(0);
   expect(calls.filter(c => c.url === "/admin/patrimonios" && c.method === "get").length).toBe(2);
@@ -379,4 +383,292 @@ test("erros de publicar e de upload são tratados e liberam os botões", async (
   expect(screen.getByRole("img", { name: "Fachada existente" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Descartar imagem escolhida" }));
   expect(screen.queryByRole("button", { name: "Enviar imagem" })).toBeNull();
+});
+
+const postal = {
+  cep: "07112000", endereco: "Rua Postal", bairro: "Bairro Postal", cidade: "Guarulhos", uf: "SP",
+};
+const postalB = {
+  cep: "01001000", endereco: "Praça Postal", bairro: "Outro bairro", cidade: "São Paulo", uf: "SP",
+};
+const mensagemIndisponivel = "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.";
+async function esperarDebounce() {
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 520)); });
+}
+async function novo() {
+  const user = await load();
+  await user.click(screen.getByRole("button", { name: "Novo patrimônio" }));
+  return user;
+}
+function digitarCep(cep = "07112-000") {
+  fireEvent.change(screen.getByLabelText("CEP"), { target: { value: cep } });
+}
+function digitar(campo, valor) {
+  fireEvent.change(screen.getByLabelText(campo), { target: { value: valor } });
+}
+
+test("CEP incompleto não consulta e CEP completo usa máscara/debounce sem repetir por foco", async () => {
+  const user = await novo();
+  digitarCep("07112-00");
+  await esperarDebounce();
+  expect(flags.cep).not.toHaveBeenCalled();
+  digitarCep("07112000");
+  expect(screen.getByLabelText("CEP").value).toBe("07112-000");
+  expect(flags.cep).not.toHaveBeenCalled();
+  await esperarDebounce();
+  expect(flags.cep).toHaveBeenCalledTimes(1);
+  expect(flags.cep).toHaveBeenCalledWith("07112000", { signal: expect.any(AbortSignal) });
+  await user.click(screen.getByLabelText("Nome"));
+  await user.click(screen.getByLabelText("CEP"));
+  digitarCep("07112-000");
+  await esperarDebounce();
+  expect(flags.cep).toHaveBeenCalledTimes(1);
+});
+
+test("CEP preenche quatro campos, mantém número/complemento e não chama Maps ou save", async () => {
+  await novo();
+  digitar("Número", "42");
+  digitar("Complemento", "Portão lateral");
+  digitarCep();
+  await esperarDebounce();
+  for (const [campo, valor] of [["Endereço", postal.endereco], ["Bairro", postal.bairro], ["Cidade", postal.cidade], ["UF", postal.uf]]) {
+    expect(screen.getByLabelText(campo).value).toBe(valor);
+  }
+  expect(screen.getByLabelText("Número").value).toBe("42");
+  expect(screen.getByLabelText("Complemento").value).toBe("Portão lateral");
+  expect(flags.geo).not.toHaveBeenCalled();
+  expect(calls.some(c => ["post", "patch"].includes(c.method))).toBe(false);
+});
+
+test("consulta pendente mostra feedback sem bloquear digitação/cancelamento", async () => {
+  flags.cep.mockImplementation(() => new Promise(() => {}));
+  const user = await novo();
+  digitarCep();
+  await esperarDebounce();
+  expect(screen.getByRole("status").textContent).toBe("Consultando CEP...");
+  expect(screen.getByLabelText("CEP").getAttribute("aria-describedby")).toBe("patrimonio-cep-feedback");
+  expect(screen.getByRole("button", { name: "Salvar" }).disabled).toBe(false);
+  digitar("Endereço", "Correção durante consulta");
+  expect(screen.getByLabelText("Endereço").value).toBe("Correção durante consulta");
+  await user.click(screen.getByRole("button", { name: "Cancelar" }));
+  expect(flags.cep.mock.calls[0][1].signal.aborted).toBe(true);
+});
+
+test.each([
+  ["CEP_NAO_ENCONTRADO", "CEP não encontrado. Preencha o endereço manualmente."],
+  ["CEP_INDISPONIVEL", mensagemIndisponivel],
+])("%s mostra feedback e permite criação manual", async (codigo, message) => {
+  flags.cep.mockRejectedValueOnce(Object.assign(new Error(message), { codigo }));
+  const user = await novo();
+  digitarCep();
+  await esperarDebounce();
+  expect(screen.getByRole("status").textContent).toBe(message);
+  digitar("Nome", "Cadastro manual");
+  digitar("Endereço", "Rua manual");
+  digitar("Bairro", "Bairro manual");
+  fireEvent.change(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio."), { target: { value: "Resumo manual." } });
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await screen.findByRole("heading", { name: "Editar patrimônio" });
+  expect(calls.find(c => c.method === "post").body.localizacao.endereco).toBe("Rua manual");
+  expect(flags.mostrarErro).not.toHaveBeenCalled();
+});
+
+test("resposta A atrasada nunca preenche o CEP B; consulta A é abortada", async () => {
+  let resolverA;
+  flags.cep.mockImplementationOnce(() => new Promise(resolve => { resolverA = resolve; }))
+    .mockResolvedValueOnce(postalB);
+  await novo();
+  digitarCep();
+  await esperarDebounce();
+  digitarCep("01001-000");
+  expect(flags.cep.mock.calls[0][1].signal.aborted).toBe(true);
+  await esperarDebounce();
+  expect(screen.getByLabelText("Endereço").value).toBe(postalB.endereco);
+  await act(async () => resolverA(postal));
+  expect(screen.getByLabelText("Endereço").value).toBe(postalB.endereco);
+  expect(screen.getByLabelText("CEP").value).toBe("01001-000");
+});
+
+test("trocas dentro do debounce fazem somente a consulta final", async () => {
+  flags.cep.mockResolvedValueOnce(postalB);
+  await novo();
+  digitarCep();
+  digitarCep("01001-000");
+  await esperarDebounce();
+  expect(flags.cep).toHaveBeenCalledTimes(1);
+  expect(flags.cep.mock.calls[0][0]).toBe("01001000");
+});
+
+test("apagar parte do CEP invalida resposta pendente e limpa feedback", async () => {
+  let resolver;
+  flags.cep.mockImplementationOnce(() => new Promise(resolve => { resolver = resolve; }));
+  await novo();
+  digitarCep();
+  await esperarDebounce();
+  digitarCep("07112-00");
+  expect(screen.queryByRole("status")).toBeNull();
+  await act(async () => resolver(postal));
+  expect(screen.getByLabelText("Endereço").value).toBe("");
+  expect(flags.cep).toHaveBeenCalledTimes(1);
+});
+
+test("lápis não consulta CEP e alteração de CEP preserva endereço editorial, imagens e categorias", async () => {
+  await edit();
+  await esperarDebounce();
+  expect(flags.cep).not.toHaveBeenCalled();
+  digitarCep();
+  await esperarDebounce();
+  expect(flags.cep).toHaveBeenCalledTimes(1);
+  expect(screen.getByLabelText("Endereço").value).toBe("Rua Teste");
+  expect(screen.getByLabelText("Bairro").value).toBe("Centro");
+  expect(screen.getByLabelText("Cidade").value).toBe("São Paulo");
+  expect(screen.getByLabelText("Número").value).toBe("393");
+  expect(screen.getByLabelText("Complemento").value).toBe("Acesso lateral");
+  expect(screen.getByLabelText("Histórico").checked).toBe(true);
+  expect(screen.getByRole("img", { name: "Fachada existente" })).toBeTruthy();
+  expect(flags.geo).not.toHaveBeenCalled();
+});
+
+test("campos manuais antes/durante a consulta são preservados, inclusive campos apagados", async () => {
+  let resolver;
+  flags.cep.mockImplementationOnce(() => new Promise(resolve => { resolver = resolve; }));
+  await novo();
+  digitar("Endereço", "Nome histórico");
+  digitar("Cidade", "Cidade editorial");
+  digitarCep();
+  await esperarDebounce();
+  digitar("Bairro", "Bairro manual");
+  digitar("Bairro", "");
+  digitar("UF", "rj");
+  await act(async () => resolver(postal));
+  expect(screen.getByLabelText("Endereço").value).toBe("Nome histórico");
+  expect(screen.getByLabelText("Bairro").value).toBe("");
+  expect(screen.getByLabelText("Cidade").value).toBe("Cidade editorial");
+  expect(screen.getByLabelText("UF").value).toBe("RJ");
+});
+
+test("repetir CEP preserva correções dos quatro campos; outro CEP só substitui campos automáticos", async () => {
+  flags.cep.mockResolvedValueOnce(postal).mockResolvedValueOnce(postalB).mockResolvedValueOnce(postal);
+  await novo();
+  digitarCep();
+  await esperarDebounce();
+  digitar("Endereço", "Endereço revisado");
+  digitarCep("01001-000");
+  await esperarDebounce();
+  expect(screen.getByLabelText("Endereço").value).toBe("Endereço revisado");
+  expect(screen.getByLabelText("Bairro").value).toBe(postalB.bairro);
+  expect(screen.getByLabelText("Cidade").value).toBe(postalB.cidade);
+  digitar("Bairro", "Bairro revisado");
+  digitar("Cidade", "Cidade revisada");
+  digitar("UF", "mg");
+  digitarCep("07112-000");
+  await esperarDebounce();
+  expect(screen.getByLabelText("Endereço").value).toBe("Endereço revisado");
+  expect(screen.getByLabelText("Bairro").value).toBe("Bairro revisado");
+  expect(screen.getByLabelText("Cidade").value).toBe("Cidade revisada");
+  expect(screen.getByLabelText("UF").value).toBe("MG");
+});
+
+test.each(["cancelar", "novo", "editar", "desmontar"])("resposta pendente não vaza ao %s formulário", async acao => {
+  let resolver;
+  flags.cep.mockImplementationOnce(() => new Promise(resolve => { resolver = resolve; }));
+  const user = await novo();
+  digitarCep();
+  await esperarDebounce();
+  const signal = flags.cep.mock.calls[0][1].signal;
+  if (acao === "cancelar") await user.click(screen.getByRole("button", { name: "Cancelar" }));
+  if (acao === "novo") await user.click(screen.getByRole("button", { name: "Novo patrimônio" }));
+  if (acao === "editar") {
+    await user.click(screen.getByRole("button", { name: "Editar Estação" }));
+    await screen.findByRole("heading", { name: "Editar patrimônio" });
+  }
+  if (acao === "desmontar") cleanup();
+  expect(signal.aborted).toBe(true);
+  await act(async () => resolver(postal));
+  if (acao === "novo") expect(screen.getByLabelText("Endereço").value).toBe("");
+  if (acao === "editar") expect(screen.getByLabelText("Endereço").value).toBe("Rua Teste");
+  if (acao === "cancelar" || acao === "desmontar") expect(screen.queryByLabelText("Endereço")).toBeNull();
+});
+
+test("fechar antes do debounce não dispara consulta", async () => {
+  const user = await novo();
+  digitarCep();
+  await user.click(screen.getByRole("button", { name: "Cancelar" }));
+  await esperarDebounce();
+  expect(flags.cep).not.toHaveBeenCalled();
+});
+
+test.each(["ADMIN", "EDITOR"])("%s cria com CEP, geocodifica só no save e faz PATCH posterior", async perfil => {
+  flags.perfil = perfil;
+  const user = await novo();
+  digitar("Nome", "Bem com CEP");
+  fireEvent.change(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio."), { target: { value: "Descrição para teste." } });
+  digitarCep();
+  await esperarDebounce();
+  digitar("Número", "80");
+  digitar("Complemento", "Fundos");
+  expect(flags.geo).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await screen.findByRole("heading", { name: "Editar patrimônio" });
+  expect(flags.geo).toHaveBeenCalledTimes(1);
+  expect(flags.geo).toHaveBeenCalledWith(expect.objectContaining({ ...postal, cep: "07112-000", numero: "80" }));
+  const post = calls.find(c => c.method === "post");
+  expect(post.body.localizacao).toEqual({
+    ...postal, cep: "07112-000", numero: "80", complemento: "Fundos", latitude: -23.46, longitude: -46.54,
+  });
+  expect(flags.cep).toHaveBeenCalledTimes(1);
+  digitar("Nome", "Bem revisado");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await screen.findByRole("button", { name: "Editar Bem revisado" });
+  expect(calls.filter(c => c.method === "post")).toHaveLength(1);
+  expect(calls.find(c => c.method === "patch").url).toBe("/admin/patrimonios/55555555-5555-4555-8555-555555555555");
+  expect(flags.geo).toHaveBeenCalledTimes(1);
+});
+
+test("edição com campos vazios usa CEP e recalcula coordenadas apenas ao salvar PATCH", async () => {
+  Object.assign(records[0].localizacao, { endereco: "", bairro: "" });
+  const user = await edit();
+  digitarCep();
+  await esperarDebounce();
+  expect(screen.getByLabelText("Endereço").value).toBe(postal.endereco);
+  expect(flags.geo).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(flags.geo).toHaveBeenCalledWith(expect.objectContaining({
+    endereco: postal.endereco, bairro: postal.bairro, cidade: "São Paulo", uf: "SP", numero: "393",
+  }));
+  const patch = calls.find(c => c.method === "patch").body;
+  expect(patch.localizacao).toMatchObject({ latitude: -23.46, longitude: -46.54 });
+  expect(patch.descricaoResumida).toBe("Resumo editorial próprio.");
+  expect(patch.categoriasAdicionais).toEqual([cats[1].id]);
+  expect(records[0].imagens).toHaveLength(1);
+});
+
+test("consulta não altera coordenadas existentes quando CEP/endereço voltam ao original", async () => {
+  flags.erroMaps = new Error("Maps indisponível");
+  const user = await edit();
+  digitarCep();
+  await esperarDebounce();
+  digitarCep("07010-000");
+  await esperarDebounce();
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(flags.geo).not.toHaveBeenCalled();
+  expect(calls.find(c => c.method === "patch").body.localizacao).toMatchObject({ latitude: -23.4543, longitude: -46.5333 });
+});
+
+test("salvar cancela consulta pendente e resposta atrasada não altera formulário após falha no PATCH", async () => {
+  let resolver;
+  flags.cep.mockImplementationOnce(() => new Promise(resolve => { resolver = resolve; }));
+  hook = config => { if (config.method === "patch") rejectApi(config, 409, "Conflito de teste."); };
+  const user = await edit();
+  digitarCep();
+  await esperarDebounce();
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await screen.findByText("Conflito de teste.");
+  expect(flags.cep.mock.calls[0][1].signal.aborted).toBe(true);
+  await act(async () => resolver(postal));
+  expect(screen.getByLabelText("Endereço").value).toBe("Rua Teste");
+  expect(screen.getByLabelText("CEP").value).toBe("07112-000");
+  expect(screen.queryByText("Consultando CEP...")).toBeNull();
 });

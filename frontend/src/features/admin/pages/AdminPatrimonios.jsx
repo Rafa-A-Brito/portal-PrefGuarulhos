@@ -18,6 +18,7 @@ import { CATEGORIA_META } from "../../../features/categoriaMeta";
 import { useAuth } from "../../../hooks/useAuth";
 import { useGoogleMaps } from "../../../hooks/useGoogleMaps";
 import { useErroModal } from "../../../hooks/useErroModal";
+import { useCepEndereco } from "../../../hooks/useCepEndereco";
 import {
   geocodificarEndereco,
   chaveEndereco,
@@ -114,7 +115,7 @@ function paraFormulario(patrimonio) {
     categoriaId: patrimonio.categoriaId ?? "",
     categoriasAdicionais: patrimonio.categoriasAdicionaisIds ?? [],
     situacao: patrimonio.situacao ?? "NAO_INFORMADO",
-    cep: patrimonio.cep || "",
+    cep: formatarCep(patrimonio.cep || ""),
     endereco: patrimonio.endereco || "",
     numero: patrimonio.numero || "",
     complemento: patrimonio.complemento || "",
@@ -151,6 +152,7 @@ export default function AdminPatrimonios() {
   const formularioRef = useRef(null);
   const pedidoEdicaoRef = useRef(0);
   const [formulario, setFormulario] = useState(FORMULARIO_VAZIO);
+  const { feedbackCep, alterarCep, marcarCampoManual, reiniciarCep, cancelarConsultaCep } = useCepEndereco(setFormulario);
   const [erroFormulario, setErroFormulario] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [etapaSalvando, setEtapaSalvando] = useState("");
@@ -233,6 +235,7 @@ export default function AdminPatrimonios() {
   }
 
   function reiniciarEstadosAuxiliares() {
+    reiniciarCep();
     setErroFormulario(null);
     setErroArquivo(null);
     setArquivoResumo(null);
@@ -267,6 +270,7 @@ export default function AdminPatrimonios() {
       setErroAcao("Editores só podem editar patrimônios em rascunho.");
       return false;
     }
+    cancelarConsultaCep();
     const pedido = ++pedidoEdicaoRef.current;
     setCarregandoEdicao(resumo.uuid);
     setErroAcao(null);
@@ -279,7 +283,9 @@ export default function AdminPatrimonios() {
         return false;
       }
       reiniciarEstadosAuxiliares();
-      setFormulario(paraFormulario(detalhe));
+      const preenchido = paraFormulario(detalhe);
+      reiniciarCep(preenchido);
+      setFormulario(preenchido);
       setOriginalEdicao(detalhe);
       setImagens(detalhe.imagens ?? []);
       setCoordenadas(detalhe.localizacao ?? null);
@@ -312,6 +318,8 @@ export default function AdminPatrimonios() {
   }
 
   function atualizar(campo, valor) {
+    marcarCampoManual(campo);
+    if (campo === "cep") alterarCep(valor);
     setFormulario((f) => ({ ...f, [campo]: valor }));
   }
 
@@ -422,6 +430,9 @@ export default function AdminPatrimonios() {
       return;
     }
 
+    // Congela o endereço usado pelo save; uma consulta pendente nunca pode
+    // alterar o formulário durante geocoding/PATCH, mesmo se o save falhar.
+    cancelarConsultaCep();
     setSalvando(true);
 
     try {
@@ -476,6 +487,8 @@ export default function AdminPatrimonios() {
           numero: opcional(formulario.numero),
           complemento: opcional(formulario.complemento),
           bairro: formulario.bairro.trim(),
+          cidade: formulario.cidade.trim(),
+          uf: formulario.uf.trim(),
           cep: formulario.cep,
           ...(latitude !== undefined && { latitude, longitude }),
         },
@@ -756,17 +769,25 @@ export default function AdminPatrimonios() {
               />
             </label>
 
-            <label>
+            <label htmlFor="patrimonio-cep">
               CEP
               <input
                 required
                 inputMode="numeric"
                 autoComplete="postal-code"
+                id="patrimonio-cep"
+                aria-label="CEP"
+                aria-describedby={feedbackCep ? "patrimonio-cep-feedback" : undefined}
                 maxLength={9}
                 placeholder="00000-000"
                 value={formulario.cep}
                 onChange={(e) => atualizar("cep", formatarCep(e.target.value))}
               />
+              {feedbackCep && (
+                <span id="patrimonio-cep-feedback" className="admin-ajuda" role="status">
+                  {feedbackCep}
+                </span>
+              )}
             </label>
 
             <label>
@@ -794,6 +815,30 @@ export default function AdminPatrimonios() {
               <input
                 value={formulario.complemento}
                 onChange={(e) => atualizar("complemento", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Cidade
+              <input
+                required
+                autoComplete="address-level2"
+                maxLength={100}
+                value={formulario.cidade}
+                onChange={(e) => atualizar("cidade", e.target.value)}
+              />
+            </label>
+
+            <label>
+              UF
+              <input
+                required
+                autoComplete="address-level1"
+                minLength={2}
+                maxLength={2}
+                pattern="[A-Za-z]{2}"
+                value={formulario.uf}
+                onChange={(e) => atualizar("uf", e.target.value.toUpperCase())}
               />
             </label>
 
