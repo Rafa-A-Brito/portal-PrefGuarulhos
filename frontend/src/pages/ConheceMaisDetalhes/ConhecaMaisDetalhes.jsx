@@ -79,7 +79,7 @@ function IndicePagina({ ativo, onEscolher, grupos }) {
           <p className="indice-grupo-titulo">{g.titulo}</p>
           <ul>
             {g.itens.map((it) => {
-              const Icone = ICONES[it.id] ?? MegaphoneIcon;
+              const Icone = ICONES[it.slug ?? it.id] ?? MegaphoneIcon;
               const ehAtivo = ativo === it.id;
               return (
                 <li key={it.id}>
@@ -270,7 +270,7 @@ export default function ConhecaMaisDetalhes() {
   }, []);
 
   const itemAtivo = todosItens.find((i) => i.id === ativo) ?? todosItens[0] ?? { id: "", titulo: "Conteúdo", sigla: "ÍNDICE" };
-  const IconeAtivo = ICONES[itemAtivo.id] ?? ListBulletIcon;
+  const IconeAtivo = ICONES[itemAtivo.slug ?? itemAtivo.id] ?? ListBulletIcon;
 
 
 

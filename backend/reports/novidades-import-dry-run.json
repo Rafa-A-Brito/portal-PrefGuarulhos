@@ -1,0 +1,120 @@
+{
+  "banco": "patrimonio_guarulhos",
+  "modo": "dry-run",
+  "status": "PUBLICADO",
+  "total": 16,
+  "criar": 16,
+  "atualizar": 0,
+  "ignorar": 0,
+  "conflitos": 0,
+  "aplicados": 0,
+  "itens": [
+    {
+      "slug": "casarao-25-mil-visitas",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "bonsucesso-cultura-e-tradicao",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "conexao-lago-2026",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "festa-nossa-senhora-de-bonsucesso",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "dom-quixote-teatro-padre-bento",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "feira-economia-solidaria",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": "01/10/2026 é referência de ordenação; evento com várias datas. Bloco e quando preservados."
+    },
+    {
+      "slug": "arraia-vixi-maria",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "festival-criart",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "semana-do-conhecimento-2026",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "mostra-guarulhense-de-cinema",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "mangiare-italiafest",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "hallyuween-adamastor",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "balloon-parade-2026",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "abt-escola-teatro-padre-bento",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "corrida-folha-metropolitana",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    },
+    {
+      "slug": "burguerland-festival",
+      "acao": "CRIAR",
+      "campos": [],
+      "aviso": null
+    }
+  ],
+  "verificacao": {
+    "antes": {
+      "registros": 0,
+      "checksum": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "depois": {
+      "registros": 0,
+      "checksum": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "inalterado": true
+  }
+}

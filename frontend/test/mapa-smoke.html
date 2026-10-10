@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+  <meta charset="UTF-8" /><title>Smoke do mapa real</title>
+  <div id="root" style="height: 600px"></div>
+  <script type="module">
+    import React from "react";
+    import { createRoot } from "react-dom/client";
+    import Mapa from "/src/features/mapa/MapaPatrimonios.jsx";
+    const root = createRoot(document.getElementById("root"));
+    const all = [
+      {
+        id: "smoke-1",
+        nome: "Primeiro patrimônio",
+        categoria: "historico",
+        bairro: "Centro",
+        resumo: "Coordenadas do fixture",
+        localizacao: { latitude: "-23.4543", longitude: "-46.5333" },
+      },
+      {
+        id: "smoke-2",
+        nome: "Segundo patrimônio",
+        categoria: "ambiental",
+        bairro: "Centro",
+        localizacao: { latitude: "-23.455", longitude: "-46.534" },
+      },
+    ];
+    let items = all,
+      selected = null;
+    function draw() {
+      root.render(
+        React.createElement(Mapa, {
+          patrimonios: items,
+          selecionado: selected,
+          onSelecionar: (item) => {
+            selected = item;
+            window.smoke.selected = item?.id;
+            draw();
+          },
+        }),
+      );
+    }
+    window.smoke = {
+      filter() {
+        items = [all[1]];
+        selected = null;
+        draw();
+      },
+      unmount() {
+        root.unmount();
+      },
+      selected: null,
+    };
+    draw();
+  </script>
+</html>

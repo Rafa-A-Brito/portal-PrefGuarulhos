@@ -1,7 +1,8 @@
-import { GoogleMap, InfoWindowF, MarkerF } from "@react-google-maps/api";
+import { GoogleMap, InfoWindowF } from "@react-google-maps/api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../styles/global.css";
-import { useGoogleMaps } from "../../hooks/useGoogleMaps";
+import AdvancedMarker from "./AdvancedMarker";
+import { GOOGLE_MAPS_MAP_ID, useGoogleMaps } from "../../hooks/useGoogleMaps";
 import { obterCoordenadas } from "./coordenadas";
 
 const GUARULHOS_CENTER = { lat: -23.4542, lng: -46.5268 };
@@ -14,41 +15,6 @@ const mapContainerStyle = {
 
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='16' fill='%235B5876' text-anchor='middle' dominant-baseline='middle'%3ESem imagem%3C/text%3E%3C/svg%3E";
-
-// Cor do pino no mapa real, por categoria — espelha as cores dos badges/chips.
-// Chaves = slugs reais do banco (ver categoriaMeta.js).
-const COR_POR_CATEGORIA = {
-  arquitetonico: "#1D6E96",
-  historico: "#7A3E9D",
-  imaterial: "#92590A",
-  ambiental: "#146A2E",
-  ferroviario: "#8A2D2D",
-  educacional: "#0F766E",
-  industrial: "#56661F",
-};
-
-// Um ícone por categoria, criado uma vez: gerar um objeto novo a cada render
-// faria todo marcador redesenhar o ícone sem necessidade.
-const cacheIcones = new Map();
-
-function pinIcon(categoria) {
-  if (!window.google?.maps) return undefined;
-
-  if (!cacheIcones.has(categoria)) {
-    const cor = COR_POR_CATEGORIA[categoria] || "#2B255C";
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
-      <path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 25 15 25s15-14 15-25C30 6.7 23.3 0 15 0z" fill="${cor}"/>
-      <circle cx="15" cy="15" r="6" fill="#fff"/>
-    </svg>`;
-    cacheIcones.set(categoria, {
-      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-      scaledSize: new window.google.maps.Size(30, 40),
-    });
-  }
-
-  return cacheIcones.get(categoria);
-}
 
 export default function MapaPatrimonios({
   patrimonios = [],
@@ -150,18 +116,19 @@ export default function MapaPatrimonios({
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={{
+          mapId: GOOGLE_MAPS_MAP_ID,
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
         }}
       >
         {marcadores.map(({ item, posicao }) => (
-          <MarkerF
+          <AdvancedMarker
             key={item.id}
             position={posicao}
-            title={item.nome}
-            icon={pinIcon(item.categoria)}
-            onClick={() => setSelectedPatrimonio(item)}
+            map={map}
+            item={item}
+            onSelecionar={setSelectedPatrimonio}
           />
         ))}
 

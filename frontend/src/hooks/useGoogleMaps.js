@@ -25,7 +25,10 @@ import { useJsApiLoader } from "@react-google-maps/api";
 export const GOOGLE_MAPS_ID = "google-map-script";
 
 // Constante FORA do hook: o loader compara as opções por referência.
-const BIBLIOTECAS = [];
+const BIBLIOTECAS = ["marker"];
+
+// DEMO_MAP_ID permite desenvolvimento; configure o ID do projeto no build de produção.
+export const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
 
 const CHAVE = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
