@@ -18,7 +18,7 @@ const EXTENSOES = {
     "image/gif": ".gif",
 };
 
-const PASTAS_PERMITIDAS = new Set(UPLOAD_FOLDERS);
+const PASTAS_PERMITIDAS = new Set(UPLOAD_FOLDERS.filter(pasta => pasta !== "referencias"));
 
 function parseContentDisposition(value) {
     const out = {};

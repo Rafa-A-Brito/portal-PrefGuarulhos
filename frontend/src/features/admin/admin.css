@@ -32,6 +32,8 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto; /* telas baixas: o menu rola em vez de cortar Exposições/Sair */
+  overscroll-behavior: contain;
 }
 
 .admin-sidebar-brand {
@@ -124,6 +126,7 @@
 
 .admin-content {
   flex: 1;
+  min-width: 0; /* sem isso uma tabela larga estica a página inteira */
   padding: 32px 40px;
   max-width: 1100px;
 }
@@ -342,7 +345,7 @@
 }
 
 .admin-form-erro {
-  color: #b3261e;
+  color: var(--danger);
   font-size: 12.5px;
   margin-top: 14px;
 }
@@ -370,5 +373,71 @@
 
   .admin-form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Mobile: menu vira barra compacta no topo ----------
+   Linha 1 = marca e "Sair"; abaixo, os links quebram em linhas (nada fica
+   escondido atrás de rolagem horizontal). Nome/e-mail do usuário só no
+   desktop. */
+@media (max-width: 720px) {
+  .admin-sidebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "marca sair"
+      "menu menu";
+    align-items: center;
+    gap: 10px 12px;
+    width: 100%;
+    height: auto;
+    padding: 10px 12px 12px;
+    position: static;
+    overflow: visible;
+  }
+
+  .admin-sidebar-brand {
+    grid-area: marca;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .admin-sidebar-footer {
+    display: contents; /* o botão "Sair" entra direto na grade */
+  }
+
+  .admin-sidebar-usuario {
+    display: none;
+  }
+
+  .admin-sidebar-sair {
+    grid-area: sair;
+    width: auto;
+    padding: 8px 12px;
+  }
+
+  .admin-sidebar-nav {
+    grid-area: menu;
+    flex: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .admin-sidebar-nav a {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 9px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .admin-content {
+    padding: 16px 14px 32px;
+  }
+
+  .admin-form {
+    padding: 16px;
   }
 }

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authRoutes from "./authRoute.js";
 import adminRoutes from "./adminRoute.js";
+import adminReferenciaRoutes from "./adminReferenciaRoute.js";
 import adminImageRoutes from "./adminImageRoute.js";
 import adminPatrimonioRoutes from "./adminPatrimonioRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
@@ -34,5 +35,6 @@ router.use("/patrimonios", patrimonioRoutes);
 router.use("/categorias", categoriaRoutes);
 router.use("/admin/patrimonios", adminPatrimonioRoutes);
 router.use("/admin", adminImageRoutes);
+router.use("/admin", adminReferenciaRoutes);
 
 export default router;

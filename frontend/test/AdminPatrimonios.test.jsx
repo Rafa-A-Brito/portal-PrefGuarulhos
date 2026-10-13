@@ -11,7 +11,7 @@ import { CHAVE_SESSAO_MOCK } from "../src/context/authConstants";
 
 const flags = vi.hoisted(() => ({
   perfil: "ADMIN", autenticado: true, demo: false, erroMaps: null,
-  mostrarErro: vi.fn(), geo: vi.fn(), gerar: vi.fn(), cep: vi.fn(),
+  mostrarErro: vi.fn(), geo: vi.fn(), cep: vi.fn(),
 }));
 vi.mock("../src/services/cepApi", async importOriginal => ({
   ...await importOriginal(), consultarCep: flags.cep,
@@ -23,9 +23,6 @@ vi.mock("../src/services/maps", async importOriginal => ({
   ...await importOriginal(),
   get GEOCODING_EM_MODO_DEMO() { return flags.demo; },
   geocodificarEndereco: flags.geo,
-}));
-vi.mock("../src/services/gemini", async importOriginal => ({
-  ...await importOriginal(), gerarResumoDeArquivo: flags.gerar,
 }));
 
 const cats = [
@@ -41,6 +38,7 @@ function fixture(uuid = id, nome = "Estação") {
     descricao: "Descrição completa atual.", descricaoResumida: "Resumo editorial próprio.",
     historia: "História completa atual.", importanciaCultural: "Importância atual.",
     localizacao: { endereco: "Rua Teste", numero: "393", bairro: "Centro", cep: "07010-000", cidade: "São Paulo", uf: "SP", complemento: "Acesso lateral", latitude: "-23.4543000", longitude: "-46.5333000" },
+    documentos: [],
     imagens: [{ id: "imagem-existente", url: "/uploads/patrimonios/existente.jpg", textoAlternativo: "Fachada existente", ordem: 0, principal: true }],
   };
 }
@@ -56,7 +54,6 @@ beforeEach(() => {
   flags.cep.mockReset().mockResolvedValue(postal);
   flags.perfil = "ADMIN"; flags.autenticado = true; flags.demo = false; flags.erroMaps = null;
   flags.geo.mockResolvedValue({ lat: -23.46, lng: -46.54 });
-  flags.gerar.mockResolvedValue("Resumo gerado para revisão.");
   records = [fixture(), fixture(secondId, "Outro patrimônio")]; calls = []; hook = null;
   Element.prototype.scrollIntoView = vi.fn();
   vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -77,6 +74,20 @@ beforeEach(() => {
       const created = { ...fixture("55555555-5555-4555-8555-555555555555", body.nome), ...body, categoria: cats.find(c => c.id === body.categoriaId), categoriasAdicionais: [], imagens: [] };
       records.push(created);
       return reply(config, { id: created.id });
+    }
+    const referenceParent = records.find(p => config.url.startsWith(`/admin/patrimonios/${p.id}/referencias`));
+    if (referenceParent && config.method === "post") {
+      const arquivo = body instanceof FormData ? body.get("arquivo") : null;
+      const doc = {
+        id: "ref-nova", titulo: arquivo?.name ?? "Fonte", descricao: arquivo ? body.get("descricao") : body.descricao,
+        url: arquivo ? "/uploads/referencias/fonte.pdf" : body.url, tipo: arquivo ? "ARQUIVO" : "LINK",
+      };
+      referenceParent.documentos.push(doc);
+      return reply(config, { ...doc, nomeArquivo: arquivo?.name ?? null });
+    }
+    if (referenceParent && config.method === "delete") {
+      referenceParent.documentos = referenceParent.documentos.filter(d => !config.url.endsWith(d.id));
+      return reply(config, { id: config.url.split("/").at(-1) });
     }
     const current = records.find(p => config.url === "/admin/patrimonios/" + p.id);
     if (current && config.method === "get") return reply(config, clone(current));
@@ -290,11 +301,15 @@ test("novo usa POST e reabre edição; cancelar não grava", async () => {
   await user.type(screen.getByLabelText("Bairro"), "Centro");
   await user.type(screen.getByLabelText("CEP"), "07010000");
   await user.type(screen.getByLabelText("Endereço"), "Rua");
-  await user.type(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio."), "Descrição nova");
+  await user.type(screen.getByLabelText("Descrição"), "Descrição nova");
+  expect(screen.getByLabelText("Resumo").value).toBe("");
+  await user.type(screen.getByLabelText("Resumo"), "Resumo manual novo");
   await user.click(screen.getByRole("button", { name: "Salvar" }));
   await screen.findByRole("heading", { name: "Editar patrimônio" });
   expect(calls.filter(c => c.method === "post")).toHaveLength(1);
   expect(screen.getByLabelText("Nome").value).toBe("Novo bem");
+  expect(calls.find(c => c.method === "post").body).toMatchObject({ descricao: "Descrição nova", descricaoResumida: "Resumo manual novo" });
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo manual novo");
   await user.click(screen.getByRole("button", { name: "Cancelar" }));
   expect(screen.queryByRole("heading", { name: "Editar patrimônio" })).toBeNull();
   expect(calls.some(c => c.method === "patch")).toBe(false);
@@ -345,24 +360,77 @@ test("troca de categoria principal remove duplicação nas adicionais", async ()
   expect(calls.find(c => c.method === "patch").body).toMatchObject({ categoriaId: cats[1].id, categoriasAdicionais: [] });
 });
 
-test("resumo por arquivo usa fluxo existente, bloqueia troca durante geração e permite remover arquivo", async () => {
+test.each(["ADMIN", "EDITOR"])("%s altera descrição sem substituir resumo manual e preserva ambos ao reabrir", async perfil => {
+  flags.perfil = perfil;
   const user = await edit();
-  await user.click(screen.getByRole("tab", { name: "Enviar arquivo" }));
-  const form = screen.getByRole("heading", { name: "Editar patrimônio" }).closest("form");
-  const input = form.querySelector('input[type="file"][accept*=".txt"]');
-  await user.upload(input, new File(["Texto"], "historia.txt", { type: "text/plain" }));
-  expect(screen.getByText("historia.txt")).toBeTruthy();
-  let release;
-  flags.gerar.mockImplementation(() => new Promise(resolve => { release = resolve; }));
-  await user.click(screen.getByRole("button", { name: "Gerar resumo com IA" }));
-  expect(screen.getByRole("button", { name: "Novo patrimônio" }).disabled).toBe(true);
-  expect(screen.getByRole("button", { name: "Cancelar" }).disabled).toBe(true);
-  release("Resumo revisável.");
-  await waitFor(() => expect(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio.").value).toBe("Resumo revisável."));
-  await user.click(screen.getByRole("button", { name: "Remover arquivo" }));
-  expect(screen.queryByText("historia.txt")).toBeNull();
-  await user.click(screen.getByRole("tab", { name: "Escrever" }));
-  expect(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio.").value).toBe("Resumo revisável.");
+  expect(screen.getByLabelText("Resumo").tagName).toBe("TEXTAREA");
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+  expect(screen.getByLabelText("Descrição").value).toBe("Descrição completa atual.");
+  fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "Nova descrição completa. ".repeat(30) } });
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(screen.queryByLabelText("Resumo")).toBeNull());
+  const patch = calls.find(c => c.method === "patch");
+  expect(patch.body.descricao).toBe("Nova descrição completa. ".repeat(30).trim());
+  expect(patch.body.descricaoResumida).toBe("Resumo editorial próprio.");
+  await user.click(screen.getByRole("button", { name: "Editar Estação" }));
+  await screen.findByLabelText("Resumo");
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+  expect(screen.getByLabelText("Descrição").value).toBe(patch.body.descricao);
+});
+
+test("editar resumo manual envia o texto digitado sem alterar descrição", async () => {
+  const user = await edit();
+  await user.clear(screen.getByLabelText("Resumo"));
+  await user.type(screen.getByLabelText("Resumo"), "Resumo escrito manualmente.");
+  expect(screen.getByLabelText("Descrição").value).toBe("Descrição completa atual.");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body).toMatchObject({
+    descricao: "Descrição completa atual.", descricaoResumida: "Resumo escrito manualmente.",
+  });
+});
+
+test.each(["", "   "])("resumo vazio (%j) impede salvar sem copiar a descrição", async resumo => {
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Resumo"), { target: { value: resumo } });
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Escreva o resumo do patrimônio.");
+  expect(calls.some(c => c.method === "patch")).toBe(false);
+  expect(screen.getByLabelText("Resumo").value).toBe(resumo);
+});
+
+test("resumo limita digitação a 500 caracteres e salva sem truncamento automático", async () => {
+  const user = await edit();
+  const resumo = screen.getByLabelText("Resumo");
+  expect(resumo.maxLength).toBe(500);
+  fireEvent.change(resumo, { target: { value: "a".repeat(499) } });
+  await user.type(resumo, "bc");
+  expect(resumo.value).toBe("a".repeat(499) + "b");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body.descricaoResumida).toBe("a".repeat(499) + "b");
+});
+
+test("resumo acima do limite é recusado sem truncar texto", async () => {
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Resumo"), { target: { value: "x".repeat(501) } });
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("O resumo deve ter no máximo 500 caracteres.");
+  expect(calls.some(c => c.method === "patch")).toBe(false);
+  expect(screen.getByLabelText("Resumo").value).toHaveLength(501);
+});
+
+test("cancelar resumo manual descarta mudanças e novo formulário começa vazio", async () => {
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Resumo"), { target: { value: "Rascunho não salvo." } });
+  await user.click(screen.getByRole("button", { name: "Cancelar" }));
+  await user.click(screen.getByRole("button", { name: "Editar Estação" }));
+  expect((await screen.findByLabelText("Resumo")).value).toBe("Resumo editorial próprio.");
+  await user.click(screen.getByRole("button", { name: "Novo patrimônio" }));
+  expect(screen.getByLabelText("Resumo").value).toBe("");
+  expect(screen.getByLabelText("Descrição").value).toBe("");
+  expect(calls.some(c => ["post", "patch"].includes(c.method))).toBe(false);
 });
 
 test("erros de publicar e de upload são tratados e liberam os botões", async () => {
@@ -466,6 +534,7 @@ test.each([
   digitar("Nome", "Cadastro manual");
   digitar("Endereço", "Rua manual");
   digitar("Bairro", "Bairro manual");
+  digitar("Descrição", "Descrição completa independente.");
   fireEvent.change(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio."), { target: { value: "Resumo manual." } });
   await user.click(screen.getByRole("button", { name: "Salvar" }));
   await screen.findByRole("heading", { name: "Editar patrimônio" });
@@ -602,6 +671,7 @@ test.each(["ADMIN", "EDITOR"])("%s cria com CEP, geocodifica só no save e faz P
   flags.perfil = perfil;
   const user = await novo();
   digitar("Nome", "Bem com CEP");
+  digitar("Descrição", "Descrição completa independente.");
   fireEvent.change(screen.getByPlaceholderText("Escreva um resumo curto do patrimônio."), { target: { value: "Descrição para teste." } });
   digitarCep();
   await esperarDebounce();
@@ -671,4 +741,54 @@ test("salvar cancela consulta pendente e resposta atrasada não altera formulár
   expect(screen.getByLabelText("Endereço").value).toBe("Rua Teste");
   expect(screen.getByLabelText("CEP").value).toBe("07112-000");
   expect(screen.queryByText("Consultando CEP...")).toBeNull();
+});
+
+
+test.each(["ADMIN", "EDITOR"])("%s adiciona link sem alterar resumo e carrega documentos ao reabrir", async perfil => {
+  flags.perfil = perfil;
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Resumo"), { target: { value: "Resumo manual em edição." } });
+  await user.click(screen.getByRole("tab", { name: "Link do Drive ou site" }));
+  await user.type(screen.getByLabelText("Link (Google Drive, site ou outro)"), "https://example.org/fonte");
+  await user.type(screen.getByLabelText("Como citar (opcional)"), "Acervo municipal");
+  await user.click(screen.getByRole("button", { name: "Adicionar referência" }));
+  expect((await screen.findByRole("link", { name: "Acervo municipal" })).href).toBe("https://example.org/fonte");
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo manual em edição.");
+  expect(records[0].descricaoResumida).toBe("Resumo editorial próprio.");
+  expect(calls.some(c => c.method === "patch")).toBe(false);
+  if (perfil === "EDITOR") expect(screen.queryByRole("button", { name: /^Remover referência/ })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Cancelar" }));
+  await user.click(screen.getByRole("button", { name: "Editar Estação" }));
+  await screen.findByRole("link", { name: "Acervo municipal" });
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+});
+
+test("upload de referência envia FormData real, resolve URL pública e remoção preserva resumo", async () => {
+  const user = await edit();
+  const input = screen.getByLabelText("Resumo").closest("form").querySelector('input[type="file"][accept*=".pdf"]');
+  await user.upload(input, new File(["%PDF-1.7"], "fonte.pdf", { type: "application/pdf" }));
+  await user.click(screen.getByRole("button", { name: "Adicionar referência" }));
+  expect((await screen.findByRole("link", { name: "fonte.pdf" })).href).toBe("http://localhost:3333/uploads/referencias/fonte.pdf");
+  const post = calls.find(c => c.method === "post");
+  expect(post.url).toBe(`/admin/patrimonios/${id}/referencias`);
+  expect(post.body).toBeInstanceOf(FormData);
+  expect(post.body.get("arquivo").name).toBe("fonte.pdf");
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+  await user.click(screen.getByRole("button", { name: "Remover referência: fonte.pdf" }));
+  await waitFor(() => expect(screen.queryByRole("link", { name: "fonte.pdf" })).toBeNull());
+  expect(calls.find(c => c.method === "delete").url).toBe(`/admin/patrimonios/${id}/referencias/ref-nova`);
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+  expect(calls.some(c => c.method === "patch")).toBe(false);
+});
+
+test("erro ao anexar referência preserva texto manual e libera formulário", async () => {
+  const user = await edit();
+  await user.click(screen.getByRole("tab", { name: "Link do Drive ou site" }));
+  await user.type(screen.getByLabelText("Link (Google Drive, site ou outro)"), "https://example.org/fonte");
+  hook = config => { if (config.method === "post") rejectApi(config, 403, "Sem permissão."); };
+  await user.click(screen.getByRole("button", { name: "Adicionar referência" }));
+  expect((await screen.findByRole("alert")).textContent).toContain("permissão");
+  expect(screen.getByLabelText("Resumo").value).toBe("Resumo editorial próprio.");
+  expect(screen.getByRole("button", { name: "Salvar" }).disabled).toBe(false);
+  expect(records[0].documentos).toHaveLength(0);
 });

@@ -26,6 +26,10 @@
   --shadow-plaque:
     0 1px 0 rgba(43, 37, 92, 0.04), 0 4px 14px rgba(43, 37, 92, 0.08);
   --container: 1180px;
+  --danger: #b3261e; /* erro/validação (único vermelho do sistema) */
+  --scroll-size: 8px;
+  --scroll-thumb: var(--blue);
+  --scroll-thumb-hover: var(--indigo);
 }
 
 *,
@@ -97,10 +101,10 @@ input:focus-visible {
 @keyframes pulseDot {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(231, 193, 119, 0.5);
+    box-shadow: 0 0 0 0 rgba(28, 161, 65, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(231, 193, 119, 0);
+    box-shadow: 0 0 0 5px rgba(28, 161, 65, 0);
   }
 }
 @keyframes skeletonPulse {
@@ -318,9 +322,9 @@ input:focus-visible {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(11, 18, 32, 0.35) 0%,
-    rgba(11, 18, 32, 0.68) 55%,
-    rgba(11, 18, 32, 0.95) 100%
+    rgba(23, 19, 49, 0.35) 0%,
+    rgba(23, 19, 49, 0.68) 55%,
+    rgba(23, 19, 49, 0.95) 100%
   );
 }
 .hero-inner {
@@ -859,9 +863,9 @@ input:focus-visible {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(11, 18, 32, 0.35) 0%,
-    rgba(11, 18, 32, 0.55) 45%,
-    rgba(11, 18, 32, 0.92) 100%
+    rgba(23, 19, 49, 0.35) 0%,
+    rgba(23, 19, 49, 0.55) 45%,
+    rgba(23, 19, 49, 0.92) 100%
   );
 }
 .detalhe-hero-skeleton {
@@ -1956,7 +1960,7 @@ input:focus-visible {
   color: var(--ink);
   border-radius: var(--radius-card);
   border: 1px solid rgba(16, 24, 40, 0.06);
-  box-shadow: 0 16px 36px rgba(11, 18, 32, 0.22);
+  box-shadow: 0 16px 36px rgba(23, 19, 49, 0.22);
   padding: 16px;
   justify-self: end;
   width: min(320px, 100%);
@@ -2226,7 +2230,7 @@ input:focus-visible {
   letter-spacing: 0.04em;
   padding: 5px 10px 5px 8px;
   border-radius: 6px;
-  background: rgba(11, 18, 32, 0.78);
+  background: rgba(23, 19, 49, 0.78);
   color: #fff;
   backdrop-filter: blur(2px);
 }
@@ -2933,8 +2937,12 @@ input:focus-visible {
   left: 22%;
   top: 58%;
   transform: rotate(-21deg);
-  filter: invert(1);
-  opacity: 0.28;
+  /* Sem filtro de cor: a imagem mantém as cores originais. Só a
+     transparência (--textura-opacidade) e a sombra controlam o destaque
+     sobre o fundo navy. Para mais ou menos presença, mude o número abaixo. */
+  --textura-opacidade: 0.5;
+  opacity: var(--textura-opacidade);
+  filter: drop-shadow(0 10px 24px rgba(23, 19, 49, 0.35));
   z-index: 1;
   pointer-events: none;
 }
@@ -3173,7 +3181,7 @@ input:focus-visible {
 /* Erro */
 
 .admin-login-erro {
-  color: #b3261e;
+  color: var(--danger);
   font-size: 12.5px;
   margin: 10px 0 0;
   text-align: left;
@@ -3191,7 +3199,7 @@ input:focus-visible {
 }
 
 .admin-login-field.is-invalid input {
-  border-color: #b3261e;
+  border-color: var(--danger);
 }
 
 .admin-login-field.is-invalid input:focus {
@@ -3201,7 +3209,7 @@ input:focus-visible {
 .admin-login-field.is-invalid input:focus ~ label,
 .admin-login-field.is-invalid input:not(:placeholder-shown) ~ label,
 .admin-login-field.is-invalid label {
-  color: #b3261e;
+  color: var(--danger);
 }
 
 .admin-login-status {
@@ -3217,7 +3225,7 @@ input:focus-visible {
 .admin-login-field-erro {
   margin: 6px 0 0;
   font-size: 12px;
-  color: #b3261e;
+  color: var(--danger);
   animation: loginAparece 0.2s ease;
 }
 
@@ -3313,6 +3321,18 @@ input:focus-visible {
 
   .admin-login-panel {
     min-height: 100vh;
+    min-height: 100dvh; /* descontando a barra do navegador no celular */
+    align-items: flex-start; /* topo, não centro: em tela alta o centro joga o form para baixo */
+    padding: clamp(20px, 6dvh, 48px) 20px
+      calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .admin-login-back {
+    margin-bottom: 20px;
+  }
+
+  .admin-login-header {
+    margin-bottom: 20px;
   }
 }
 /* =========================================================
@@ -4342,10 +4362,10 @@ input:focus-visible {
   align-items: center;
   gap: 8px;
   margin: 0 0 6px 15px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
   color: var(--navy);
 }
 
@@ -4593,11 +4613,18 @@ input:focus-visible {
    TRANSIÇÃO AO ABRIR O PAINEL (AdminLoading, em App.jsx)
    ========================================================= */
 .admin-transicao {
+  /* cobre a janela inteira e centraliza, não importa em que contêiner a
+     tela de validação seja desenhada (navbar, rodapé, layout do admin) */
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px;
   background: var(--paper);
+  overflow-y: auto;
 }
 
 .admin-transicao-card {
@@ -4736,7 +4763,7 @@ input:focus-visible {
   display: grid;
   place-items: center;
   border-radius: 12px;
-  color: #b3261e;
+  color: var(--danger);
   background: rgba(179, 38, 30, 0.1);
 }
 
@@ -5101,4 +5128,142 @@ input:focus-visible {
 .cat-badge.situacao-demolido {
   background: #b54d3d;
   color: #ffffff;
+}
+
+/* =========================================================
+   CONHEÇA MAIS DETALHES — índice com cor por tipo, ordenação
+   ========================================================= */
+.detalhes-secao .section-head h2 {
+  text-transform: capitalize;
+}
+
+.detalhes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 24px;
+}
+
+.detalhes-toolbar-rotulo {
+  margin-right: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* Título limitado a 2 linhas: o índice não repete o texto inteiro */
+.indice-item strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Notícia = verde (accent) | Evento = azul (blue) */
+.indice-item--noticia {
+  border-left-color: rgba(28, 161, 65, 0.35);
+}
+.indice-item--evento {
+  border-left-color: rgba(62, 163, 220, 0.45);
+}
+.indice-item.indice-item--noticia svg,
+.indice-item--noticia small {
+  color: var(--accent-dark);
+}
+.indice-item.indice-item--evento svg,
+.indice-item--evento small {
+  color: var(--indigo);
+}
+.indice-grupo .indice-item--noticia.ativo {
+  border-left-color: var(--green);
+  background: rgba(28, 161, 65, 0.09);
+}
+.indice-grupo .indice-item--evento.ativo {
+  border-left-color: var(--blue);
+  background: rgba(62, 163, 220, 0.1);
+}
+
+/* =========================================================
+   AJUSTES MOBILE (telas estreitas e toque)
+   ========================================================= */
+@media (max-width: 880px) {
+  /* mapa primeiro, lista depois: no celular o mapa é o foco */
+  .mapa-central {
+    order: -1;
+  }
+  .mapa-sidebar {
+    max-height: 360px;
+  }
+  .mapa-map-area,
+  .mapa-map-area .map-wrapper,
+  .mapa-map-area .map-mockup-container {
+    min-height: 360px;
+  }
+  .hero-v2 {
+    min-height: 480px;
+  }
+}
+
+@media (max-width: 520px) {
+  .brand-text,
+  .brand-sep {
+    display: none; /* evita estourar a navbar ao lado do logo */
+  }
+  .mapa-legenda {
+    position: static;
+    margin-top: 10px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+  .destaque-card {
+    width: 190px;
+  }
+}
+
+/* Alvos de toque de pelo menos 40px */
+@media (pointer: coarse) {
+  .fmh-btn,
+  .mapa-detail-close,
+  .mockup-close-btn,
+  .navbar-busca-fechar {
+    width: 40px;
+    height: 40px;
+  }
+  .filter-pill,
+  .pagination button {
+    min-height: 40px;
+  }
+}
+
+/* =========================================================
+   CONHEÇA MAIS — agenda enxuta (máx. 4 eventos) + CTA
+   ========================================================= */
+/* Título do evento limitado a 2 linhas: a lista fica com altura previsível */
+.ultima-titulo {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* CTA logo abaixo da agenda: botão cheio, em azul da marca */
+.noticias-side .noticias-todas {
+  margin-top: 12px;
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    gap 0.15s ease;
+}
+
+.noticias-side .noticias-todas:hover {
+  border-color: var(--indigo);
+  background: var(--indigo);
+  gap: 12px;
 }

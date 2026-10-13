@@ -27,8 +27,6 @@ import { listarNovidades } from "../../services/conteudoApi";
 import { useConteudoPublico } from "../../hooks/useConteudoPublico";
 import EstadoConteudo from "../../components/EstadoConteudo";
 
-
-
 // Ícone de cada item no índice (chave = id do item)
 const ICONES = {
   "casarao-25-mil-visitas": BuildingLibraryIcon,
@@ -52,22 +50,34 @@ const ICONES = {
   fontes: DocumentTextIcon,
 };
 
-function agruparNovidades(itens) {
+function agruparNovidades(itens, ordem = "recentes") {
+  // Ordena os itens pela data; os meses saem agrupados na mesma ordem.
+  const ordenados = [...itens].sort((a, b) =>
+    ordem === "recentes"
+      ? b.data.localeCompare(a.data)
+      : a.data.localeCompare(b.data),
+  );
   const mapa = new Map();
-  for (const item of itens) {
+  for (const item of ordenados) {
     const chave = item.data.slice(0, 7);
     if (!mapa.has(chave)) {
       const data = new Date(`${chave}-01T12:00:00`);
       mapa.set(chave, {
         id: `mes-${chave}`,
-        titulo: data.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
-        sigla: data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
+        titulo: data.toLocaleDateString("pt-BR", {
+          month: "long",
+          year: "numeric",
+        }),
+        sigla: data
+          .toLocaleDateString("pt-BR", { month: "short" })
+          .replace(".", "")
+          .toUpperCase(),
         itens: [],
       });
     }
     mapa.get(chave).itens.push(item);
   }
-  return [...mapa.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([, grupo]) => grupo);
+  return [...mapa.values()];
 }
 
 // Lista de links do índice (usada na coluna do desktop e no painel do mobile)
@@ -81,19 +91,30 @@ function IndicePagina({ ativo, onEscolher, grupos }) {
             {g.itens.map((it) => {
               const Icone = ICONES[it.slug ?? it.id] ?? MegaphoneIcon;
               const ehAtivo = ativo === it.id;
+              const tipo =
+                it.tipo === "EVENTO" ? "evento" : it.tipo ? "noticia" : "";
+              const rotuloTipo =
+                tipo === "evento"
+                  ? "Evento"
+                  : tipo === "noticia"
+                    ? "Notícia"
+                    : "";
               return (
                 <li key={it.id}>
                   <Link
                     to={`#${it.id}`}
                     replace
-                    className={`indice-item${ehAtivo ? " ativo" : ""}`}
+                    className={`indice-item${tipo ? ` indice-item--${tipo}` : ""}${ehAtivo ? " ativo" : ""}`}
+                    title={it.titulo}
                     aria-current={ehAtivo ? "location" : undefined}
                     onClick={() => onEscolher(it.id)}
                   >
                     <Icone width={20} height={20} aria-hidden="true" />
                     <span>
                       <strong>{it.titulo}</strong>
-                      <small>{it.data}</small>
+                      <small>
+                        {rotuloTipo ? `${rotuloTipo} · ${it.data}` : it.data}
+                      </small>
                     </span>
                   </Link>
                 </li>
@@ -146,29 +167,40 @@ function ItemLinha({ item }) {
           </ul>
         )}
 
-        {item.imagemUrl && <img src={item.imagemUrl} alt="" loading="lazy" style={{ maxWidth: "100%", maxHeight: 360, objectFit: "contain" }} />}
+        {item.imagemUrl && (
+          <img
+            src={item.imagemUrl}
+            alt=""
+            loading="lazy"
+            style={{ maxWidth: "100%", maxHeight: 360, objectFit: "contain" }}
+          />
+        )}
         <p>{item.texto}</p>
 
         <div className="detalhes-cta">
-          {item.cta?.url && <a
-            className="btn-solid"
-            href={item.cta.url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {item.cta.rotulo} →
-          </a>}
-          {item.fontes.length > 0 && <p className="detalhes-fontes">
-            Fontes:{" "}
-            {item.fontes.map((f, i) => (
-              <span key={f.url}>
-                {i > 0 && " · "}
-                <a href={f.url} target="_blank" rel="noopener noreferrer">
-                  {f.veiculo}
-                </a>
-              </span>
-            ))}
-          </p>}
+          {item.cta?.url && (
+            <a
+              className="btn-solid"
+              href={item.cta.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {item.cta.rotulo} →
+            </a>
+          )}
+          {item.fontes.length > 0 && (
+            <p className="detalhes-fontes">
+              Fontes:{" "}
+              {item.fontes.map((f, i) => (
+                <span key={f.url}>
+                  {i > 0 && " · "}
+                  <a href={f.url} target="_blank" rel="noopener noreferrer">
+                    {f.veiculo}
+                  </a>
+                </span>
+              ))}
+            </p>
+          )}
         </div>
       </div>
     </article>
@@ -178,13 +210,50 @@ function ItemLinha({ item }) {
 export default function ConhecaMaisDetalhes() {
   const { hash } = useLocation();
   const novidades = useConteudoPublico(listarNovidades);
-  const grupos = useMemo(() => agruparNovidades(novidades.itens), [novidades.itens]);
-  const fontesNoticias = useMemo(() => [...new Map(novidades.itens.flatMap((item) => item.fontes).map((fonte) => [fonte.url, fonte])).values()], [novidades.itens]);
-  const gruposIndice = useMemo(() => [
-    ...grupos,
-    ...(fontesNoticias.length ? [{ id: "referencias", titulo: "Referências", sigla: "FONTES", itens: [{ id: "fontes", titulo: "Fontes e referências", data: `${fontesNoticias.length} fontes` }] }] : []),
-  ], [grupos, fontesNoticias]);
-  const todosItens = useMemo(() => gruposIndice.flatMap((g) => g.itens.map((item) => ({ ...item, sigla: g.sigla }))), [gruposIndice]);
+  const [ordem, setOrdem] = useState("recentes");
+  const grupos = useMemo(
+    () => agruparNovidades(novidades.itens, ordem),
+    [novidades.itens, ordem],
+  );
+  const fontesNoticias = useMemo(
+    () => [
+      ...new Map(
+        novidades.itens
+          .flatMap((item) => item.fontes)
+          .map((fonte) => [fonte.url, fonte]),
+      ).values(),
+    ],
+    [novidades.itens],
+  );
+  const gruposIndice = useMemo(
+    () => [
+      ...grupos,
+      ...(fontesNoticias.length
+        ? [
+            {
+              id: "referencias",
+              titulo: "Referências",
+              sigla: "FONTES",
+              itens: [
+                {
+                  id: "fontes",
+                  titulo: "Fontes e referências",
+                  data: `${fontesNoticias.length} fontes`,
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
+    [grupos, fontesNoticias],
+  );
+  const todosItens = useMemo(
+    () =>
+      gruposIndice.flatMap((g) =>
+        g.itens.map((item) => ({ ...item, sigla: g.sigla })),
+      ),
+    [gruposIndice],
+  );
   const ids = useMemo(() => todosItens.map((item) => item.id), [todosItens]);
   const [ativo, setAtivo] = useState("");
   const [painelAberto, setPainelAberto] = useState(false);
@@ -269,10 +338,9 @@ export default function ConhecaMaisDetalhes() {
     setPainelAberto(false);
   }, []);
 
-  const itemAtivo = todosItens.find((i) => i.id === ativo) ?? todosItens[0] ?? { id: "", titulo: "Conteúdo", sigla: "ÍNDICE" };
+  const itemAtivo = todosItens.find((i) => i.id === ativo) ??
+    todosItens[0] ?? { id: "", titulo: "Conteúdo", sigla: "ÍNDICE" };
   const IconeAtivo = ICONES[itemAtivo.slug ?? itemAtivo.id] ?? ListBulletIcon;
-
-
 
   return (
     <div>
@@ -288,7 +356,11 @@ export default function ConhecaMaisDetalhes() {
           fazem parte da história de Guarulhos.
         </p>
         <div className="detalhes-hero-cta">
-          <Link className="btn-solid" to={grupos.length ? `#${grupos[0].id}` : "#conteudo-novidades"} replace>
+          <Link
+            className="btn-solid"
+            to={grupos.length ? `#${grupos[0].id}` : "#conteudo-novidades"}
+            replace
+          >
             Ver notícias e agenda
           </Link>
           <Link className="detalhes-link-sec" to="#fontes" replace>
@@ -301,16 +373,47 @@ export default function ConhecaMaisDetalhes() {
       <div className="detalhes-layout">
         <aside className="detalhes-rail">
           <p className="detalhes-rail-titulo">Nesta página</p>
-          <IndicePagina ativo={ativo} onEscolher={escolher} grupos={gruposIndice} />
+          <IndicePagina
+            ativo={ativo}
+            onEscolher={escolher}
+            grupos={gruposIndice}
+          />
         </aside>
 
         <div className="detalhes-conteudo" id="conteudo-novidades">
+          <div
+            className="detalhes-toolbar"
+            role="group"
+            aria-label="Ordenar por data"
+          >
+            <span className="detalhes-toolbar-rotulo">Ordenar por</span>
+            {[
+              ["recentes", "Mais recentes"],
+              ["antigos", "Mais antigos"],
+            ].map(([valor, rotulo]) => (
+              <button
+                key={valor}
+                type="button"
+                className={`filter-pill${ordem === valor ? " on" : ""}`}
+                aria-pressed={ordem === valor}
+                onClick={() => setOrdem(valor)}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
           <EstadoConteudo estado={novidades} nome="novidades" />
           {grupos.map((grupo) => (
             <section id={grupo.id} className="detalhes-secao" key={grupo.id}>
-              <div className="section-head"><div><h2>{grupo.titulo}</h2></div></div>
+              <div className="section-head">
+                <div>
+                  <h2>{grupo.titulo}</h2>
+                </div>
+              </div>
               <div className="detalhes-lista">
-                {grupo.itens.map((item) => <ItemLinha key={item.id} item={item} />)}
+                {grupo.itens.map((item) => (
+                  <ItemLinha key={item.id} item={item} />
+                ))}
               </div>
             </section>
           ))}
@@ -322,7 +425,8 @@ export default function ConhecaMaisDetalhes() {
                 <div>
                   <h2>Fontes e referências</h2>
                   <p className="sub">
-                    Fontes dos conteúdos publicados. Todos os links abrem o site original.
+                    Fontes dos conteúdos publicados. Todos os links abrem o site
+                    original.
                   </p>
                 </div>
               </div>
@@ -338,8 +442,6 @@ export default function ConhecaMaisDetalhes() {
                   </li>
                 ))}
               </ul>
-
-
             </div>
           </section>
         </div>
@@ -408,7 +510,11 @@ export default function ConhecaMaisDetalhes() {
                 <XMarkIcon width={18} height={18} />
               </button>
             </div>
-            <IndicePagina ativo={ativo} onEscolher={escolher} grupos={gruposIndice} />
+            <IndicePagina
+              ativo={ativo}
+              onEscolher={escolher}
+              grupos={gruposIndice}
+            />
           </aside>
         </div>
       )}

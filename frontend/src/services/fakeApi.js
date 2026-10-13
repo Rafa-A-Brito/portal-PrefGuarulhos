@@ -79,6 +79,19 @@ function coordenadaParaNumero(valor) {
  * Formato do backend → formato que o resto do front espera. Se "p" já vier
  * achatado (mock local), devolve como está.
  */
+export function normalizarReferencia(documento) {
+  const tipo = documento.tipo === "ARQUIVO" || documento.tipo === "LINK"
+    ? documento.tipo
+    : documento.url?.startsWith("/uploads/") || documento.mimeType ? "ARQUIVO" : "LINK";
+  return {
+    id: documento.id,
+    descricao: documento.descricao ?? documento.titulo ?? "",
+    nomeArquivo: tipo === "ARQUIVO" ? documento.nomeArquivo ?? documento.titulo ?? "" : null,
+    url: resolverUrlPublica(documento.url),
+    tipo,
+  };
+}
+
 export function normalizarPatrimonio(p) {
   if (!p) return p;
   if (typeof p.categoria === "string") return p;
@@ -124,6 +137,7 @@ export function normalizarPatrimonio(p) {
     numero: loc?.numero ?? "",
     complemento: loc?.complemento ?? "",
     cep: loc?.cep ?? "",
+    referencias: (p.documentos ?? []).map(normalizarReferencia),
     resumo: p.descricaoResumida,
     descricao: p.descricao,
     historia: p.historia ?? "",

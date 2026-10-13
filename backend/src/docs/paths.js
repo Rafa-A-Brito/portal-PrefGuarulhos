@@ -341,3 +341,50 @@ paths["/api/admin/patrimonios/imagens/{imagemId}"] = {
         },
     },
 };
+
+
+const referenciaResponse = {
+    type: "object", required: ["success", "data"], properties: {
+        success: { type: "boolean" },
+        data: { type: "object", required: ["id", "descricao", "nomeArquivo", "url", "tipo"], properties: {
+            id: { type: "string", format: "uuid" }, descricao: { type: "string" },
+            nomeArquivo: { type: "string", nullable: true }, url: { type: "string" },
+            tipo: { type: "string", enum: ["ARQUIVO", "LINK"] },
+        } },
+    },
+};
+paths["/api/admin/patrimonios/{id}/referencias"] = {
+    post: {
+        tags: ["Patrimônios administrativos"], summary: "Adiciona referência do texto",
+        description: "ADMIN em qualquer status; EDITOR somente em RASCUNHO. Reutiliza PatrimonioDocumento. Um arquivo PDF/DOC/DOCX/ODT/TXT/MD de até 10 MB OU um link HTTP(S). Não altera descrição nem resumo.",
+        security: bearerAuth, parameters: [idParameter],
+        requestBody: { required: true, content: {
+            "application/json": { schema: { type: "object", additionalProperties: false, required: ["url"], properties: {
+                url: { type: "string", format: "uri", pattern: "^https?://", maxLength: 4000 }, descricao: { type: "string", maxLength: 300 },
+            } } },
+            "multipart/form-data": { schema: { type: "object", additionalProperties: false, required: ["arquivo"], properties: {
+                arquivo: { type: "string", format: "binary" }, descricao: { type: "string", maxLength: 300 },
+            } } },
+        } },
+        responses: {
+            201: { description: "Referência criada.", content: { "application/json": { schema: referenciaResponse } } },
+            400: badRequest, 401: unauthorized, 403: forbidden,
+            404: error("Patrimônio inexistente.", "NOT_FOUND", "Patrimônio não encontrado."),
+            413: error("Arquivo acima de 10 MB.", "INTERNAL_ERROR", "O arquivo deve ter no máximo 10 MB."), 500: internal,
+        },
+    },
+};
+paths["/api/admin/patrimonios/{id}/referencias/{referenciaId}"] = {
+    delete: {
+        tags: ["Patrimônios administrativos"], summary: "Remove referência do patrimônio",
+        description: "Somente ADMIN. Confere o vínculo com o patrimônio e limpa arquivo local após exclusão do registro.",
+        security: bearerAuth, parameters: [idParameter, { name: "referenciaId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+            200: { description: "Referência removida.", content: { "application/json": { schema: { type: "object", properties: {
+                success: { type: "boolean" }, data: { type: "object", properties: { id: { type: "string", format: "uuid" } } },
+            } } } } },
+            400: badRequest, 401: unauthorized, 403: forbidden,
+            404: error("Patrimônio ou referência inexistente.", "NOT_FOUND", "Referência não encontrada neste patrimônio."), 500: internal,
+        },
+    },
+};

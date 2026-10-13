@@ -6,27 +6,27 @@ Data: 09/10/2026. Nenhum apply foi executado no banco real.
 
 As páginas ConhecaMais e ConhecaMaisDetalhes já buscavam GET /api/novidades. A tabela real estava vazia; conectar novamente o mock ao frontend de produção esconderia a ausência dos registros. Foi criado um importador separado, usando o schema Zod atual e o mesmo mapeamento de campos da API. Não há alteração de schema, seed, pesquisa editorial ou layout.
 
-O mapa usava MarkerF, que instancia google.maps.Marker. A versão instalada de @react-google-maps/api não oferece um componente Advanced Marker. O wrapper novo recebe a instância real do mapa e usa AdvancedMarkerElement, filhos DOM próprios e o evento gmp-click. A biblioteca marker é carregada pelo hook compartilhado. Não há nova chamada de geocoding.
+O mapa usava MarkerF, que instancia google.maps.Marker. aA versão instalada de @react-google-maps/api não oferece um componente Advanced Marker. O wrapper novo recebe a instância real do mapa e usa AdvancedMarkerElement, filhos DOM próprios e o evento gmp-click. A biblioteca marker é carregada pelo hook compartilhado. Não há nova chamada de geocoding.
 
 ## Comparação campo a campo
 
-| Fonte editorial | Prisma / API | Tratamento |
-| --- | --- | --- |
-| id | slug único; UUID gerado pelo Prisma | Identidade estável do editorial; UUIDs existentes nunca são substituídos. |
-| tipo | TipoNovidade / tipo | noticia/evento convertidos para NOTICIA/EVENTO. |
-| tag | tag / tag | Preservada. |
-| data | Date / data YYYY-MM-DD | Quatro notícias preservam a data. Eventos usam o primeiro dia do bloco e o mês do grupo em 2026, como o fallback existente. |
-| bloco.dia | blocoDia / bloco.dia | Preservado inclusive intervalos, como 17–18. |
-| bloco.mes | blocoMes / bloco.mes | Preservado inclusive Out/2026 na feira. |
-| bloco.legenda | blocoLegenda / bloco.legenda | Preservada. |
-| titulo | titulo / titulo | Preservado. |
-| resumo | resumo / resumo | Preservado; ausência em eventos vira null, permitida pelo schema. |
-| texto | texto / texto | Preservado integralmente. |
-| quando | quando / quando | Preservado, sem inventar horários. |
-| local | local / local | Preservado. |
-| imagem | imagemUrl / imagemUrl | As quatro imagens existem. No apply, cópia exclusiva para uploads/novidades com nome SHA-256; /src/assets não é persistido como URL pública. |
-| cta.rotulo, cta.url | ctaRotulo, ctaUrl / cta aninhado | Preservados; URLs passam pela validação HTTP(S) existente. |
-| fontes | JSONB / fontes | Veículo, assunto e URL preservados. |
+| Fonte editorial     | Prisma / API                        | Tratamento                                                                                                                                   |
+| ------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                  | slug único; UUID gerado pelo Prisma | Identidade estável do editorial; UUIDs existentes nunca são substituídos.                                                                    |
+| tipo                | TipoNovidade / tipo                 | noticia/evento convertidos para NOTICIA/EVENTO.                                                                                              |
+| tag                 | tag / tag                           | Preservada.                                                                                                                                  |
+| data                | Date / data YYYY-MM-DD              | Quatro notícias preservam a data. Eventos usam o primeiro dia do bloco e o mês do grupo em 2026, como o fallback existente.                  |
+| bloco.dia           | blocoDia / bloco.dia                | Preservado inclusive intervalos, como 17–18.                                                                                                 |
+| bloco.mes           | blocoMes / bloco.mes                | Preservado inclusive Out/2026 na feira.                                                                                                      |
+| bloco.legenda       | blocoLegenda / bloco.legenda        | Preservada.                                                                                                                                  |
+| titulo              | titulo / titulo                     | Preservado.                                                                                                                                  |
+| resumo              | resumo / resumo                     | Preservado; ausência em eventos vira null, permitida pelo schema.                                                                            |
+| texto               | texto / texto                       | Preservado integralmente.                                                                                                                    |
+| quando              | quando / quando                     | Preservado, sem inventar horários.                                                                                                           |
+| local               | local / local                       | Preservado.                                                                                                                                  |
+| imagem              | imagemUrl / imagemUrl               | As quatro imagens existem. No apply, cópia exclusiva para uploads/novidades com nome SHA-256; /src/assets não é persistido como URL pública. |
+| cta.rotulo, cta.url | ctaRotulo, ctaUrl / cta aninhado    | Preservados; URLs passam pela validação HTTP(S) existente.                                                                                   |
+| fontes              | JSONB / fontes                      | Veículo, assunto e URL preservados.                                                                                                          |
 
 Total confirmado: 4 notícias de setembro, 5 eventos de outubro, 5 de novembro e 2 de dezembro = 16.
 
@@ -36,10 +36,10 @@ A feira não define dia exato. O responsável autorizou 01/10/2026 exclusivament
 
 Executar a partir de backend, com o checkout completo contendo o arquivo editorial e os assets do frontend:
 
-~~~powershell
+```powershell
 node scripts/import-novidades.js --created-by-email=admin@exemplo.com
 node scripts/import-novidades.js --created-by-email=admin@exemplo.com --status=PUBLICADO --dry-run
-~~~
+```
 
 O primeiro comando usa dry-run e RASCUNHO. ADMIN e EDITOR devem existir e estar ativos. PUBLICADO exige ADMIN, conforme a API. Rascunhos não aparecem no GET público.
 
@@ -73,9 +73,9 @@ Mantidos: formato/cor/tamanho dos pinos, coordenadas backend normalizadas, sele�
 
 Smoke reproduzível, a partir de frontend:
 
-~~~powershell
+```powershell
 node scripts/smoke-mapa.mjs
-~~~
+```
 
 Requer Chrome/Edge (ou CHROME_PATH) e a configuração Google do ambiente. Inicia Vite em 5175 e navegador headless com perfil temporário. Usa dois patrimônios fictícios, não acessa backend/banco e não chama Geocoder. Fecha servidor e navegador ao terminar. O perfil temporário fica no diretório temporário do sistema. A página de teste não faz parte do build de produção.
 

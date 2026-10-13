@@ -17,7 +17,10 @@ for (const pasta of UPLOAD_FOLDERS) {
     app.use(`/uploads/${pasta}`, express.static(path.join(UPLOAD_DIR, pasta), {
         dotfiles: "deny",
         index: false,
-        setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff"),
+        setHeaders: (res) => {
+            res.setHeader("X-Content-Type-Options", "nosniff");
+            if (pasta === "referencias") res.setHeader("Content-Disposition", "attachment");
+        },
     }));
 }
 app.get("/api/docs.json", (_req, res) => res.json(openapi));

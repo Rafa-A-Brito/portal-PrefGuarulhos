@@ -6,13 +6,14 @@ import {
   CheckBadgeIcon,
   PaperClipIcon,
   XMarkIcon,
-  SparklesIcon,
-  PencilSquareIcon,
+  LinkIcon,
+  DocumentTextIcon,
   MapPinIcon,
   ArrowPathIcon,
   PhotoIcon,
   TrashIcon,
   CheckCircleIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../../../features/categoriaMeta";
 import { useAuth } from "../../../hooks/useAuth";
@@ -24,19 +25,14 @@ import {
   chaveEndereco,
   GEOCODING_EM_MODO_DEMO,
 } from "../../../services/maps";
-import {
-  gerarResumoDeArquivo,
-  validarArquivoResumo,
-  EXTENSOES_RESUMO,
-  IA_EM_MODO_DEMO,
-} from "../../../services/gemini";
 import { listarCategorias } from "../../../services/fakeApi";
 import * as adminApi from "../../../services/adminApi";
+import * as referenciasApi from "../../../services/referenciasApi";
 
 // "descricao" no backend é texto livre (sem limite); este é só o limite do
 // formulário. O campo "descricaoResumida" do backend aceita no máximo 500.
-const LIMITE_RESUMO = 2000; // 2.000 caracteres (aprox. 300 palavras)
-const LIMITE_RESUMO_CURTO = 500;
+const LIMITE_DESCRICAO = 2000; // 2.000 caracteres (aprox. 300 palavras)
+const LIMITE_RESUMO = 500;
 const MAX_CATEGORIAS_ADICIONAIS = 6;
 
 const SITUACOES = [
@@ -66,8 +62,8 @@ const FORMULARIO_VAZIO = {
   bairro: "",
   cidade: "Guarulhos",
   uf: "SP",
-  modoResumo: "escrever", // "escrever" | "arquivo"
-  resumo: "",
+  descricao: "",
+  descricaoResumida: "",
   historia: "",
   importanciaCultural: "",
 };
@@ -78,15 +74,6 @@ function formatarCep(valor) {
     .replace(/\D/g, "")
     .slice(0, 8)
     .replace(/^(\d{5})(\d)/, "$1-$2");
-}
-
-/** descricaoResumida (<= 500) derivada do resumo, cortando em fim de palavra. */
-function resumoCurto(texto) {
-  if (texto.length <= LIMITE_RESUMO_CURTO) return texto;
-
-  const corte = texto.slice(0, LIMITE_RESUMO_CURTO - 1);
-  const ultimoEspaco = corte.lastIndexOf(" ");
-  return `${(ultimoEspaco > 300 ? corte.slice(0, ultimoEspaco) : corte).trimEnd()}…`;
 }
 
 /**
@@ -122,7 +109,8 @@ function paraFormulario(patrimonio) {
     bairro: patrimonio.bairro || "",
     cidade: patrimonio.cidade || "Guarulhos",
     uf: patrimonio.uf || "SP",
-    resumo: patrimonio.descricao || patrimonio.resumo || "",
+    descricao: patrimonio.descricao ?? "",
+    descricaoResumida: patrimonio.resumo ?? "",
     historia: patrimonio.historia || "",
     importanciaCultural: patrimonio.importanciaCultural || "",
   };
@@ -132,7 +120,8 @@ export default function AdminPatrimonios() {
   const { usuario } = useAuth();
   const { mostrarErro } = useErroModal();
   const eAdmin = usuario?.perfil === "ADMIN";
-  const podeEditar = (p) => eAdmin || (usuario?.perfil === "EDITOR" && p.status === "RASCUNHO");
+  const podeEditar = (p) =>
+    eAdmin || (usuario?.perfil === "EDITOR" && p.status === "RASCUNHO");
 
   // Mesmo loader do mapa público (um script só). Aqui ele serve ao geocoding:
   // o geocodificarEndereco espera o Geocoder existir, e este "erro" só avisa
@@ -147,12 +136,17 @@ export default function AdminPatrimonios() {
   // null = formulário fechado; "novo" = criando; senão, UUID do patrimônio.
   const [editandoId, setEditandoId] = useState(null);
   const [carregandoEdicao, setCarregandoEdicao] = useState(null);
-  const [originalEdicao, setOriginalEdicao] = useState(null);
   const [erroAcao, setErroAcao] = useState(null);
   const formularioRef = useRef(null);
   const pedidoEdicaoRef = useRef(0);
   const [formulario, setFormulario] = useState(FORMULARIO_VAZIO);
-  const { feedbackCep, alterarCep, marcarCampoManual, reiniciarCep, cancelarConsultaCep } = useCepEndereco(setFormulario);
+  const {
+    feedbackCep,
+    alterarCep,
+    marcarCampoManual,
+    reiniciarCep,
+    cancelarConsultaCep,
+  } = useCepEndereco(setFormulario);
   const [erroFormulario, setErroFormulario] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [etapaSalvando, setEtapaSalvando] = useState("");
@@ -162,12 +156,6 @@ export default function AdminPatrimonios() {
   // foram calculadas: endereço igual => reaproveita e não gasta geocodificação.
   const [coordenadas, setCoordenadas] = useState(null);
   const [chaveOriginal, setChaveOriginal] = useState("");
-
-  const [erroArquivo, setErroArquivo] = useState(null);
-  const [arquivoResumo, setArquivoResumo] = useState(null);
-  const [gerando, setGerando] = useState(false);
-
-  const inputArquivoRef = useRef(null);
 
   // Imagens do patrimônio em edição (só existem depois de ele ser salvo).
   const [imagens, setImagens] = useState([]);
@@ -182,16 +170,45 @@ export default function AdminPatrimonios() {
 
   const inputImagemRef = useRef(null);
   const operandoImagem = enviandoImagem || removendoImagemId !== null;
-  const ocupado = salvando || operandoImagem || gerando || carregandoEdicao !== null || acaoEmAndamento !== null;
+
+  // Referência do texto (arquivo ou link). Como as imagens, só existe depois
+  // de o patrimônio ser salvo. O arquivo serve como fonte do texto.
+  const [referencias, setReferencias] = useState([]);
+  const [refModo, setRefModo] = useState("arquivo"); // "arquivo" | "link"
+  const [refArquivo, setRefArquivo] = useState(null);
+  const [refLink, setRefLink] = useState("");
+  const [refDescricao, setRefDescricao] = useState("");
+  const [enviandoRef, setEnviandoRef] = useState(false);
+  const [removendoRefId, setRemovendoRefId] = useState(null);
+  const [erroRef, setErroRef] = useState(null);
+  const inputReferenciaRef = useRef(null);
+  const operandoReferencia = enviandoRef || removendoRefId !== null;
+
+  const ocupado =
+    salvando ||
+    operandoImagem ||
+    operandoReferencia ||
+    carregandoEdicao !== null ||
+    acaoEmAndamento !== null;
 
   useEffect(() => {
     if (editandoId && !carregandoEdicao) {
-      formularioRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-      formularioRef.current?.querySelector("input")?.focus({ preventScroll: true });
+      formularioRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+      formularioRef.current
+        ?.querySelector("input")
+        ?.focus({ preventScroll: true });
     }
   }, [editandoId, carregandoEdicao]);
 
-  useEffect(() => () => { pedidoEdicaoRef.current++; }, []);
+  useEffect(
+    () => () => {
+      pedidoEdicaoRef.current++;
+    },
+    [],
+  );
 
   const contagemPorCategoria = useMemo(
     () =>
@@ -237,10 +254,9 @@ export default function AdminPatrimonios() {
   function reiniciarEstadosAuxiliares() {
     reiniciarCep();
     setErroFormulario(null);
-    setErroArquivo(null);
-    setArquivoResumo(null);
-    setGerando(false);
     setImagens([]);
+    setReferencias([]);
+    limparReferencia();
     limparSelecaoImagem();
     setErroImagem(null);
     setAvisoFormulario(null);
@@ -250,7 +266,6 @@ export default function AdminPatrimonios() {
     if (ocupado) return;
     pedidoEdicaoRef.current++;
     setErroAcao(null);
-    setOriginalEdicao(null);
     reiniciarEstadosAuxiliares();
     setFormulario({
       ...FORMULARIO_VAZIO,
@@ -279,15 +294,17 @@ export default function AdminPatrimonios() {
       const detalhe = await adminApi.buscarPatrimonioAdmin(resumo.uuid);
       if (pedido !== pedidoEdicaoRef.current) return false;
       if (!podeEditar(detalhe)) {
-        setErroAcao("Este patrimônio não está mais em rascunho. Somente ADMIN pode editá-lo.");
+        setErroAcao(
+          "Este patrimônio não está mais em rascunho. Somente ADMIN pode editá-lo.",
+        );
         return false;
       }
       reiniciarEstadosAuxiliares();
       const preenchido = paraFormulario(detalhe);
       reiniciarCep(preenchido);
       setFormulario(preenchido);
-      setOriginalEdicao(detalhe);
       setImagens(detalhe.imagens ?? []);
+      setReferencias(detalhe.referencias ?? []);
       setCoordenadas(detalhe.localizacao ?? null);
       setChaveOriginal(chaveEndereco(detalhe));
       setEditandoId(detalhe.uuid);
@@ -304,7 +321,6 @@ export default function AdminPatrimonios() {
 
   function fecharFormulario() {
     pedidoEdicaoRef.current++;
-    setOriginalEdicao(null);
     reiniciarEstadosAuxiliares();
     setEditandoId(null);
     setFormulario(FORMULARIO_VAZIO);
@@ -348,51 +364,6 @@ export default function AdminPatrimonios() {
     });
   }
 
-  // ===== Resumo: escrever ou enviar arquivo para a IA =====
-
-  function escolherArquivoResumo(e) {
-    const arquivo = e.target.files?.[0];
-    e.target.value = "";
-
-    if (!arquivo) return;
-
-    const problema = validarArquivoResumo(arquivo);
-
-    if (problema) {
-      setErroArquivo(problema);
-      return;
-    }
-
-    setErroArquivo(null);
-    setArquivoResumo(arquivo);
-  }
-
-  function removerArquivoResumo() {
-    setArquivoResumo(null);
-    setErroArquivo(null);
-  }
-
-  async function gerarResumo() {
-    if (!arquivoResumo || ocupado) return;
-
-    setGerando(true);
-    setErroFormulario(null);
-
-    try {
-      const texto = await gerarResumoDeArquivo(arquivoResumo, {
-        limite: LIMITE_RESUMO,
-      });
-      atualizar("resumo", texto);
-    } catch (err) {
-      mostrarErro(err, {
-        origem: "AdminPatrimonios › gerarResumo",
-        mensagem: "Não foi possível gerar o resumo a partir do arquivo.",
-      });
-    } finally {
-      setGerando(false);
-    }
-  }
-
   // ===== Salvar =====
 
   async function salvar(e) {
@@ -412,17 +383,24 @@ export default function AdminPatrimonios() {
       return;
     }
 
-    if (!formulario.resumo.trim()) {
-      setErroFormulario(
-        formulario.modoResumo === "arquivo"
-          ? "Anexe um arquivo e gere o resumo (ou escreva o texto) antes de salvar."
-          : "Escreva o resumo do patrimônio.",
-      );
+    if (!formulario.descricao.trim()) {
+      setErroFormulario("Escreva a descrição do patrimônio.");
+      return;
+    }
+
+    if (!formulario.descricaoResumida.trim()) {
+      setErroFormulario("Escreva o resumo do patrimônio.");
+      return;
+    }
+
+    if (formulario.descricaoResumida.trim().length > LIMITE_RESUMO) {
+      setErroFormulario("O resumo deve ter no máximo 500 caracteres.");
       return;
     }
 
     const enderecoMudou = chaveEndereco(formulario) !== chaveOriginal;
-    const precisaGeocodificar = editandoId === "novo" || !coordenadas || enderecoMudou;
+    const precisaGeocodificar =
+      editandoId === "novo" || !coordenadas || enderecoMudou;
     if (!GEOCODING_EM_MODO_DEMO && precisaGeocodificar && erroMaps) {
       setErroFormulario(
         "Não foi possível carregar o Google Maps para localizar o endereço. Verifique a chave da API e a conexão e recarregue a página.",
@@ -469,14 +447,11 @@ export default function AdminPatrimonios() {
         const texto = valor.trim();
         return texto ? texto : undefined;
       };
-      const resumo = formulario.resumo.trim();
 
       const dados = {
         nome: formulario.nome.trim(),
-        descricao: resumo,
-        descricaoResumida: originalEdicao && resumo === originalEdicao.descricao?.trim()
-          ? originalEdicao.resumo
-          : resumoCurto(resumo),
+        descricao: formulario.descricao.trim(),
+        descricaoResumida: formulario.descricaoResumida.trim(),
         categoriaId: formulario.categoriaId,
         categoriasAdicionais: formulario.categoriasAdicionais,
         situacao: formulario.situacao,
@@ -634,6 +609,121 @@ export default function AdminPatrimonios() {
     }
   }
 
+  // ===== Referência do texto (arquivo ou link) =====
+
+  function limparReferencia() {
+    setRefArquivo(null);
+    setRefLink("");
+    setRefDescricao("");
+    setErroRef(null);
+  }
+
+  function trocarModoReferencia(modo) {
+    setRefModo(modo);
+    setRefArquivo(null);
+    setRefLink("");
+    setErroRef(null);
+  }
+
+  function escolherArquivoReferencia(e) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!arquivo) return;
+
+    const problema = referenciasApi.validarArquivoReferencia(arquivo);
+    if (problema) {
+      setErroRef(problema);
+      return;
+    }
+
+    setErroRef(null);
+    setRefArquivo(arquivo);
+  }
+
+  const referenciaPronta =
+    refModo === "arquivo" ? Boolean(refArquivo) : refLink.trim() !== "";
+
+  // 400/403/404/413 têm mensagem própria; o resto (rede, 5xx) vai pro modal.
+  function tratarErroReferencia(err, acao) {
+    const status = err.response?.status;
+    const mensagens = {
+      403: "Você não tem permissão para esta ação.",
+      404: "Rota de referências não encontrada no servidor (ou o patrimônio não existe). Recarregue a página e confira o backend.",
+      413: `O arquivo é grande demais para o servidor (máximo de ${referenciasApi.TAMANHO_MAX_REFERENCIA_MB} MB).`,
+    };
+
+    if (status === 400) {
+      setErroRef(adminApi.extrairMensagemDeErro(err));
+    } else if (mensagens[status]) {
+      setErroRef(mensagens[status]);
+    } else {
+      mostrarErro(err, {
+        origem: `AdminPatrimonios › ${acao} referência`,
+        mensagem:
+          acao === "enviar"
+            ? "Não foi possível anexar a referência."
+            : "Não foi possível remover a referência.",
+      });
+    }
+  }
+
+  async function enviarReferencia() {
+    if (!referenciaPronta || ocupado) return;
+    if (!editandoId || editandoId === "novo") return;
+
+    if (refModo === "link") {
+      const problema = referenciasApi.validarLinkReferencia(refLink);
+      if (problema) {
+        setErroRef(problema);
+        return;
+      }
+    }
+
+    setEnviandoRef(true);
+    setErroRef(null);
+
+    try {
+      const nova = await referenciasApi.enviarReferenciaPatrimonio(editandoId, {
+        arquivo: refModo === "arquivo" ? refArquivo : undefined,
+        url: refModo === "link" ? refLink.trim() : undefined,
+        descricao: refDescricao.trim() || undefined,
+      });
+
+      setReferencias((atual) => [...atual, nova]);
+      limparReferencia();
+    } catch (err) {
+      tratarErroReferencia(err, "enviar");
+    } finally {
+      setEnviandoRef(false);
+    }
+  }
+
+  async function removerReferencia(referencia) {
+    if (!eAdmin || ocupado) return;
+
+    const confirmou = window.confirm("Remover esta referência?");
+    if (!confirmou) return;
+
+    setRemovendoRefId(referencia.id);
+    setErroRef(null);
+
+    try {
+      await referenciasApi.removerReferenciaPatrimonio(
+        editandoId,
+        referencia.id,
+      );
+      setReferencias((atual) => atual.filter((r) => r.id !== referencia.id));
+    } catch (err) {
+      // 404: já não existe no servidor; some da tela também.
+      if (err.response?.status === 404) {
+        setReferencias((atual) => atual.filter((r) => r.id !== referencia.id));
+      }
+      tratarErroReferencia(err, "remover");
+    } finally {
+      setRemovendoRefId(null);
+    }
+  }
+
   // ===== Publicar / arquivar (somente ADMIN) =====
 
   async function mudarStatus(patrimonio, acao) {
@@ -666,9 +756,6 @@ export default function AdminPatrimonios() {
     }
   }
 
-
-  const modoArquivo = formulario.modoResumo === "arquivo";
-
   return (
     <div>
       <div className="admin-page-head admin-page-head-row">
@@ -680,16 +767,33 @@ export default function AdminPatrimonios() {
           </p>
         </div>
 
-        <button type="button" className="btn-solid" disabled={ocupado || carregando} onClick={abrirNovo}>
+        <button
+          type="button"
+          className="btn-solid"
+          disabled={ocupado || carregando}
+          onClick={abrirNovo}
+        >
           <PlusIcon width={16} height={16} />
           Novo patrimônio
         </button>
       </div>
 
-      {carregandoEdicao && <p role="status">Carregando patrimônio para edição…</p>}
-      {erroAcao && <p className="admin-form-erro" role="alert">{erroAcao}</p>}
+      {carregandoEdicao && (
+        <p role="status">Carregando patrimônio para edição…</p>
+      )}
+      {erroAcao && (
+        <p className="admin-form-erro" role="alert">
+          {erroAcao}
+        </p>
+      )}
       {editandoId && (
-        <form ref={formularioRef} className="admin-form" onSubmit={salvar} aria-busy={ocupado} inert={ocupado}>
+        <form
+          ref={formularioRef}
+          className="admin-form"
+          onSubmit={salvar}
+          aria-busy={ocupado}
+          inert={ocupado}
+        >
           <h2>
             {editandoId === "novo" ? "Novo patrimônio" : "Editar patrimônio"}
           </h2>
@@ -740,24 +844,51 @@ export default function AdminPatrimonios() {
               </select>
             </label>
 
-            <fieldset className="admin-form-col-2 admin-form-check-grid">
-              <legend>
-                Categorias adicionais (até {MAX_CATEGORIAS_ADICIONAIS}) — o bem
-                também aparece nesses filtros
+            <fieldset className="admin-form-col-2 admin-chips">
+              <legend className="admin-chips-legenda">
+                <span>Categorias adicionais</span>
+                <span className="admin-chips-contador">
+                  {formulario.categoriasAdicionais.length}/
+                  {MAX_CATEGORIAS_ADICIONAIS}
+                </span>
               </legend>
-              {categorias
-                .filter((c) => c.id !== formulario.categoriaId)
-                .map((c) => (
-                  <label key={c.id}>
-                    <input
-                      type="checkbox"
-                      checked={formulario.categoriasAdicionais.includes(c.id)}
-                      disabled={!formulario.categoriasAdicionais.includes(c.id) && formulario.categoriasAdicionais.length >= MAX_CATEGORIAS_ADICIONAIS}
-                      onChange={() => alternarCategoriaAdicional(c.id)}
-                    />
-                    {c.nome}
-                  </label>
-                ))}
+              <p className="admin-chips-ajuda">
+                O bem também aparece nesses filtros.
+              </p>
+              <div className="admin-chips-lista">
+                {categorias
+                  .filter((c) => c.id !== formulario.categoriaId)
+                  .map((c) => {
+                    const marcada = formulario.categoriasAdicionais.includes(
+                      c.id,
+                    );
+                    const bloqueada =
+                      !marcada &&
+                      formulario.categoriasAdicionais.length >=
+                        MAX_CATEGORIAS_ADICIONAIS;
+
+                    return (
+                      <label
+                        key={c.id}
+                        className="admin-chip"
+                        data-cat={c.slug}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={marcada}
+                          disabled={bloqueada}
+                          onChange={() => alternarCategoriaAdicional(c.id)}
+                        />
+                        <span className="admin-chip-marca" aria-hidden="true">
+                          {marcada && (
+                            <CheckIcon width={12} height={12} strokeWidth={3} />
+                          )}
+                        </span>
+                        {c.nome}
+                      </label>
+                    );
+                  })}
+              </div>
             </fieldset>
 
             <label>
@@ -777,14 +908,20 @@ export default function AdminPatrimonios() {
                 autoComplete="postal-code"
                 id="patrimonio-cep"
                 aria-label="CEP"
-                aria-describedby={feedbackCep ? "patrimonio-cep-feedback" : undefined}
+                aria-describedby={
+                  feedbackCep ? "patrimonio-cep-feedback" : undefined
+                }
                 maxLength={9}
                 placeholder="00000-000"
                 value={formulario.cep}
                 onChange={(e) => atualizar("cep", formatarCep(e.target.value))}
               />
               {feedbackCep && (
-                <span id="patrimonio-cep-feedback" className="admin-ajuda" role="status">
+                <span
+                  id="patrimonio-cep-feedback"
+                  className="admin-ajuda"
+                  role="status"
+                >
                   {feedbackCep}
                 </span>
               )}
@@ -845,9 +982,9 @@ export default function AdminPatrimonios() {
             <p className="admin-ajuda admin-form-col-2">
               <MapPinIcon width={16} height={16} />
               <span>
-                Cidade: {formulario.cidade} — {formulario.uf}. A posição no mapa é calculada
-                automaticamente a partir do endereço quando você salva; não
-                precisa informar latitude nem longitude.
+                Cidade: {formulario.cidade} — {formulario.uf}. A posição no mapa
+                é calculada automaticamente a partir do endereço quando você
+                salva; não precisa informar latitude nem longitude.
                 {GEOCODING_EM_MODO_DEMO &&
                   " (Geocodificação desligada: o patrimônio é salvo SEM coordenadas e não aparece no mapa até ela ser ativada. Se você mudar o endereço de um patrimônio já cadastrado, a posição antiga é removida.)"}
               </span>
@@ -1013,123 +1150,253 @@ export default function AdminPatrimonios() {
                 )}
 
                 {!eAdmin && imagens.length > 0 && (
-                  <p className="admin-aviso-ia">
+                  <p className="admin-aviso-texto">
                     Somente administradores podem remover imagens.
                   </p>
                 )}
               </div>
             )}
 
-            {/* ----- Resumo: escrever ou enviar arquivo ----- */}
             <div className="admin-form-col-2 admin-upload">
-              <span className="admin-upload-rotulo">Resumo</span>
-
-              <div
-                className="admin-segmentado"
-                role="tablist"
-                aria-label="Como informar o resumo"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={!modoArquivo}
-                  onClick={() => atualizar("modoResumo", "escrever")}
-                >
-                  <PencilSquareIcon width={15} height={15} />
-                  Escrever
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={modoArquivo}
-                  onClick={() => atualizar("modoResumo", "arquivo")}
-                >
-                  <PaperClipIcon width={15} height={15} />
-                  Enviar arquivo
-                </button>
+              <label htmlFor="patrimonio-descricao" className="admin-upload-rotulo">
+                Descrição
+              </label>
+              <textarea
+                id="patrimonio-descricao"
+                rows={6}
+                maxLength={LIMITE_DESCRICAO}
+                placeholder="Escreva a descrição completa do patrimônio."
+                value={formulario.descricao}
+                onChange={(e) => atualizar("descricao", e.target.value)}
+              />
+              <div className="admin-resumo-contador">
+                {formulario.descricao.length}/{LIMITE_DESCRICAO}
               </div>
+            </div>
 
-              {modoArquivo && (
-                <div className="admin-upload-linha admin-upload-bloco">
-                  <input
-                    ref={inputArquivoRef}
-                    type="file"
-                    accept={EXTENSOES_RESUMO.join(",")}
-                    hidden
-                    onChange={escolherArquivoResumo}
-                  />
+            {/* ----- Resumo manual ----- */}
+            <div className="admin-form-col-2 admin-upload">
+              <label
+                htmlFor="patrimonio-resumo"
+                className="admin-upload-rotulo"
+              >
+                Resumo
+              </label>
+              <textarea
+                id="patrimonio-resumo"
+                rows={4}
+                style={{ resize: "none" }}
+                maxLength={LIMITE_RESUMO}
+                placeholder="Escreva um resumo curto do patrimônio."
+                value={formulario.descricaoResumida}
+                onChange={(e) => atualizar("descricaoResumida", e.target.value)}
+              />
+              <div className="admin-resumo-contador">
+                {formulario.descricaoResumida.length}/{LIMITE_RESUMO}
+              </div>
+              <p className="admin-aviso-texto">
+                Se o texto vier de uma fonte (livro, site, documento), anexe a
+                referência logo abaixo ou cite-a ao final do resumo.
+              </p>
+            </div>
 
+            {/* ----- Referência do texto: arquivo (PDF, Word...) ou link (Drive, site) ----- */}
+            {editandoId === "novo" ? (
+              <p className="admin-ajuda admin-form-col-2">
+                <PaperClipIcon width={16} height={16} />
+                <span>
+                  A referência do texto (arquivo ou link) é anexada logo depois
+                  de salvar, igual às imagens.
+                </span>
+              </p>
+            ) : (
+              <div className="admin-form-col-2 admin-upload admin-refs">
+                <span className="admin-upload-rotulo">
+                  Referência do texto (opcional)
+                </span>
+
+                {referencias.length === 0 ? (
+                  <p className="admin-ajuda">
+                    Nenhuma referência anexada ainda.
+                  </p>
+                ) : (
+                  <ul
+                    className="admin-refs-lista"
+                    aria-label="Referências do patrimônio"
+                  >
+                    {referencias.map((ref) => {
+                      const Icone =
+                        ref.tipo === "LINK" ? LinkIcon : DocumentTextIcon;
+                      const rotulo =
+                        ref.descricao || ref.nomeArquivo || ref.nome || ref.url;
+
+                      return (
+                        <li key={ref.id} className="admin-ref-item">
+                          <Icone width={18} height={18} aria-hidden="true" />
+                          {ref.url ? (
+                            <a
+                              href={ref.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {rotulo}
+                            </a>
+                          ) : (
+                            <span>{rotulo}</span>
+                          )}
+
+                          {eAdmin && (
+                            <button
+                              type="button"
+                              className="admin-upload-remover"
+                              aria-label={`Remover referência: ${rotulo}`}
+                              title="Remover referência"
+                              disabled={ocupado}
+                              onClick={() => removerReferencia(ref)}
+                            >
+                              {removendoRefId === ref.id ? (
+                                <ArrowPathIcon
+                                  width={16}
+                                  height={16}
+                                  className="icon-spin"
+                                />
+                              ) : (
+                                <TrashIcon width={16} height={16} />
+                              )}
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                <div
+                  className="admin-segmentado"
+                  role="tablist"
+                  aria-label="Tipo de referência"
+                >
                   <button
                     type="button"
-                    className="btn-outline"
-                    onClick={() => inputArquivoRef.current?.click()}
+                    role="tab"
+                    aria-selected={refModo === "arquivo"}
+                    onClick={() => trocarModoReferencia("arquivo")}
                   >
-                    <PaperClipIcon width={16} height={16} />
-                    {arquivoResumo ? "Trocar arquivo" : "Anexar arquivo"}
+                    <PaperClipIcon width={15} height={15} />
+                    Anexar arquivo
                   </button>
-
-                  <span className="admin-upload-nome">
-                    {arquivoResumo?.name || ".txt, .md ou .pdf, até 5 MB"}
-                  </span>
-
-                  {arquivoResumo && (
-                    <button
-                      type="button"
-                      className="admin-upload-remover"
-                      aria-label="Remover arquivo"
-                      onClick={removerArquivoResumo}
-                    >
-                      <XMarkIcon width={16} height={16} />
-                    </button>
-                  )}
-
                   <button
                     type="button"
-                    className="btn-solid"
-                    disabled={!arquivoResumo || gerando}
-                    onClick={gerarResumo}
+                    role="tab"
+                    aria-selected={refModo === "link"}
+                    onClick={() => trocarModoReferencia("link")}
                   >
-                    {gerando ? (
-                      <ArrowPathIcon
-                        width={16}
-                        height={16}
-                        className="icon-spin"
-                      />
-                    ) : (
-                      <SparklesIcon width={16} height={16} />
-                    )}
-                    {gerando ? "Lendo o arquivo…" : "Gerar resumo com IA"}
+                    <LinkIcon width={15} height={15} />
+                    Link do Drive ou site
                   </button>
                 </div>
-              )}
 
-              {erroArquivo && <p className="admin-form-erro">{erroArquivo}</p>}
+                {refModo === "arquivo" ? (
+                  <div className="admin-upload-linha admin-upload-bloco">
+                    <input
+                      ref={inputReferenciaRef}
+                      type="file"
+                      accept={referenciasApi.EXTENSOES_REFERENCIA.join(",")}
+                      hidden
+                      onChange={escolherArquivoReferencia}
+                    />
 
-              {(!modoArquivo || formulario.resumo) && (
-                <>
-                  <textarea
-                    rows={4}
-                    style={{ resize: "none" }}
-                    maxLength={LIMITE_RESUMO}
-                    placeholder="Escreva um resumo curto do patrimônio."
-                    value={formulario.resumo}
-                    onChange={(e) => atualizar("resumo", e.target.value)}
-                  />
-                  <div className="admin-resumo-contador">
-                    {formulario.resumo.length}/{LIMITE_RESUMO}
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      disabled={ocupado}
+                      onClick={() => inputReferenciaRef.current?.click()}
+                    >
+                      <PaperClipIcon width={16} height={16} />
+                      {refArquivo ? "Trocar arquivo" : "Escolher arquivo"}
+                    </button>
+
+                    <span className="admin-upload-nome">
+                      {refArquivo?.name ||
+                        `PDF, Word, TXT ou MD, até ${referenciasApi.TAMANHO_MAX_REFERENCIA_MB} MB`}
+                    </span>
+
+                    {refArquivo && !enviandoRef && (
+                      <button
+                        type="button"
+                        className="admin-upload-remover"
+                        aria-label="Descartar arquivo escolhido"
+                        onClick={() => setRefArquivo(null)}
+                      >
+                        <XMarkIcon width={16} height={16} />
+                      </button>
+                    )}
                   </div>
-                </>
-              )}
+                ) : (
+                  <label className="admin-refs-campo">
+                    Link (Google Drive, site ou outro)
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://drive.google.com/..."
+                      value={refLink}
+                      onChange={(e) => {
+                        setRefLink(e.target.value);
+                        setErroRef(null);
+                      }}
+                    />
+                  </label>
+                )}
 
-              {modoArquivo && (
-                <p className="admin-aviso-ia">
-                  A IA gera apenas um rascunho: leia e corrija o texto antes de
-                  salvar.
-                  {IA_EM_MODO_DEMO &&
-                    " (Modo demonstração: a IA ainda não está ligada; .txt e .md mostram o início do próprio arquivo.)"}
-                </p>
-              )}
-            </div>
+                {referenciaPronta && (
+                  <div className="admin-imagem-campos">
+                    <label>
+                      Como citar (opcional)
+                      <input
+                        maxLength={300}
+                        placeholder="Ex.: Prefeitura de Guarulhos, Inventário do Patrimônio, 2024"
+                        value={refDescricao}
+                        onChange={(e) => setRefDescricao(e.target.value)}
+                      />
+                    </label>
+
+                    <div>
+                      <button
+                        type="button"
+                        className="btn-solid"
+                        disabled={ocupado}
+                        onClick={enviarReferencia}
+                      >
+                        {enviandoRef ? (
+                          <>
+                            <ArrowPathIcon
+                              width={16}
+                              height={16}
+                              className="icon-spin"
+                            />
+                            Anexando…
+                          </>
+                        ) : (
+                          "Adicionar referência"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {erroRef && (
+                  <p className="admin-form-erro" role="alert">
+                    {erroRef}
+                  </p>
+                )}
+
+                {!eAdmin && referencias.length > 0 && (
+                  <p className="admin-aviso-texto">
+                    Somente administradores podem remover referências.
+                  </p>
+                )}
+              </div>
+            )}
             <label className="admin-form-col-2">
               História (opcional)
               <textarea
@@ -1154,15 +1421,13 @@ export default function AdminPatrimonios() {
           </div>
 
           {erroFormulario && (
-            <p className="admin-form-erro" role="alert">{erroFormulario}</p>
+            <p className="admin-form-erro" role="alert">
+              {erroFormulario}
+            </p>
           )}
 
           <div className="admin-form-acoes">
-            <button
-              type="submit"
-              className="btn-solid"
-              disabled={ocupado}
-            >
+            <button type="submit" className="btn-solid" disabled={ocupado}>
               {salvando ? (
                 <>
                   <ArrowPathIcon width={16} height={16} className="icon-spin" />
@@ -1198,7 +1463,7 @@ export default function AdminPatrimonios() {
       ) : erro ? (
         <p className="empty-state">{erro}</p>
       ) : (
-        <table className="admin-table">
+        <table className="admin-table admin-table--cards">
           <thead>
             <tr>
               <th>Nome</th>
@@ -1217,21 +1482,25 @@ export default function AdminPatrimonios() {
             {patrimonios.map((p) => (
               <tr key={p.uuid} data-cat={p.categoria}>
                 <td>{p.nome}</td>
-                <td>
+                <td data-label="Categoria">
                   <span className="admin-cat" data-cat={p.categoria}>
                     {CATEGORIA_META[p.categoria]?.label ?? p.categoria}
                   </span>
                 </td>
-                <td>{p.bairro || "—"}</td>
-                <td>
+                <td data-label="Bairro">{p.bairro || "—"}</td>
+                <td data-label="Status">
                   <span className={`admin-status admin-status--${p.status}`}>
                     {ROTULO_STATUS[p.status] ?? p.status}
                   </span>
                 </td>
-                <td className="admin-table-acoes">
+                <td className="admin-table-acoes" data-label="Ações">
                   <button
                     type="button"
-                    aria-label={podeEditar(p) ? `Editar ${p.nome}` : `Editar ${p.nome}: editores só podem editar rascunhos`}
+                    aria-label={
+                      podeEditar(p)
+                        ? `Editar ${p.nome}`
+                        : `Editar ${p.nome}: editores só podem editar rascunhos`
+                    }
                     title={
                       podeEditar(p)
                         ? "Editar"
@@ -1240,9 +1509,15 @@ export default function AdminPatrimonios() {
                     disabled={!podeEditar(p) || ocupado}
                     onClick={() => abrirEdicao(p)}
                   >
-                    {carregandoEdicao === p.uuid
-                      ? <ArrowPathIcon width={16} height={16} className="icon-spin" />
-                      : <PencilIcon width={16} height={16} />}
+                    {carregandoEdicao === p.uuid ? (
+                      <ArrowPathIcon
+                        width={16}
+                        height={16}
+                        className="icon-spin"
+                      />
+                    ) : (
+                      <PencilIcon width={16} height={16} />
+                    )}
                   </button>
 
                   {eAdmin && p.status !== "PUBLICADO" && (

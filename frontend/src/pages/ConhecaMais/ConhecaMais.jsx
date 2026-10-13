@@ -16,6 +16,16 @@ import EstadoConteudo from "../../components/EstadoConteudo";
 
 const ROTA_DETALHES = "/conheca-mais/detalhes";
 const EMAIL_CULTURA = "cultura@guarulhos.sp.gov.br";
+// A agenda da home mostra só os próximos eventos; o resto fica na página de detalhes.
+const MAX_EVENTOS_AGENDA = 4;
+
+// "YYYY-MM-DD" de hoje no fuso local (toISOString usaria UTC e viraria o dia à noite).
+function hojeISO() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
 
 // "2025-05-16" -> "16 de maio de 2025". O "T12:00:00" evita que o fuso
 // horário empurre a data para o dia anterior.
@@ -75,7 +85,18 @@ export default function ConhecaMais() {
   const exposicoesEstado = useConteudoPublico(listarExposicoes);
   const exposicoes = exposicoesEstado.itens;
   const noticias = novidades.itens.filter((item) => item.tipo === "NOTICIA");
-  const eventos = novidades.itens.filter((item) => item.tipo === "EVENTO");
+  const todosEventos = novidades.itens.filter((item) => item.tipo === "EVENTO");
+  // Próximos eventos primeiro (do mais perto para o mais longe); se não houver
+  // nenhum futuro, mostra os mais recentes para a agenda não ficar vazia.
+  const hoje = hojeISO();
+  const futuros = todosEventos
+    .filter((e) => e.data >= hoje)
+    .sort((a, b) => a.data.localeCompare(b.data));
+  const eventosOrdenados = futuros.length
+    ? futuros
+    : [...todosEventos].sort((a, b) => b.data.localeCompare(a.data));
+  const eventos = eventosOrdenados.slice(0, MAX_EVENTOS_AGENDA);
+  const eventosRestantes = todosEventos.length - eventos.length;
   const [destaque, segundo, ...demais] = noticias;
 
   return (
@@ -224,7 +245,9 @@ export default function ConhecaMais() {
                 ))}
               </ul>
               <Link className="noticias-todas" to={ROTA_DETALHES}>
-                Ver agenda completa
+                {eventosRestantes > 0
+                  ? `Veja mais ${eventosRestantes} ${eventosRestantes === 1 ? "evento" : "eventos"}`
+                  : "Ver agenda completa"}
                 <ArrowRightIcon width={14} height={14} />
               </Link>
             </aside>
@@ -264,16 +287,18 @@ export default function ConhecaMais() {
                   <span className="artista">{e.artista}</span>
                   <span className="local">{e.local}</span>
                   <p>{e.bio}</p>
-                  {e.ctaSaibaMais && <div className="expo-cta-row">
-                    <a
-                      className="btn-solid"
-                      href={e.ctaSaibaMais}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Saiba mais
-                    </a>
-                  </div>}
+                  {e.ctaSaibaMais && (
+                    <div className="expo-cta-row">
+                      <a
+                        className="btn-solid"
+                        href={e.ctaSaibaMais}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Saiba mais
+                      </a>
+                    </div>
+                  )}
                 </div>
               </article>
             ))}

@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ConhecaMais from "../src/pages/ConhecaMais/ConhecaMais";
 import ConhecaMaisDetalhes from "../src/pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
@@ -27,12 +27,26 @@ beforeEach(() => {
 });
 afterEach(() => { api.defaults.adapter = original; vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
-test("Conheça Mais renderiza os 16 itens obtidos pela API e links para os IDs reais", async () => {
-  render(<MemoryRouter><ConhecaMais /></MemoryRouter>);
-  for (const item of items) expect(await screen.findByText(item.titulo)).toBeTruthy();
-  expect(calls).toContain("/novidades");
-  expect(screen.getAllByText("Leia mais")[0].getAttribute("href")).toContain("#uuid-");
-  expect(screen.queryByText(editorial.noticiasSetembro[0].titulo)).toBeNull();
+test("Conheça Mais mostra notícias e quatro próximos eventos com acesso à agenda completa", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 9, 12, 12));
+  try {
+    render(<MemoryRouter><ConhecaMais /></MemoryRouter>);
+    for (const item of items.filter(item => item.tipo === "NOTICIA")) {
+      expect(await screen.findByText(item.titulo)).toBeTruthy();
+    }
+    const agenda = within(screen.getByRole("complementary", { name: "Agenda de eventos" }));
+    const eventos = items.filter(item => item.tipo === "EVENTO" && item.data >= "2026-10-12")
+      .sort((a, b) => a.data.localeCompare(b.data));
+    for (const item of eventos.slice(0, 4)) expect(await agenda.findByText(item.titulo)).toBeTruthy();
+    for (const item of items.filter(item => item.tipo === "EVENTO" && !eventos.slice(0, 4).includes(item))) {
+      expect(agenda.queryByText(item.titulo)).toBeNull();
+    }
+    expect(agenda.getByRole("link", { name: /Veja mais/ }).getAttribute("href")).toContain("/conheca-mais/detalhes");
+    expect(calls).toContain("/novidades");
+    expect(screen.getAllByText("Leia mais")[0].getAttribute("href")).toContain("#uuid-");
+    expect(screen.queryByText(editorial.noticiasSetembro[0].titulo)).toBeNull();
+  } finally { vi.useRealTimers(); }
 });
 
 test("Detalhes renderiza texto, bloco, quando/local, imagens, CTA/fontes e hash após carga da API", async () => {

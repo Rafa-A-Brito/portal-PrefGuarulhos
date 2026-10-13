@@ -2,6 +2,8 @@
 
 Data: 09/10/2026.
 
+> Registro histórico. Em 12/10/2026, o fluxo de geração de resumo foi removido. Descrição e resumo agora são campos manuais independentes; editar a descrição preserva o resumo. As menções à geração abaixo descrevem somente a auditoria anterior.
+
 ## Escopo e método
 
 Inspecionados AdminPatrimonios.jsx, adminApi.js, normalizarPatrimonio, geocodificação, App.jsx/RotaProtegida, interceptor de sessão, modal de erros, adminPatrimonioRoute/controller/service e rotas/service de imagens.

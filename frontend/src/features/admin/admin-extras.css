@@ -172,7 +172,7 @@
 }
 
 .admin-upload-remover:hover {
-  color: #b3261e;
+  color: var(--danger);
   background: rgba(179, 38, 30, 0.08);
 }
 
@@ -227,7 +227,7 @@
   color: var(--ink-soft);
 }
 
-.admin-aviso-ia {
+.admin-aviso-texto {
   margin: 8px 0 0;
   font-size: 12px;
   line-height: 1.5;
@@ -381,10 +381,325 @@
 }
 
 /* Gestão de usuários */
-.admin-usuarios-campos { border: 0; padding: 0; margin: 0; min-width: 0; }
-.admin-usuarios-tabela { overflow-x: auto; }
-.admin-usuarios-acoes, .admin-usuarios-paginacao { display: flex; align-items: center; gap: 10px; }
-.admin-usuarios-paginacao { flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-.admin-usuario-ativo { background: #dff3e4; color: #11672a; }
-.admin-usuario-inativo { background: #eee; color: #555; }
-.admin-usuarios button:disabled { opacity: 0.55; cursor: not-allowed; }
+.admin-usuarios-campos {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.admin-usuarios-tabela {
+  overflow-x: auto;
+}
+.admin-usuarios-acoes,
+.admin-usuarios-paginacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-usuarios-paginacao {
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+.admin-usuario-ativo {
+  background: #dff3e4;
+  color: #11672a;
+}
+.admin-usuario-inativo {
+  background: #eee;
+  color: #555;
+}
+.admin-usuarios button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* ---------- 7) Categorias adicionais: chips selecionáveis ----------
+   Substitui a grade de caixas de seleção. A cor de cada chip vem do
+   data-cat (mesmas variáveis --cat-* do bloco 4). */
+.admin-chips {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-chips-legenda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.admin-chips-contador {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.admin-chips-ajuda {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.admin-chips-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-form .admin-chip {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* a caixa nativa fica escondida, mas continua focável e acessível */
+.admin-form .admin-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.admin-chip-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--cat-bg);
+  color: #fff;
+  box-shadow: inset 0 0 0 5px var(--cat-bg);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.admin-chip:hover:not(:has(input:disabled)) {
+  border-color: var(--cat-dot);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.admin-chip:has(input:checked) {
+  border-color: var(--cat-dot);
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+}
+
+.admin-chip:has(input:checked) .admin-chip-marca {
+  background: var(--cat-dot);
+  box-shadow: none;
+}
+
+.admin-chip:has(input:focus-visible) {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.admin-chip:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-form .admin-chip,
+  .admin-chip-marca {
+    transition: none;
+  }
+}
+
+/* ---------- 8) Dashboard: textos do cartão em linhas separadas ----------
+   Cada texto depois do número vira um bloco próprio (antes ficavam
+   "colados" na mesma linha). */
+.admin-dashboard-card strong ~ * {
+  display: block;
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* ---------- 9) Tabelas do admin viram cartões no mobile ----------
+   Só tabelas com a classe .admin-table--cards (e células com data-label).
+   Cada linha vira um cartão: nome em destaque, campos com rótulo e os
+   botões de ação sempre visíveis no rodapé do cartão. */
+@media (max-width: 720px) {
+  .admin-table--cards,
+  .admin-table--cards tbody {
+    display: block;
+    border: 0;
+    background: transparent;
+  }
+
+  /* cabeçalho some da vista, mas continua para leitores de tela */
+  .admin-table--cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .admin-table--cards tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-plaque);
+  }
+
+  .admin-table.admin-table--cards tbody tr[data-cat] {
+    background: var(--cat-row);
+    box-shadow: inset 4px 0 0 var(--cat-dot);
+  }
+
+  .admin-table.admin-table--cards tbody td,
+  .admin-table.admin-table--cards tbody tr[data-cat] td,
+  .admin-table.admin-table--cards tbody tr[data-cat] td:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: right;
+  }
+
+  .admin-table--cards td:first-child {
+    justify-content: flex-start;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: left;
+    color: var(--ink);
+  }
+
+  .admin-table--cards td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* ações: rodapé do cartão, botões à esquerda */
+  .admin-table--cards td[data-label="Ações"] {
+    justify-content: flex-start;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .admin-table.admin-table--cards tbody td[data-label="Ações"] {
+    border-top: 1px solid var(--line);
+  }
+
+  .admin-table--cards td[data-label="Ações"]::before {
+    content: none;
+  }
+
+  .admin-table--cards .admin-table-acoes {
+    justify-content: flex-start;
+  }
+
+  .admin-table--cards .admin-table-acoes button {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* linha única "Nenhum ... encontrado" */
+  .admin-table--cards td[colspan] {
+    justify-content: center;
+    font-weight: 400;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+}
+
+/* ---------- 10) Referência do texto (arquivo ou link) ----------
+   Reaproveita .admin-upload-*, .admin-segmentado e .admin-imagem-campos. */
+.admin-refs-lista {
+  display: grid;
+  gap: 8px;
+  align-self: stretch;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-ref-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.admin-ref-item > svg {
+  flex: none;
+  color: var(--blue);
+}
+
+.admin-ref-item a,
+.admin-ref-item > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--indigo);
+  font-weight: 600;
+}
+
+.admin-ref-item > span {
+  color: var(--ink);
+}
+
+.admin-refs-campo {
+  align-self: stretch;
+  margin-bottom: 10px;
+}

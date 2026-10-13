@@ -1,3 +1,5 @@
+> Planejamento futuro, sem implementação ou importação pelo código de produção. O resumo administrativo é preenchido manualmente.
+
 # IA — Mapeamento de tendências culturais com Gemini
 
 Este documento descreve a proposta de implementação do módulo de inteligência

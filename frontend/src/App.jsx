@@ -104,23 +104,26 @@ function AppRoutes() {
   const location = useLocation();
   const { carregando: verificandoSessao, autenticado, usuario } = useAuth();
 
-  // A transição aparece uma vez a cada vez que se navega para /admin. Em vez
-  // de ligar/desligar com um efeito (que deixaria o painel "piscar" por um
-  // quadro antes da transição), guardamos a chave da navegação que já foi
-  // concluída: location.key muda a cada navegação.
-  const [chaveConcluida, setChaveConcluida] = useState(null);
+  // A transição aparece uma vez por entrada no painel (login ou recarga em
+  // /admin). Antes ela dependia de location.key, que muda a cada navegação:
+  // clicar em "Dashboard" no menu lateral repetia a tela cheia de ~2 s toda vez.
+  const [transicaoVista, setTransicaoVista] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  const concluirTransicao = useCallback(
-    () => setChaveConcluida(location.key),
-    [location.key],
-  );
+  useEffect(() => {
+    // Saiu (ou a sessão expirou): no próximo login a transição volta a aparecer.
+    if (!verificandoSessao && !autenticado) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTransicaoVista(false);
+    }
+  }, [verificandoSessao, autenticado]);
 
-  const emTransicao =
-    location.pathname === "/admin" && chaveConcluida !== location.key;
+  const concluirTransicao = useCallback(() => setTransicaoVista(true), []);
+
+  const emTransicao = location.pathname === "/admin" && !transicaoVista;
 
   // Sem sessão (e já verificado), não há o que "validar": deixa a
   // RotaProtegida mandar a pessoa para o login em vez de mostrar a transição.
