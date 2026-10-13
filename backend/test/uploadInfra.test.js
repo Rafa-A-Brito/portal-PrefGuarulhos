@@ -37,6 +37,8 @@ function stub(t, target, method, implementation) {
 }
 function auth(t, role = "ADMIN") {
     stub(t, prisma.user, "findUnique", async () => ({ ...admin, role }));
+    stub(t, prisma.patrimonio, "findUnique", async () => ({ id: patrimonioId, status: "RASCUNHO" }));
+    stub(t, prisma, "$queryRaw", async () => []);
 }
 function form(extra = {}, double = false) {
     const data = new FormData();
@@ -114,14 +116,14 @@ test("upload bem-sucedido é público, DELETE remove registro e arquivo", async 
     auth(t);
     let record;
     stub(t, prisma.patrimonio, "findUnique", async () => ({ id: patrimonioId }));
-    stub(t, prisma, "$transaction", async callback => callback({
-        patrimonioImagem: { create: async ({ data }) => (record = { id: randomUUID(), ...data }) },
-    }));
+    stub(t, prisma, "$transaction", async callback => callback(prisma));
+    stub(t, prisma.patrimonioImagem, "create", async ({ data }) => (record = { id: randomUUID(), ...data }));
     const response = await upload();
     assert.equal(response.status, 201);
     const { data } = await response.json();
     assert.equal(await (await fetch(base + data.url)).text(), "image-content");
     stub(t, prisma.patrimonioImagem, "findUnique", async () => record);
+    stub(t, prisma.patrimonioImagem, "findFirst", async () => record);
     stub(t, prisma.patrimonioImagem, "delete", async () => record);
     assert.equal((await fetch(base + "/api/admin/patrimonios/imagens/" + data.id, {
         method: "DELETE", headers: { authorization: "Bearer " + generateToken(admin.id) },
@@ -139,4 +141,78 @@ test("Express serve as três pastas sem transformar arquivos em HTML", async () 
         assert.match(response.headers.get("content-type"), /image\/png/);
         assert.equal(await response.text(), folder);
     }
+});
+
+test("campo arquivo mantém validação de assinatura, metadados obrigatórios e URL da origem", async t => {
+    auth(t);
+    stub(t, prisma, "$transaction", async callback => callback(prisma));
+    let saved;
+    stub(t, prisma.patrimonioImagem, "create", async ({ data }) => (saved = { id: randomUUID(), ...data }));
+    const imageDir = path.join(uploads, "imagens");
+    const data = (bytes, alt) => {
+        const body = new FormData();
+        body.append("arquivo", new Blob([bytes], { type: "image/png" }), "imagem.png");
+        if (alt !== undefined) body.append("textoAlternativo", alt);
+        return body;
+    };
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    assert.equal((await upload(data(png))).status, 400);
+    assert.deepEqual(await fs.readdir(imageDir), []);
+    assert.equal((await upload(data("conteudo invalido", "Alt"))).status, 415);
+    assert.deepEqual(await fs.readdir(imageDir), []);
+    const duplicate = data(png, "Alt");
+    duplicate.append("arquivo", new Blob([png], { type: "image/png" }), "outra.png");
+    assert.equal((await upload(duplicate)).status, 400);
+    assert.deepEqual(await fs.readdir(imageDir), []);
+    const response = await upload(data(png, "Alt"));
+    assert.equal(response.status, 201);
+    assert.equal(saved.textoAlternativo, "Alt");
+    assert.ok(saved.url.startsWith("/api/uploads/imagens/"));
+    assert.deepEqual(await fs.readFile(path.join(imageDir, path.basename(saved.url))), png);
+});
+
+test("imagem legada conserva GIF e texto derivado sem permitir EDITOR após publicação", async t => {
+    auth(t);
+    const body = () => {
+        const data = new FormData();
+        data.append("imagem", new Blob(["GIF89a"], { type: "image/gif" }), "legado.gif");
+        return data;
+    };
+    let record;
+    stub(t, prisma, "$transaction", async callback => callback(prisma));
+    stub(t, prisma.patrimonioImagem, "create", async ({ data }) => (record = { id: randomUUID(), ...data }));
+    assert.equal((await upload(body())).status, 201);
+    assert.equal(record.textoAlternativo, "legado.gif");
+    assert.ok(record.url.endsWith(".gif"));
+    const before = await list();
+    stub(t, prisma.user, "findUnique", async () => ({ ...admin, role: "EDITOR" }));
+    let locked = false;
+    const tx = {
+        $queryRaw: async () => { locked = true; },
+        patrimonio: { findUnique: async () => { assert.equal(locked, true); return { id: patrimonioId, status: "PUBLICADO" }; } },
+        patrimonioImagem: { create: async () => assert.fail("Não gravar após publicação") },
+    };
+    stub(t, prisma, "$transaction", async callback => callback(tx));
+    assert.equal((await upload(body())).status, 403);
+    assert.deepEqual(await list(), before);
+});
+
+test("exclusão legada restaura arquivo se houver rollback após o DELETE", async t => {
+    auth(t);
+    const name = "rollback.png";
+    await fs.writeFile(path.join(uploads, "patrimonios", name), "original");
+    const record = { id: randomUUID(), patrimonioId, url: `/uploads/patrimonios/${name}` };
+    stub(t, prisma.patrimonioImagem, "findUnique", async () => record);
+    stub(t, prisma.patrimonioImagem, "findFirst", async () => record);
+    stub(t, prisma.patrimonioImagem, "delete", async () => record);
+    stub(t, prisma, "$transaction", async callback => {
+        await callback(prisma);
+        await assert.rejects(fs.stat(path.join(uploads, "patrimonios", name)), { code: "ENOENT" });
+        throw new Error("Commit recusado");
+    });
+    const response = await fetch(base + "/api/admin/patrimonios/imagens/" + record.id, {
+        method: "DELETE", headers: { authorization: "Bearer " + generateToken(admin.id) },
+    });
+    assert.equal(response.status, 500);
+    assert.equal(await fs.readFile(path.join(uploads, "patrimonios", name), "utf8"), "original");
 });

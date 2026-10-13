@@ -12,6 +12,8 @@
 
 Aplicação web interativa para o mapeamento, consulta e preservação da memória dos patrimônios históricos da cidade de Guarulhos. A plataforma permite a navegação por rotas culturais, visualização em mapa interativo via Google Maps, análise de dados estatísticos e mecanismos avançados de pesquisa e filtragem.
 
+Documentação da [classificação territorial dos patrimônios](docs/classificacao-territorial.md): códigos, rótulos, contratos e aplicação da migration.
+
 ---
 
 ## 📖 Sobre o Projeto
@@ -153,10 +155,11 @@ Para criar/aplicar as migrations durante o desenvolvimento:
 npx prisma migrate dev
 ```
 
-Para popular o ambiente local com os patrimônios iniciais:
+Para importar os 34 registros da pesquisa como RASCUNHO, configure PATRIMONIOS_PUBLIC_BASE_URL, aplique as migrations e revise o dry-run. Consulte [a política de importação, reconciliação e imagens](docs/populacao-patrimonios.md). A seed antiga está desativada.
 
 ```bash
-npm run prisma:seed
+npm run seed:pesquisa -- --dry-run
+npm run seed:pesquisa
 ```
 
 ### Executando em desenvolvimento
@@ -173,6 +176,16 @@ O backend estará disponível em:
 http://localhost:3333
 ```
 
+### Documentação interativa da API
+
+Com o backend em execução, abra [Swagger UI](http://localhost:3333/api/docs) no navegador. A especificação OpenAPI 3.0.3 também está disponível em `GET /api/docs.json`. Essas páginas não consultam o banco; as rotas que leem ou gravam dados continuam dependendo do PostgreSQL configurado.
+
+Para testar as rotas protegidas, faça `POST /api/auth/login` na própria interface com uma conta ativa. Copie o `data.token` da resposta, clique em **Authorize** e informe o token JWT. O Swagger UI enviará o cabeçalho `Authorization: Bearer <token>` somente nas operações protegidas; o token não é persistido no navegador por padrão. `POST /api/admins` exige ADMIN; `POST /api/admin/patrimonios` aceita ADMIN ou EDITOR. É necessário já existir uma conta ADMIN para cadastrar outras contas; não há cadastro público.
+
+Use **Try it out** para preencher os parâmetros e executar uma requisição. Consultas públicas como `GET /api/patrimonios?pagina=1&limite=20` não exigem autenticação. **Atenção:** Try it out nas operações POST e PATCH executa ações reais no banco configurado. Confira a variável de ambiente do banco antes de criar administradores, patrimônios ou trocar senhas.
+
+Para trocar a própria senha, faça login com uma conta EDITOR ou ADMIN, autorize o token e execute `PATCH /api/auth/senha` com `senhaAtual` e `novaSenha`. A nova senha deve ter pelo menos 12 caracteres e no máximo 72 bytes em UTF-8. A senha antiga deixará de funcionar no próximo login. JWTs já emitidos continuam válidos até expirar, pois a API não possui revogação de tokens.
+
 Para executar o frontend, utilize o procedimento definido no README do respectivo repositório.
 
 ### Consulta pública de patrimônios
@@ -183,7 +196,7 @@ GET /api/patrimonios/:slug
 ```
 
 A listagem aceita os parâmetros opcionais `busca`, `categoria`, `situacao`,
-`bairro`, `pagina` e `limite`. Apenas patrimônios publicados são retornados.
+`bairro`, `pagina` e `limite`. Apenas patrimônios publicados são retornados, em ordem editorial (null por último). Categoria aceita nome ou slug; busca inclui título/texto das seções. O detalhe retorna seções, fatos e ligações ordenadas, além de número/ordem de exibição. A carga mantém RASCUNHO e não publica os registros.
 
 Exemplo:
 
@@ -267,6 +280,17 @@ disponível em `/api/docs`.
 EDITOR e ADMIN podem trocar a própria senha em `PATCH /api/auth/senha`, informando
 `senhaAtual` e `novaSenha` com um token Bearer. A nova senha segue as regras do cadastro.
 JWTs emitidos antes da troca permanecem válidos até expirar.
+Para testar consulta, edição, publicação e arquivamento de patrimônios pelo Swagger ou Postman,
+consulte o [guia de administração de patrimônios](docs/patrimonios-admin.md).
+
+Para consultar `GET /api/admin/dashboard` com acesso ADMIN ou EDITOR e executar seus testes, consulte o
+[guia do dashboard estatístico](docs/dashboard.md).
+O dashboard usa `totalPatrimonios` e `meta.baseContagem: "TODOS_OS_STATUS"`,
+incluindo rascunhos, publicados e arquivados. O campo anterior `totalPublicados`
+foi substituído; as consultas públicas continuam restritas a publicados.
+O escopo reduzido inclui total, categorias principais, bairros e regiões;
+tombamento e rotas foram retirados desta entrega. `meta.parcial: false` e
+pendências vazias indicam conclusão desse escopo, não da seção 5.5 original inteira.
 
 Contribuições são bem-vindas! Para contribuir:
 
