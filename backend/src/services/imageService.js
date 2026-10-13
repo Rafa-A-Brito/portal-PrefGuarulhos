@@ -2,6 +2,7 @@ import { removerArquivoUpload } from "../utils/arquivoUpload.js";
 import prisma from "../config/prisma.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import BadRequestError from "../errors/BadRequestError.js";
+import { bloquearEAutorizar, deleteImagem } from "./midiaService.js";
 
 // Limites das colunas em patrimonio_imagens (schema.prisma). Validar aqui
 // devolve 400 com mensagem clara em vez de estourar no banco como 500.
@@ -49,6 +50,7 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
         const alt = textoAlternativo || titulo || file.originalname.slice(0, 300);
 
         return await prisma.$transaction(async (tx) => {
+            await bloquearEAutorizar(tx, patrimonioId, user);
             if (principal) {
                 await tx.patrimonioImagem.updateMany({
                     where: { patrimonioId },
@@ -75,7 +77,7 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
     }
 }
 
-export async function removerImagemPatrimonio(id) {
+export async function removerImagemPatrimonio(id, user) {
     const imagem = await prisma.patrimonioImagem.findUnique({
         where: { id },
     });
@@ -86,11 +88,7 @@ export async function removerImagemPatrimonio(id) {
         throw error;
     }
 
-    await prisma.patrimonioImagem.delete({
-        where: { id },
-    });
-
-    await removerArquivoUpload(imagem.url);
+    await deleteImagem(imagem.patrimonioId, id, user);
 
     return {
         id: imagem.id,

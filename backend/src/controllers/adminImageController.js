@@ -12,5 +12,5 @@ export async function upload(req, res) {
 }
 
 export async function remove(req, res) {
-    res.json({ success: true, data: await removerImagemPatrimonio(req.validatedParams.imagemId) });
+    res.json({ success: true, data: await removerImagemPatrimonio(req.validatedParams.imagemId, req.user) });
 }
