@@ -38,6 +38,10 @@ beforeEach(t => {
     patrimonio = { id, status: "RASCUNHO", descricaoResumida: "Resumo manual preservado.", documentos, categoriasAdicionais: [] };
     stub(t, prisma.user, "findUnique", async () => ({ id: userId, role, isActive: true }));
     stub(t, prisma.patrimonio, "findUnique", async ({ where }) => where.id === id ? patrimonio : null);
+    stub(t, prisma.patrimonioDocumento, "findFirst", async ({ where }) => {
+        const registro = documentos.find((documento) => documento.url === where.url);
+        return registro ? { patrimonio: { status: patrimonio.status } } : null;
+    });
     stub(t, prisma, "$transaction", async callback => {
         const snapshot = [...documentos];
         try {
@@ -105,7 +109,8 @@ for (const [ext, mime, content] of [
         assert.equal(data.tipo, "ARQUIVO"); assert.equal(data.nomeArquivo, `fonte.${ext}`);
         assert.match(data.url, new RegExp(`^/uploads/referencias/[0-9a-f-]+\\.${ext}$`));
         assert.equal(documentos[0].mimeType, mime);
-        const download = await fetch(base + data.url);
+        assert.equal((await fetch(base + data.url)).status, 401);
+        const download = await fetch(base + data.url, { headers: headers() });
         assert.equal(download.status, 200);
         assert.equal(download.headers.get("content-disposition"), "attachment");
         assert.equal(download.headers.get("x-content-type-options"), "nosniff");

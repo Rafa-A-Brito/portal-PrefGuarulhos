@@ -1,5 +1,41 @@
 # Limpeza e exclusão de arquivos de mídia
 
+## Acesso aos arquivos vinculados a patrimônios
+
+As URLs `/uploads/patrimonios/<arquivo>` e `/uploads/referencias/<arquivo>`
+continuam válidas, sem movimentar arquivos ou alterar URLs no banco. Essas
+pastas não são servidas por `express.static`: usam a mesma autorização de
+`/api/uploads/imagens/<arquivo>` e `/api/uploads/documentos/<arquivo>`.
+
+Cada requisição consulta o registro da imagem/documento e o status associado.
+PUBLICADO permite acesso sem token. RASCUNHO e ARQUIVADO exigem usuário ativo
+com token válido e role ADMIN ou EDITOR. Ausência de autenticação retorna 401;
+usuário autenticado sem papel permitido retorna 403. Token inválido ou conta
+desativada é recusado com 401, mesmo ao solicitar mídia publicada. Falhas de
+banco não são tratadas como visitante ou arquivo ausente.
+
+Arquivo sem registro ou ausente no disco retorna 404. Nomes não podem conter
+separadores, pontos intermediários ou subpastas; extensões são limitadas por
+tipo. Arquivos simbólicos e pastas/junctions que escapem da pasta autorizada
+são recusados. A leitura usa o descritor do arquivo conferido. Se falhar antes
+dos headers, segue ao tratamento de erros; após enviar bytes, encerra a resposta.
+
+Content-Type e `X-Content-Type-Options: nosniff` são preservados; referências
+continuam downloads com `Content-Disposition: attachment`. Todas essas mídias
+recebem `Cache-Control: private, no-store` e `Vary: Authorization`, inclusive
+quando publicadas, para evitar reutilização após arquivamento. Uma requisição
+iniciada após a mudança de status consulta novamente o banco.
+
+As rotas estáticas de exposições, novidades e pesquisa em
+`/arquivos/patrimonios/<arquivo>` mantêm seu comportamento público.
+
+Os testes HTTP de `test/midiaPublica.test.js` usam uploads temporários e Prisma
+simulado, incluindo permissões, cache, traversal, junction e erros de stream.
+Os testes PostgreSQL exigem um banco exclusivo de testes; nenhum seed,
+importador ou migration é necessário para esta correção.
+
+## Limpeza e recuperação
+
 Os endpoints e permissões permanecem: ADMIN altera mídias em qualquer status;
 EDITOR apenas em rascunhos. URLs externas não são movidas nem apagadas.
 

@@ -12,7 +12,7 @@ import exposicaoRoutes from "./exposicaoRoute.js";
 import novidadeRoutes from "./novidadeRoute.js";
 import adminExposicaoRoutes from "./adminExposicaoRoute.js";
 import adminNovidadeRoutes from "./adminNovidadeRoute.js";
-import { servirArquivo } from "../controllers/midiaPublicaController.js";
+import { semCacheMidia, servirArquivo } from "../controllers/midiaPublicaController.js";
 import authenticateOpcional from "../middlewares/authenticateOpcional.js";
 import { validateParams } from "../middlewares/validate.js";
 import { arquivoParamsSchema } from "../schemas/midiaSchema.js";
@@ -45,6 +45,6 @@ router.use("/admin", adminReferenciaRoutes);
 
 // Mídias são entregues por rota própria, com checagem do status do patrimônio,
 // em vez de expor a pasta uploads inteira com express.static.
-router.get("/uploads/:tipo/:arquivo", authenticateOpcional, validateParams(arquivoParamsSchema), servirArquivo);
+router.get("/uploads/:tipo/:arquivo", semCacheMidia, authenticateOpcional, validateParams(arquivoParamsSchema), servirArquivo);
 
 export default router;

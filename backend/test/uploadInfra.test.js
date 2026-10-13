@@ -112,7 +112,7 @@ test("cópia exclusiva não sobrescreve arquivo preexistente em colisão", async
     assert.deepEqual(await list(), ["anterior.png"]);
 });
 
-test("upload bem-sucedido é público, DELETE remove registro e arquivo", async t => {
+test("upload de rascunho exige token para leitura, DELETE remove registro e arquivo", async t => {
     auth(t);
     let record;
     stub(t, prisma.patrimonio, "findUnique", async () => ({ id: patrimonioId }));
@@ -121,18 +121,19 @@ test("upload bem-sucedido é público, DELETE remove registro e arquivo", async 
     const response = await upload();
     assert.equal(response.status, 201);
     const { data } = await response.json();
-    assert.equal(await (await fetch(base + data.url)).text(), "image-content");
+    stub(t, prisma.patrimonioImagem, "findFirst", async () => record ? { ...record, patrimonio: { status: "RASCUNHO" } } : null);
+    assert.equal((await fetch(base + data.url)).status, 401);
+    assert.equal(await (await fetch(base + data.url, { headers: { authorization: "Bearer " + generateToken(admin.id) } })).text(), "image-content");
     stub(t, prisma.patrimonioImagem, "findUnique", async () => record);
-    stub(t, prisma.patrimonioImagem, "findFirst", async () => record);
-    stub(t, prisma.patrimonioImagem, "delete", async () => record);
+    stub(t, prisma.patrimonioImagem, "delete", async () => { const deleted = record; record = null; return deleted; });
     assert.equal((await fetch(base + "/api/admin/patrimonios/imagens/" + data.id, {
         method: "DELETE", headers: { authorization: "Bearer " + generateToken(admin.id) },
     })).status, 200);
     assert.equal((await fetch(base + data.url)).status, 404);
 });
 
-test("Express serve as três pastas sem transformar arquivos em HTML", async () => {
-    for (const folder of ["patrimonios", "exposicoes", "novidades"]) {
+test("Express mantém exposição e novidade estáticas sem transformar arquivos em HTML", async () => {
+    for (const folder of ["exposicoes", "novidades"]) {
         await fs.mkdir(path.join(uploads, folder), { recursive: true });
         await fs.writeFile(path.join(uploads, folder, "publica.png"), folder);
         const response = await fetch(base + "/uploads/" + folder + "/publica.png");

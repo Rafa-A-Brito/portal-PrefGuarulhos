@@ -54,6 +54,8 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "PATCH /api/admin/patrimonios/{id}/documentos/{documentoId}",
             "DELETE /api/admin/patrimonios/{id}/documentos/{documentoId}",
             "GET /api/uploads/{tipo}/{arquivo}",
+            "GET /uploads/patrimonios/{arquivo}",
+            "GET /uploads/referencias/{arquivo}",
             "GET /api/docs",
             "GET /api/docs.json",
             "POST /api/auth/login",
@@ -107,6 +109,19 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
     );
     assert.equal(JSON.stringify(openapi).includes("passwordHash"), false);
     assert.equal(openapi.components.schemas.PatrimonioResumo.properties.imagens.maxItems, 1);
+});
+
+test("OpenAPI documenta proteção editorial e ausência de cache nas URLs antigas", () => {
+    for (const tipo of ["patrimonios", "referencias"]) {
+        const get = openapi.paths[`/uploads/${tipo}/{arquivo}`].get;
+        assert.match(get.description, /RASCUNHO\/ARQUIVADO/);
+        assert.match(get.description, /ADMIN ou EDITOR ativo/);
+        assert.match(get.description, /sem fallback/);
+        assert.ok(get.responses[401] && get.responses[403] && get.responses[404]);
+        assert.deepEqual(get.responses[200].headers["Cache-Control"].schema.enum, ["private, no-store"]);
+    }
+    assert.match(openapi.paths["/uploads/referencias/{arquivo}"].get.description, /attachment/);
+    assert.match(openapi.paths["/api/uploads/{tipo}/{arquivo}"].get.description, /private, no-store/);
 });
 
 test("Swagger UI e JSON respondem sem consultar o banco", async () => {

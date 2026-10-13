@@ -213,7 +213,8 @@ const arquivoPathParameters = [
 const arquivoPublicoResponses = {
     200: { description: "Conteúdo binário do arquivo.", content: { "image/jpeg": { schema: { type: "string", format: "binary" } }, "image/png": { schema: { type: "string", format: "binary" } }, "image/webp": { schema: { type: "string", format: "binary" } }, "application/pdf": { schema: { type: "string", format: "binary" } } } },
     400: badRequest,
-    401: error("Mídia de patrimônio não publicado sem autenticação válida.", "UNAUTHORIZED", "Mídia disponível apenas para usuários autenticados."),
+    401: error("Mídia não publicada sem autenticação, ou credencial enviada inválida/conta desativada (inclusive para arquivo publicado).", "UNAUTHORIZED", "Mídia disponível apenas para usuários autenticados."),
+    403: forbidden,
     404: error("Arquivo ou registro de mídia inexistente.", "NOT_FOUND", "Arquivo não encontrado."),
     500: internal,
 };
@@ -306,11 +307,32 @@ paths["/api/admin/patrimonios/{id}/documentos/{documentoId}"] = {
 paths["/api/uploads/{tipo}/{arquivo}"] = {
     get: {
         tags: ["Mídias públicas"], summary: "Entrega uma mídia cadastrada",
-        description: "Mídias de patrimônios PUBLICADOS são públicas. Arquivos de rascunhos e arquivados exigem token de ADMIN ou EDITOR. Os arquivos ficam na pasta UPLOAD_ROOT (backup) e a URL nunca expõe caminhos absolutos do servidor. A pasta uploads não é versionada no Git.",
+        description: "PUBLICADO permite visitante; RASCUNHO e ARQUIVADO exigem ADMIN ou EDITOR ativo. Token enviado inválido ou conta desativada retorna 401. Consulta o registro e o status em cada requisição. Arquivo sem registro, ausente ou caminho redirecionado retorna 404. Cache-Control: private, no-store, inclusive quando publicado. Os arquivos ficam em UPLOAD_ROOT; não há exposição estática dessas mídias.",
         parameters: arquivoPathParameters,
         responses: arquivoPublicoResponses,
     },
 };
+
+for (const [tipo, mimeTypes] of [
+    ["patrimonios", ["image/jpeg", "image/png", "image/webp", "image/gif"]],
+    ["referencias", ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.oasis.opendocument.text", "text/plain", "text/markdown"]],
+]) {
+    paths[`/uploads/${tipo}/{arquivo}`] = { get: {
+        tags: ["Mídias públicas"], summary: `Entrega ${tipo} pela URL anterior`,
+        description: "Preserva URL e arquivo existentes. PUBLICADO é público; RASCUNHO/ARQUIVADO exigem ADMIN ou EDITOR ativo. Credencial enviada inválida/usuário desativado retorna 401. Acesso depende do registro e status consultados em cada requisição, sem fallback estático. Aceita somente um nome de arquivo, sem subpastas ou symlinks. Cache-Control: private, no-store; X-Content-Type-Options: nosniff. " + (tipo === "referencias" ? "Download como attachment." : "Imagem inline."),
+        parameters: [{ in: "path", name: "arquivo", required: true, schema: { type: "string", maxLength: 255 },
+            description: tipo === "referencias" ? "Nome seguro com extensão pdf/doc/docx/odt/txt/md." : "Nome seguro com extensão jpg/jpeg/png/webp/gif." }],
+        responses: { ...arquivoPublicoResponses, 200: {
+            description: "Arquivo vinculado a patrimônio autorizado.",
+            headers: {
+                "Cache-Control": { schema: { type: "string", enum: ["private, no-store"] } },
+                "X-Content-Type-Options": { schema: { type: "string", enum: ["nosniff"] } },
+                "Content-Disposition": { schema: { type: "string" }, description: tipo === "referencias" ? "attachment" : "inline" },
+            },
+            content: Object.fromEntries(mimeTypes.map((mime) => [mime, { schema: { type: "string", format: "binary" } }])),
+        } },
+    } };
+}
 
 // Mantem exposicoes, novidades, usuarios, categorias e referencias do destino.
 for (const [url, operations] of Object.entries(destino)) paths[url] = { ...operations, ...paths[url] };

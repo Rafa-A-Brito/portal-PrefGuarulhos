@@ -60,3 +60,12 @@ export const arquivoParamsSchema = z.strictObject({
     tipo: z.enum(["imagens", "documentos"]),
     arquivo: z.string().trim().min(1).max(120).regex(/^[0-9a-f-]+\.[a-z0-9]+$/, "Informe um arquivo válido."),
 });
+
+// Os nomes antigos incluem títulos e underscores; não exigem UUID.
+// Um único nome/extensão, sem pontos intermediários, separadores ou subpastas.
+export const arquivoLegadoParamsSchema = z.union([
+    z.strictObject({ tipo: z.literal("patrimonios"), arquivo: z.string().min(1).max(255)
+        .regex(/^[\p{L}\p{N}_-]+\.(?:jpg|jpeg|png|webp|gif)$/iu) }),
+    z.strictObject({ tipo: z.literal("referencias"), arquivo: z.string().min(1).max(255)
+        .regex(/^[\p{L}\p{N}_-]+\.(?:pdf|doc|docx|odt|txt|md)$/iu) }),
+]);
