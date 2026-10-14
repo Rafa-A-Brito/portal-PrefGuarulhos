@@ -1,4 +1,8 @@
-import { criarImagemPatrimonio, removerImagemPatrimonio, atualizarImagemPatrimonio } from "../services/imageService.js";
+import {
+    criarImagemPatrimonio,
+    removerImagemPatrimonio,
+    atualizarImagemPatrimonio,
+} from "../services/imageService.js";
 
 export async function upload(req, res) {
     const imagem = await criarImagemPatrimonio(
@@ -12,9 +16,15 @@ export async function upload(req, res) {
 }
 
 export async function remove(req, res) {
-    res.json({ success: true, data: await removerImagemPatrimonio(req.validatedParams.imagemId, req.user) });
+    res.json({
+        success: true,
+        data: await removerImagemPatrimonio(req.validatedParams.imagemId, req.user),
+    });
 }
 
 export async function update(req, res) {
-    res.json({ success: true, data: await atualizarImagemPatrimonio(req.validatedParams.imagemId, req.body, req.user) });
+    res.json({
+        success: true,
+        data: await atualizarImagemPatrimonio(req.validatedParams.imagemId, req.body, req.user),
+    });
 }

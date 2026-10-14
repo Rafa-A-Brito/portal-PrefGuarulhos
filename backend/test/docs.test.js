@@ -3,6 +3,37 @@ import { test } from "node:test";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import openapi from "../src/docs/openapi.js";
 
+test("Swagger documenta limpeza nullable de mídia sem tornar campos obrigatórios nullable", () => {
+    for (const [name, nullableFields, requiredFields] of [
+        ["ImagemPatch", ["titulo", "credito", "fonte"], ["textoAlternativo"]],
+        ["DocumentoPatch", ["descricao", "fonte", "dataDocumento"], ["titulo", "tipo"]],
+    ]) {
+        const schema = openapi.components.schemas[name];
+        assert.match(schema.description, /Omissão preserva/);
+        assert.match(schema.description, /null limpa/);
+        for (const campo of nullableFields) assert.equal(schema.properties[campo].nullable, true);
+        for (const campo of requiredFields) assert.notEqual(schema.properties[campo].nullable, true);
+    }
+    assert.equal(openapi.components.schemas.DocumentoPatch.properties.dataDocumento.format, "date");
+    assert.notEqual(openapi.components.schemas.ImagemUpload.properties.titulo.nullable, true);
+    assert.notEqual(openapi.components.schemas.DocumentoUpload.properties.descricao.nullable, true);
+});
+
+test("Swagger documenta região opcional nullable com códigos e rótulos em todos os contratos", async () => {
+    const { RegiaoPatrimonio } = await import("@prisma/client");
+    for (const name of ["LocalizacaoRequest", "LocalizacaoPatch", "Localizacao"]) {
+        const schema = openapi.components.schemas[name];
+        const regiao = schema.properties.regiao;
+        assert.equal(schema.required?.includes("regiao") ?? false, false);
+        assert.equal(regiao.nullable, true);
+        assert.deepEqual(regiao.enum, [...Object.values(RegiaoPatrimonio), null]);
+        assert.deepEqual(Object.keys(regiao["x-enum-labels"]), Object.values(RegiaoPatrimonio));
+        assert.equal(regiao["x-enum-labels"].VILA_GALVAO, "Vila Galvão");
+        assert.equal(regiao.enum.includes("NAO_INFORMADO"), false);
+    }
+});
+
+
 test("especificação OpenAPI válida, com referências, rotas e autenticação corretas", async () => {
     await SwaggerParser.validate(structuredClone(openapi));
     assert.equal(openapi.openapi, "3.0.3");
@@ -16,6 +47,15 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
         [
             "GET /api",
             "GET /api/health",
+            "GET /api/admin/dashboard",
+            "PATCH /api/admin/patrimonios/{id}/imagens/{imagemId}",
+            "DELETE /api/admin/patrimonios/{id}/imagens/{imagemId}",
+            "POST /api/admin/patrimonios/{id}/documentos",
+            "PATCH /api/admin/patrimonios/{id}/documentos/{documentoId}",
+            "DELETE /api/admin/patrimonios/{id}/documentos/{documentoId}",
+            "GET /api/uploads/{tipo}/{arquivo}",
+            "GET /uploads/patrimonios/{arquivo}",
+            "GET /uploads/referencias/{arquivo}",
             "GET /api/docs",
             "GET /api/docs.json",
             "POST /api/auth/login",
@@ -79,6 +119,19 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
     );
     assert.equal(JSON.stringify(openapi).includes("passwordHash"), false);
     assert.equal(openapi.components.schemas.PatrimonioResumo.properties.imagens.maxItems, 1);
+});
+
+test("OpenAPI documenta proteção editorial e ausência de cache nas URLs antigas", () => {
+    for (const tipo of ["patrimonios", "referencias"]) {
+        const get = openapi.paths[`/uploads/${tipo}/{arquivo}`].get;
+        assert.match(get.description, /RASCUNHO\/ARQUIVADO/);
+        assert.match(get.description, /ADMIN ou EDITOR ativo/);
+        assert.match(get.description, /sem fallback/);
+        assert.ok(get.responses[401] && get.responses[403] && get.responses[404]);
+        assert.deepEqual(get.responses[200].headers["Cache-Control"].schema.enum, ["private, no-store"]);
+    }
+    assert.match(openapi.paths["/uploads/referencias/{arquivo}"].get.description, /attachment/);
+    assert.match(openapi.paths["/api/uploads/{tipo}/{arquivo}"].get.description, /private, no-store/);
 });
 
 test("Swagger UI e JSON respondem sem consultar o banco", async () => {

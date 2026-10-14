@@ -4,6 +4,7 @@ import adminRoutes from "./adminRoute.js";
 import adminReferenciaRoutes from "./adminReferenciaRoute.js";
 import adminImageRoutes from "./adminImageRoute.js";
 import adminPatrimonioRoutes from "./adminPatrimonioRoute.js";
+import dashboardRoutes from "./dashboardRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
 import categoriaRoutes from "./configRoutes.js";
 import dashboardRoutes from "./dashboardRoute.js";
@@ -13,6 +14,10 @@ import exposicaoRoutes from "./exposicaoRoute.js";
 import novidadeRoutes from "./novidadeRoute.js";
 import adminExposicaoRoutes from "./adminExposicaoRoute.js";
 import adminNovidadeRoutes from "./adminNovidadeRoute.js";
+import { semCacheMidia, servirArquivo } from "../controllers/midiaPublicaController.js";
+import authenticateOpcional from "../middlewares/authenticateOpcional.js";
+import { validateParams } from "../middlewares/validate.js";
+import { arquivoParamsSchema } from "../schemas/midiaSchema.js";
 
 const router = Router();
 router.use("/exposicoes", exposicaoRoutes);
@@ -35,10 +40,15 @@ router.use("/auth", authRoutes);
 router.use("/admins", adminRoutes);
 router.use("/patrimonios", patrimonioRoutes);
 router.use("/categorias", categoriaRoutes);
+router.use("/admin/dashboard", dashboardRoutes);
 router.use("/admin/patrimonios", adminPatrimonioRoutes);
 router.use("/admin/patrimonios", patrimonioEditorialRoutes);
 router.use("/admin/dashboard", dashboardRoutes);
 router.use("/admin", adminImageRoutes);
 router.use("/admin", adminReferenciaRoutes);
+
+// Mídias são entregues por rota própria, com checagem do status do patrimônio,
+// em vez de expor a pasta uploads inteira com express.static.
+router.get("/uploads/:tipo/:arquivo", semCacheMidia, authenticateOpcional, validateParams(arquivoParamsSchema), servirArquivo);
 
 export default router;

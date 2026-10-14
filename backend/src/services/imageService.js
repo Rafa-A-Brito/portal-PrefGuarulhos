@@ -101,10 +101,13 @@ export async function atualizarImagemPatrimonio(id, input, user) {
     // em PUBLICADO/ARQUIVADO. Não adota silenciosamente a restrição da equipe.
     if (!["ADMIN", "EDITOR"].includes(user?.role)) throw new ForbiddenError();
     const data = updateImagemSchema.parse(input);
-    return prisma.$transaction(async tx => {
+    return prisma.$transaction(async (tx) => {
         const imagem = await bloquearImagem(tx, id);
         if (data.principal === true) {
-            await tx.patrimonioImagem.updateMany({ where: { patrimonioId: imagem.patrimonioId, id: { not: id } }, data: { principal: false } });
+            await tx.patrimonioImagem.updateMany({
+                where: { patrimonioId: imagem.patrimonioId, id: { not: id } },
+                data: { principal: false },
+            });
         }
         return tx.patrimonioImagem.update({ where: { id }, data });
     });
@@ -112,10 +115,16 @@ export async function atualizarImagemPatrimonio(id, input, user) {
 
 export async function removerImagemPatrimonio(id, user) {
     if (user?.role !== "ADMIN") throw new ForbiddenError();
-    return comQuarentenaUpload(preparar => prisma.$transaction(async tx => {
-        const imagem = await bloquearImagem(tx, id);
-        if (imagem.url.startsWith("/uploads/patrimonios/") && !await uploadCompartilhado(tx, imagem.url)) await preparar(imagem.url);
-        await tx.patrimonioImagem.delete({ where: { id } });
-        return { id: imagem.id };
-    }));
+    return comQuarentenaUpload((preparar) =>
+        prisma.$transaction(async (tx) => {
+            const imagem = await bloquearImagem(tx, id);
+            if (
+                imagem.url.startsWith("/uploads/patrimonios/") &&
+                !(await uploadCompartilhado(tx, imagem.url))
+            )
+                await preparar(imagem.url);
+            await tx.patrimonioImagem.delete({ where: { id } });
+            return { id: imagem.id };
+        })
+    );
 }

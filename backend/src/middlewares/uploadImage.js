@@ -7,6 +7,7 @@ import BaseError from "../errors/BaseError.js";
 import { detectarMimeImagem } from "../utils/imagemBinaria.js";
 
 import { UPLOAD_DIR as uploadDir, UPLOAD_FOLDERS } from "../config/uploadDir.js";
+import { PASTAS, LIMITES, URL_PREFIXO } from "../config/storage.js";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
@@ -19,7 +20,7 @@ const EXTENSOES = {
     "image/gif": ".gif",
 };
 
-const PASTAS_PERMITIDAS = new Set(UPLOAD_FOLDERS.filter(pasta => pasta !== "referencias"));
+const PASTAS_PERMITIDAS = new Set(UPLOAD_FOLDERS.filter((pasta) => pasta !== "referencias"));
 
 function parseContentDisposition(value) {
     const out = {};
@@ -51,7 +52,7 @@ function parseHeaders(buffer) {
     return headers;
 }
 
-export function uploadImagem(pasta, { opcional = false } = {}) {
+export function uploadImagem(pasta, { opcional = false, aceitarArquivo = false } = {}) {
     if (!PASTAS_PERMITIDAS.has(pasta)) {
         throw new Error(`Pasta de upload inválida: ${pasta}`);
     }
@@ -146,7 +147,10 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
 
                     const content = body.slice(headerEnd + 4, contentEnd);
 
-                    if (disposition.name === "imagem") {
+                    if (
+                        disposition.name === "imagem" ||
+                        (aceitarArquivo && disposition.name === "arquivo")
+                    ) {
                         if (opcional && !disposition.filename && content.length === 0) {
                             pos = nextBoundary;
                             continue;
@@ -161,18 +165,35 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
                             .trim()
                             .toLowerCase();
 
+                        const contratoArquivo = disposition.name === "arquivo";
+                        if (contratoArquivo && (!TIPOS.has(mime) || mime === "image/gif")) {
+                            const error = new BaseError(
+                                "Formato não suportado. Envie JPEG, PNG ou WebP.",
+                                415
+                            );
+                            error.code = "UNSUPPORTED_MEDIA_TYPE";
+                            throw error;
+                        }
+
                         if (!TIPOS.has(mime)) {
                             throw new BadRequestError(
                                 "Formato de imagem não suportado. Use JPG, PNG, WEBP ou GIF."
                             );
                         }
 
-                        if (content.length > MAX_SIZE) {
-                            throw new BaseError("A imagem deve ter no máximo 10 MB.", 413);
+                        if (content.length > (contratoArquivo ? LIMITES.imagem : MAX_SIZE)) {
+                            const error = new BaseError(
+                                "Arquivo excede o tamanho máximo permitido.",
+                                413
+                            );
+                            if (contratoArquivo) error.code = "FILE_TOO_LARGE";
+                            throw error;
                         }
 
                         if (detectarMimeImagem(content) !== mime) {
-                            throw new BadRequestError("O conteúdo da imagem não corresponde ao formato declarado.");
+                            throw new BadRequestError(
+                                "O conteúdo da imagem não corresponde ao formato declarado."
+                            );
                         }
 
                         fs.mkdirSync(destinoUploadDir, {
@@ -181,11 +202,13 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
 
                         const filename = `${randomUUID()}${EXTENSOES[mime]}`;
 
-                        const filePath = path.join(destinoUploadDir, filename);
+                        const filePath = path.join(pastaArquivo, filename);
 
                         fs.writeFileSync(filePath, content, { flag: "wx" });
 
                         file = req.file = {
+                            fieldname: disposition.name,
+                            path: filePath,
                             filename,
                             originalname: disposition.filename,
                             mimetype: mime,
@@ -195,7 +218,9 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
                             relativePath: `${pasta}/${filename}`,
 
                             // URL pública que pode ser salva no banco
-                            url: `/uploads/${pasta}/${filename}`,
+                            url: contratoArquivo
+                                ? `${URL_PREFIXO.imagem}/${filename}`
+                                : `/uploads/${pasta}/${filename}`,
                         };
                     } else if (disposition.name) {
                         req.body[disposition.name] = content.toString("utf8");
