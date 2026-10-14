@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
 import { MapPinIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../categoriaMeta";
+import { classificarLocalizacao } from "./politicaLocalizacao";
 
 import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
 
 export default function PlaquetaCard({ item }) {
   const meta = CATEGORIA_META[item.categoria];
   const Icon = meta?.Icon;
+  const politica = classificarLocalizacao(item);
 
   return (
     <article className="plaqueta">
@@ -30,9 +32,9 @@ export default function PlaquetaCard({ item }) {
         <h3>{item.nome}</h3>
         <div className="bairro">
           <MapPinIcon className="inline-icon" aria-hidden="true" />
-          {item.bairro}
+          {politica.aviso || item.bairro}
         </div>
-        {item.cep && <span className="cep">CEP {item.cep}</span>}
+        {politica.exibirEndereco && item.cep && <span className="cep">CEP {item.cep}</span>}
         <p className="resumo">{item.resumo}</p>
         <Link
           className="verlink"

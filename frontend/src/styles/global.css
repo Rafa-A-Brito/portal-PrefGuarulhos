@@ -27,9 +27,11 @@
     0 1px 0 rgba(43, 37, 92, 0.04), 0 4px 14px rgba(43, 37, 92, 0.08);
   --container: 1180px;
   --danger: #b3261e; /* erro/validação (único vermelho do sistema) */
+  /* scrollbar */
   --scroll-size: 8px;
   --scroll-thumb: var(--blue);
   --scroll-thumb-hover: var(--indigo);
+  --scroll-track: transparent;
 }
 
 *,
@@ -37,10 +39,44 @@
 *::after {
   box-sizing: border-box;
 }
+
+html {
+  scroll-behavior: smooth;
+}
 html,
 body {
   margin: 0;
   padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Scrollbar: padrão moderno (Firefox, Chrome/Edge 121+, Safari 18.2+) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+/* Fallback para Safari antigo e WebKit sem suporte ao padrão */
+@supports not (scrollbar-color: auto) {
+  *::-webkit-scrollbar {
+    width: var(--scroll-size);
+    height: var(--scroll-size);
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--scroll-track);
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover);
+  }
 }
 
 body {
@@ -2161,13 +2197,7 @@ input:focus-visible {
   overflow-x: auto;
   scroll-snap-type: x proximity;
   padding-bottom: 4px;
-}
-.destaques-track::-webkit-scrollbar {
-  height: 6px;
-}
-.destaques-track::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 999px;
+  scrollbar-color: var(--line) transparent;
 }
 
 .destaque-card {

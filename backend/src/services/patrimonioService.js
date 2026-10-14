@@ -6,6 +6,8 @@ import BadRequestError from "../errors/BadRequestError.js";
 import ForbiddenError from "../errors/ForbiddenError.js";
 import { createPatrimonioSchema, localizacaoSchema } from "../schemas/patrimonioSchema.js";
 import { slugify } from "../utils/slug.js";
+import { destinoPublicoWhere } from "../utils/identidadeEditorial.js";
+import { fatoSelect, ligacaoSelect, ordemEditorial } from "./patrimonioEditorialService.js";
 
 const MAX_SLUG_ATTEMPTS = 1000;
 
@@ -49,6 +51,11 @@ const publicListSelect = {
 };
 
 const publicDetailSelect = {
+    fatos: { orderBy: ordemEditorial, select: fatoSelect },
+    ligacoes: {
+        where: { destino: destinoPublicoWhere }, orderBy: ordemEditorial,
+        select: { ...ligacaoSelect, destino: { select: { id: true, slug: true, nome: true } } },
+    },
     id: true,
     nome: true,
     slug: true,
@@ -147,6 +154,18 @@ async function listWithStatus(
                 { descricao: { contains: busca, mode: "insensitive" } },
                 { historia: { contains: busca, mode: "insensitive" } },
                 { importanciaCultural: { contains: busca, mode: "insensitive" } },
+                { detalhes: { some: { OR: [
+                    { titulo: { contains: busca, mode: "insensitive" } },
+                    { texto: { contains: busca, mode: "insensitive" } },
+                ] } } },
+                { categoria: { OR: [
+                    { nome: { contains: busca, mode: "insensitive" } },
+                    { slug: { contains: busca, mode: "insensitive" } },
+                ] } },
+                { categoriasAdicionais: { some: { categoria: { OR: [
+                    { nome: { contains: busca, mode: "insensitive" } },
+                    { slug: { contains: busca, mode: "insensitive" } },
+                ] } } } },
             ],
         }),
         // O filtro de categoria casa com a principal OU com alguma adicional.
@@ -155,11 +174,17 @@ async function listWithStatus(
             AND: [
                 {
                     OR: [
-                        { categoria: { nome: { equals: categoria, mode: "insensitive" } } },
+                        { categoria: { OR: [
+                            { nome: { equals: categoria, mode: "insensitive" } },
+                            { slug: { equals: categoria, mode: "insensitive" } },
+                        ] } },
                         {
                             categoriasAdicionais: {
                                 some: {
-                                    categoria: { nome: { equals: categoria, mode: "insensitive" } },
+                                    categoria: { OR: [
+                                        { nome: { equals: categoria, mode: "insensitive" } },
+                                        { slug: { equals: categoria, mode: "insensitive" } },
+                                    ] },
                                 },
                             },
                         },
@@ -196,6 +221,8 @@ async function listWithStatus(
 }
 
 const adminInclude = {
+    fatos: { orderBy: ordemEditorial, select: fatoSelect },
+    ligacoes: { orderBy: ordemEditorial, select: ligacaoSelect },
     categoria: true,
     categoriasAdicionais: { include: { categoria: true } },
     localizacao: true,

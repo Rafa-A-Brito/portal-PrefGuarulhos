@@ -3,8 +3,9 @@
  * O nome "fakeApi" é herança do tempo do mock; hoje tudo vem da API real
  * (GET /patrimonios, GET /patrimonios/:slug, GET /categorias).
  *
- * Fallback local: SÓ em desenvolvimento (import.meta.env.DEV) e SÓ quando a
- * rede falha (backend desligado). Em produção, erro de rede é erro: a
+ * Fallback local da listagem: SÓ em desenvolvimento (import.meta.env.DEV)
+ * e SÓ quando a rede falha (backend desligado). O detalhe sempre usa a API,
+ * permitindo feedback e retry mesmo em desenvolvimento. Em produção, a
  * exceção sobe e o PatrimoniosContext mostra a mensagem. O mock é importado
  * dinamicamente, então não entra no bundle de produção que é carregado.
  *
@@ -16,7 +17,8 @@
  *     front é /patrimonios/:id). O UUID fica em "uuid".
  *   - "categoria" é o slug da categoria PRINCIPAL; "categorias" lista a
  *     principal + as adicionais (usado nos filtros).
- *   - "detalhes" é montado a partir de "historia" e "importanciaCultural".
+ *   - "detalhes" preserva as seções da API, com fallback para os textos
+ *     de "historia" e "importanciaCultural" quando não houver seções.
  */
 import api from "./api";
 
@@ -128,17 +130,19 @@ export function normalizarPatrimonio(p) {
       Boolean,
     ),
     categoriasAdicionaisIds: adicionais.map((c) => c.id),
+    categoriasInfo: [p.categoria, ...adicionais].filter(Boolean),
     situacao: p.situacao,
     status: p.status, // só vem nas rotas /admin
     bairro: loc?.bairro ?? "",
-    cidade: loc?.cidade ?? "Guarulhos",
-    uf: loc?.uf ?? "SP",
+    cidade: loc?.cidade ?? "",
+    uf: loc?.uf ?? "",
     endereco: loc?.endereco ?? "",
     numero: loc?.numero ?? "",
     complemento: loc?.complemento ?? "",
     cep: loc?.cep ?? "",
     referencias: (p.documentos ?? []).map(normalizarReferencia),
     resumo: p.descricaoResumida,
+    descricaoResumida: p.descricaoResumida,
     descricao: p.descricao,
     historia: p.historia ?? "",
     importanciaCultural: p.importanciaCultural ?? "",
@@ -149,6 +153,8 @@ export function normalizarPatrimonio(p) {
     })),
     localizacao: lat !== null && lng !== null ? { lat, lng } : null,
     detalhes,
+    rotas: (p.rotas ?? []).slice().sort((a, b) => a.ordem - b.ordem)
+      .map((vinculo) => vinculo.rota),
   };
 }
 
@@ -184,17 +190,25 @@ export async function listarPatrimonios() {
   }
 }
 
-/** GET /patrimonios/:slug — devolve null se não existir (404). */
-export async function buscarPatrimonioPorId(id) {
+// Compartilha somente requisições em andamento (inclusive no StrictMode).
+const detalhesPendentes = new Map();
+
+/** GET /patrimonios/:slug — null no 404; erro de rede permanece visível. */
+export function buscarPatrimonioPorId(id) {
+  if (!detalhesPendentes.has(id)) {
+    const pedido = carregarDetalhe(id).finally(() => detalhesPendentes.delete(id));
+    detalhesPendentes.set(id, pedido);
+  }
+  return detalhesPendentes.get(id);
+}
+
+async function carregarDetalhe(id) {
   try {
-    const { data } = await api.get(`/patrimonios/${id}`);
+    const { data } = await api.get(`/patrimonios/${encodeURIComponent(id)}`);
     return normalizarPatrimonio(data.data);
   } catch (err) {
     if (err.response?.status === 404) return null;
-    if (!podeUsarMock(err)) throw err;
-    avisarFallback(`GET /patrimonios/${id}`, err);
-    const mock = await carregarMock();
-    return mock.find((p) => String(p.id) === String(id)) ?? null;
+    throw err;
   }
 }
 

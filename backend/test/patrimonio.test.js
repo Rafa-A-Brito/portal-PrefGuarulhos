@@ -100,17 +100,27 @@ test("consulta apenas patrimônios publicados com filtros e paginação", async 
         assert.deepEqual(findManyArguments.where.situacao, "PRESERVADO");
         // categoria casa com a principal OU com uma adicional (dentro de AND, para não colidir com o OR da busca)
         assert.deepEqual(findManyArguments.where.AND[0].OR, [
-            { categoria: { nome: { equals: "Religioso", mode: "insensitive" } } },
+            { categoria: { OR: [
+                { nome: { equals: "Religioso", mode: "insensitive" } },
+                { slug: { equals: "Religioso", mode: "insensitive" } },
+            ] } },
             {
                 categoriasAdicionais: {
-                    some: { categoria: { nome: { equals: "Religioso", mode: "insensitive" } } },
+                    some: { categoria: { OR: [
+                        { nome: { equals: "Religioso", mode: "insensitive" } },
+                        { slug: { equals: "Religioso", mode: "insensitive" } },
+                    ] } },
                 },
             },
         ]);
         assert.deepEqual(findManyArguments.where.localizacao, {
             is: { bairro: { equals: "Centro", mode: "insensitive" } },
         });
-        assert.equal(findManyArguments.where.OR.length, 5);
+        assert.equal(findManyArguments.where.OR.length, 8);
+        assert.deepEqual(findManyArguments.where.OR[5], { detalhes: { some: { OR: [
+            { titulo: { contains: "igreja", mode: "insensitive" } },
+            { texto: { contains: "igreja", mode: "insensitive" } },
+        ] } } });
         assert.equal(findManyArguments.skip, 10);
         assert.equal(findManyArguments.take, 10);
         assert.deepEqual(resultado.paginacao, {

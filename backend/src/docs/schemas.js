@@ -1,8 +1,18 @@
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const string = (description, extra = {}) => ({ type: "string", description, ...extra });
 const nullable = (schema) => ({ ...schema, nullable: true });
+const uuidEditorial = { type: "string", format: "uuid" };
 
 export const schemas = {
+    FatoRequest: {
+        type: "object", additionalProperties: false, required: ["rotulo", "valor"],
+        properties: { rotulo: { type: "string", minLength: 1, maxLength: 200 }, valor: { type: "string", minLength: 1, maxLength: 10000 }, ordem: { type: "integer", minimum: 0, maximum: 2147483647, description: "Única por patrimônio. Omitida no POST: adicionar ao final." } },
+    },
+    LigacaoRequest: {
+        type: "object", additionalProperties: false, required: ["patrimonioDestinoId", "texto"],
+        properties: { patrimonioDestinoId: uuidEditorial, texto: { type: "string", minLength: 1, maxLength: 2000 }, ordem: { type: "integer", minimum: 0, maximum: 2147483647 } },
+    },
+    EditorialOrdem: { type: "object", additionalProperties: false, required: ["ids"], properties: { ids: { type: "array", uniqueItems: true, maxItems: 1000, items: uuidEditorial, description: "Todos os IDs atuais na ordem desejada; recebe ordens 0..n-1 sem recriar os itens." } } },
     SystemResponse: {
         type: "object",
         required: ["success", "data"],
@@ -810,3 +820,23 @@ schemas.PatrimonioImagemRemovidaResponse = {
         type: "object", required: ["id"], properties: { id: { type: "string", format: "uuid" } },
     } },
 };
+
+// D1B: somente campos aditivos ao detalhe; listagens atuais permanecem iguais.
+for (const nome of ["Fato", "Ligacao"]) {
+    const { required: _required, ...campos } = schemas[nome + "Request"];
+    schemas[nome + "Patch"] = { ...campos, minProperties: 1 };
+    schemas[nome] = { type: "object", required: ["id", ...Object.keys(schemas[nome + "Request"].properties)],
+        properties: { id: uuidEditorial, ...schemas[nome + "Request"].properties } };
+}
+schemas.Ligacao.properties.destino = { type: "object", required: ["id", "nome", "slug"], properties: { id: uuidEditorial, nome: { type: "string" }, slug: { type: "string" } } };
+schemas.Ligacao.required.push("destino");
+schemas.LigacaoAdmin = { ...schemas.Ligacao, properties: { ...schemas.Ligacao.properties,
+    destino: { ...schemas.Ligacao.properties.destino, required: ["id", "nome", "slug", "status"], properties: { ...schemas.Ligacao.properties.destino.properties, status: ref("StatusPublicacao") } } } };
+for (const nome of ["Fato", "LigacaoAdmin"]) {
+    schemas[nome + "Response"] = { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref(nome) } };
+    schemas[nome + "ListaResponse"] = { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: { type: "array", items: ref(nome) } } };
+}
+for (const nome of ["PatrimonioDetalhe", "PatrimonioAdmin"]) {
+    schemas[nome].properties.fatos = { type: "array", items: ref("Fato") };
+    schemas[nome].properties.ligacoes = { type: "array", items: ref(nome === "PatrimonioAdmin" ? "LigacaoAdmin" : "Ligacao"), description: nome === "PatrimonioAdmin" ? "Inclui destinos em qualquer status para edição." : "Apenas destinos publicados, não legados; ordenadas por ordem e ID." };
+}

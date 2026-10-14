@@ -1,0 +1,16 @@
+.mapa-central, .mapa-detail-body { min-width: 0; }
+.mapa-map-area .mapa-detail-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 28px);
+  overflow-wrap: anywhere;
+}
+.mapa-detail-panel .mapa-detail-img { flex-shrink: 0; max-width: 100%; }
+.mapa-detail-panel .mapa-detail-body { overflow-y: auto; min-height: 0; }
+.mapa-detail-panel .mapa-detail-close { width: 40px; height: 40px; }
+.mapa-detail-panel .mapa-detail-actions { position: sticky; bottom: -16px; background: white; padding: 8px 0; }
+.mapa-detail-panel .mapa-detail-actions a { white-space: normal; text-align: center; }
+.mapa-detail-panel .mapa-detail-actions svg { flex-shrink: 0; }
+@media (max-width: 520px) {
+  .mapa-detail-panel .mapa-detail-img { height: 100px; }
+}

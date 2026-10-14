@@ -2,6 +2,9 @@ import { removerArquivoUpload } from "../utils/arquivoUpload.js";
 import prisma from "../config/prisma.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import BadRequestError from "../errors/BadRequestError.js";
+import ForbiddenError from "../errors/ForbiddenError.js";
+import { updateImagemSchema } from "../schemas/imagemSchema.js";
+import { comQuarentenaUpload, uploadCompartilhado } from "../utils/quarentenaUpload.js";
 
 // Limites das colunas em patrimonio_imagens (schema.prisma). Validar aqui
 // devolve 400 com mensagem clara em vez de estourar no banco como 500.
@@ -49,6 +52,7 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
         const alt = textoAlternativo || titulo || file.originalname.slice(0, 300);
 
         return await prisma.$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT id FROM patrimonio WHERE id = ${patrimonioId}::uuid FOR UPDATE`;
             if (principal) {
                 await tx.patrimonioImagem.updateMany({
                     where: { patrimonioId },
@@ -75,24 +79,43 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
     }
 }
 
-export async function removerImagemPatrimonio(id) {
-    const imagem = await prisma.patrimonioImagem.findUnique({
-        where: { id },
-    });
-
+async function exigirImagem(tx, id) {
+    const imagem = await tx.patrimonioImagem.findUnique({ where: { id } });
     if (!imagem) {
         const error = new NotFoundError("Imagem não encontrada.");
         error.code = "IMAGEM_NOT_FOUND";
         throw error;
     }
 
-    await prisma.patrimonioImagem.delete({
-        where: { id },
+    return imagem;
+}
+
+async function bloquearImagem(tx, id) {
+    const imagem = await exigirImagem(tx, id);
+    await tx.$queryRaw`SELECT id FROM patrimonio WHERE id = ${imagem.patrimonioId}::uuid FOR UPDATE`;
+    return exigirImagem(tx, id);
+}
+
+export async function atualizarImagemPatrimonio(id, input, user) {
+    // Conserva a política de criação atual: EDITOR também pode editar imagens
+    // em PUBLICADO/ARQUIVADO. Não adota silenciosamente a restrição da equipe.
+    if (!["ADMIN", "EDITOR"].includes(user?.role)) throw new ForbiddenError();
+    const data = updateImagemSchema.parse(input);
+    return prisma.$transaction(async tx => {
+        const imagem = await bloquearImagem(tx, id);
+        if (data.principal === true) {
+            await tx.patrimonioImagem.updateMany({ where: { patrimonioId: imagem.patrimonioId, id: { not: id } }, data: { principal: false } });
+        }
+        return tx.patrimonioImagem.update({ where: { id }, data });
     });
+}
 
-    await removerArquivoUpload(imagem.url);
-
-    return {
-        id: imagem.id,
-    };
+export async function removerImagemPatrimonio(id, user) {
+    if (user?.role !== "ADMIN") throw new ForbiddenError();
+    return comQuarentenaUpload(preparar => prisma.$transaction(async tx => {
+        const imagem = await bloquearImagem(tx, id);
+        if (imagem.url.startsWith("/uploads/patrimonios/") && !await uploadCompartilhado(tx, imagem.url)) await preparar(imagem.url);
+        await tx.patrimonioImagem.delete({ where: { id } });
+        return { id: imagem.id };
+    }));
 }

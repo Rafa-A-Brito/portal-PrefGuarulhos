@@ -15,6 +15,7 @@ const { default: prisma } = await import("../src/config/prisma.js");
 const { generateToken } = await import("../src/utils/token.js");
 const admin = { id: randomUUID(), isActive: true, role: "ADMIN" };
 const patrimonioId = randomUUID();
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aH5sAAAAASUVORK5CYII=", "base64");
 let server, base;
 before(async () => {
     await fs.mkdir(path.join(uploads, "patrimonios"));
@@ -40,8 +41,8 @@ function auth(t, role = "ADMIN") {
 }
 function form(extra = {}, double = false) {
     const data = new FormData();
-    data.append("imagem", new Blob(["image-content"], { type: "image/png" }), "imagem.png");
-    if (double) data.append("imagem", new Blob(["second"], { type: "image/png" }), "outra.png");
+    data.append("imagem", new Blob([png], { type: "image/png" }), "imagem.png");
+    if (double) data.append("imagem", new Blob([png], { type: "image/png" }), "outra.png");
     for (const [key, value] of Object.entries(extra)) data.append(key, value);
     return data;
 }
@@ -115,12 +116,17 @@ test("upload bem-sucedido é público, DELETE remove registro e arquivo", async 
     let record;
     stub(t, prisma.patrimonio, "findUnique", async () => ({ id: patrimonioId }));
     stub(t, prisma, "$transaction", async callback => callback({
-        patrimonioImagem: { create: async ({ data }) => (record = { id: randomUUID(), ...data }) },
+        $queryRaw: async () => [],
+        patrimonioImagem: {
+            create: async ({ data }) => (record = { id: randomUUID(), ...data }),
+            findUnique: async () => record,
+            delete: async () => record,
+        },
     }));
     const response = await upload();
     assert.equal(response.status, 201);
     const { data } = await response.json();
-    assert.equal(await (await fetch(base + data.url)).text(), "image-content");
+    assert.deepEqual(Buffer.from(await (await fetch(base + data.url)).arrayBuffer()), png);
     stub(t, prisma.patrimonioImagem, "findUnique", async () => record);
     stub(t, prisma.patrimonioImagem, "delete", async () => record);
     assert.equal((await fetch(base + "/api/admin/patrimonios/imagens/" + data.id, {

@@ -76,10 +76,10 @@ export const paths = {
     },
     "/api/patrimonios": {
         get: {
-            tags: ["Patrimônios públicos"], summary: "Lista patrimônios publicados", description: "Retorna apenas status PUBLICADO, ordenados por nome e ID. A busca procura nos campos nome, descrição resumida, descrição, história e importância cultural, sem diferenciar maiúsculas/minúsculas. Categoria e bairro usam correspondência exata, também sem diferenciar maiúsculas/minúsculas.",
+            tags: ["Patrimônios públicos"], summary: "Lista patrimônios publicados", description: "Retorna apenas status PUBLICADO, ordenados por nome e ID. A busca procura nos textos principais, títulos/textos de detalhes e nomes/slugs das categorias principal e adicionais, sem diferenciar maiúsculas/minúsculas. Categoria e bairro usam correspondência exata, também sem diferenciar maiúsculas/minúsculas.",
             parameters: [
                 { in: "query", name: "busca", schema: { type: "string", minLength: 1, maxLength: 200 }, description: "Termo de busca; recebe trim." },
-                { in: "query", name: "categoria", schema: { type: "string", minLength: 1, maxLength: 100 }, description: "Nome exato da categoria (não UUID); recebe trim.", example: "Histórico" },
+                { in: "query", name: "categoria", schema: { type: "string", minLength: 1, maxLength: 100 }, description: "Nome ou slug exato da categoria principal ou adicional (não UUID); recebe trim.", example: "Histórico" },
                 { in: "query", name: "situacao", schema: schema("Situacao"), description: "Situação atual do patrimônio." },
                 { in: "query", name: "bairro", schema: { type: "string", minLength: 1, maxLength: 100 }, description: "Nome exato do bairro; recebe trim." },
                 { in: "query", name: "pagina", schema: { type: "integer", minimum: 1, default: 1 }, description: "Página, convertida de texto para número." },
@@ -306,7 +306,7 @@ const imageIdParameter = { name: "imagemId", in: "path", required: true, schema:
 paths["/api/admin/patrimonios/{id}/imagens"] = {
     post: {
         tags: ["Patrimônios administrativos"], summary: "Adiciona imagem ao patrimônio",
-        description: "ADMIN e EDITOR. Campo imagem obrigatório, JPG/PNG/WEBP/GIF até 10 MB. Falhas descartam somente o upload novo.",
+        description: "ADMIN e EDITOR em qualquer status. Campo imagem obrigatório, JPG/PNG/WEBP/GIF até 10 MB. A assinatura binária precisa corresponder ao MIME. Falhas descartam somente o upload novo.",
         security: bearerAuth,
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
         requestBody: { required: true, content: { "multipart/form-data": { schema: {
@@ -332,7 +332,7 @@ paths["/api/admin/patrimonios/{id}/imagens"] = {
 paths["/api/admin/patrimonios/imagens/{imagemId}"] = {
     delete: {
         tags: ["Patrimônios administrativos"], summary: "Remove imagem do patrimônio",
-        description: "Somente ADMIN. Remove registro e tenta limpar o arquivo local após a exclusão.",
+        description: "Somente ADMIN. Quarentena antes da exclusão; restauração em rollback e limpeza definitiva após commit. URLs compartilhadas permanecem disponíveis.",
         security: bearerAuth, parameters: [imageIdParameter],
         responses: {
             200: response("Imagem removida.", "PatrimonioImagemRemovidaResponse"),
@@ -377,7 +377,7 @@ paths["/api/admin/patrimonios/{id}/referencias"] = {
 paths["/api/admin/patrimonios/{id}/referencias/{referenciaId}"] = {
     delete: {
         tags: ["Patrimônios administrativos"], summary: "Remove referência do patrimônio",
-        description: "Somente ADMIN. Confere o vínculo com o patrimônio e limpa arquivo local após exclusão do registro.",
+        description: "Somente ADMIN. Confere o vínculo; arquivo local passa por quarentena, rollback restaura os bytes e a limpeza definitiva ocorre após commit. LINK não remove arquivo.",
         security: bearerAuth, parameters: [idParameter, { name: "referenciaId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
         responses: {
             200: { description: "Referência removida.", content: { "application/json": { schema: { type: "object", properties: {
@@ -388,3 +388,69 @@ paths["/api/admin/patrimonios/{id}/referencias/{referenciaId}"] = {
         },
     },
 };
+
+paths["/api/admin/patrimonios/imagens/{imagemId}"].patch = {
+    tags: ["Patrimônios administrativos"], summary: "Edita metadados da imagem",
+    description: "ADMIN e EDITOR em qualquer status, conforme a política atual de imagens. Não altera URL ou vínculo. Principal é atualizado sob lock do patrimônio.",
+    security: bearerAuth, parameters: [imageIdParameter],
+    requestBody: { required: true, content: { "application/json": { schema: {
+        type: "object", additionalProperties: false, minProperties: 1, properties: {
+            titulo: { type: "string", maxLength: 200, nullable: true },
+            textoAlternativo: { type: "string", minLength: 1, maxLength: 300 },
+            credito: { type: "string", maxLength: 200, nullable: true },
+            fonte: { type: "string", maxLength: 500, nullable: true },
+            ordem: { type: "integer", minimum: 0, maximum: 2147483647 }, principal: { type: "boolean" },
+        },
+    } } } },
+    responses: { 200: response("Imagem atualizada.", "PatrimonioImagemResponse"), 400: badRequest, 401: unauthorized, 403: forbidden,
+        404: error("Imagem inexistente.", "IMAGEM_NOT_FOUND", "Imagem não encontrada."), 500: internal },
+};
+paths["/api/admin/patrimonios/{id}/referencias/{referenciaId}"].patch = {
+    tags: ["Patrimônios administrativos"], summary: "Edita metadados da referência",
+    description: "ADMIN em qualquer status; EDITOR somente RASCUNHO. Conserva tipo ARQUIVO/LINK, URL, mimeType e vínculo. Responde com o DTO atual; fonte/dataDocumento permanecem disponíveis em documentos no detalhe do patrimônio.",
+    security: bearerAuth, parameters: paths["/api/admin/patrimonios/{id}/referencias/{referenciaId}"].delete.parameters,
+    requestBody: { required: true, content: { "application/json": { schema: {
+        type: "object", additionalProperties: false, minProperties: 1, properties: {
+            titulo: { type: "string", minLength: 1, maxLength: 200 },
+            descricao: { type: "string", maxLength: 300, nullable: true },
+            fonte: { type: "string", maxLength: 500, nullable: true },
+            dataDocumento: { type: "string", format: "date", nullable: true },
+        },
+    } } } },
+    responses: { 200: { description: "Referência atualizada.", content: { "application/json": { schema: referenciaResponse } } },
+        400: badRequest, 401: unauthorized, 403: forbidden, 404: error("Referência inexistente neste patrimônio.", "NOT_FOUND", "Referência não encontrada neste patrimônio."), 500: internal },
+};
+paths["/api/admin/dashboard"] = { get: {
+    tags: ["Patrimônios administrativos"], summary: "Obtém fotografia agregada dos patrimônios",
+    description: "ADMIN/EDITOR. Transação RepeatableRead somente leitura. Total, categorias principais e bairros incluem TODOS_OS_STATUS; PUBLICADO e meta.publicados contam apenas publicados. Bens sem localização/bairro entram em Não informado. Não altera as listagens existentes.",
+    security: bearerAuth,
+    responses: { 200: { description: "Contagens consistentes na mesma fotografia.", content: { "application/json": { schema: {
+        type: "object", required: ["success", "data"], properties: {
+            success: { type: "boolean", enum: [true] },
+            data: { type: "object", required: ["total", "RASCUNHO", "PUBLICADO", "ARQUIVADO", "porCategoria", "porBairro", "meta"], properties: {
+                ...Object.fromEntries(["total", "RASCUNHO", "PUBLICADO", "ARQUIVADO"].map(key => [key, { type: "integer", minimum: 0 }])),
+                porCategoria: { type: "array", items: { type: "object", properties: { id: { type: "string", format: "uuid" }, nome: { type: "string" }, slug: { type: "string" }, quantidade: { type: "integer" } } } },
+                porBairro: { type: "array", items: { type: "object", properties: { bairro: { type: "string" }, quantidade: { type: "integer" } } } },
+                meta: { type: "object", properties: { baseContagem: { type: "string", enum: ["TODOS_OS_STATUS"] }, categoria: { type: "string", enum: ["PRINCIPAL"] }, publicados: { type: "integer" } } },
+            } },
+        },
+    } } } }, 401: unauthorized, 403: forbidden, 500: internal },
+} };
+
+for (const [recurso, nome, dto] of [["fatos", "Fato", "Fato"], ["ligacoes", "Ligacao", "LigacaoAdmin"]]) {
+    const base = "/api/admin/patrimonios/{id}/" + recurso;
+    const params = [{ in: "path", name: "id", required: true, schema: { type: "string", format: "uuid" } }];
+    const common = { tags: ["Patrimônios admin"], security: bearerAuth, parameters: params,
+        description: "ADMIN em qualquer status; EDITOR edita somente origem RASCUNHO. Leituras ADMIN/EDITOR em todos os status. Itens complementam detalhes. Ordem ocupada, destino duplicado ou legado consolidado: 409. Ligações são direcionadas e não aceitam autorrelação; destinos não publicados ficam apenas no admin.",
+        responses: { 400: badRequest, 401: unauthorized, 403: forbidden, 404: error("Patrimônio/item não encontrado.", "NOT_FOUND", "Não encontrado."), 409: error("Conflito de ordem, destino ou identidade.", "CONFLICT", "Conflito."), 500: internal } };
+    paths[base] = {
+        get: { ...common, summary: "Lista " + recurso, responses: { ...common.responses, 200: response("Itens ordenados.", dto + "ListaResponse") } },
+        post: { ...common, summary: "Cria " + recurso, requestBody: body(nome + "Request"), responses: { ...common.responses, 201: response("Item criado.", dto + "Response") } },
+    };
+    paths[base + "/ordem"] = { patch: { ...common, summary: "Reordena " + recurso, requestBody: body("EditorialOrdem"), responses: { ...common.responses, 200: response("Ordem atualizada.", dto + "ListaResponse") } } };
+    const item = { ...common, parameters: [...params, { in: "path", name: "itemId", required: true, schema: { type: "string", format: "uuid" } }] };
+    paths[base + "/{itemId}"] = {
+        patch: { ...item, summary: "Atualiza " + recurso, requestBody: body(nome + "Patch"), responses: { ...common.responses, 200: response("Item atualizado.", dto + "Response") } },
+        delete: { ...item, summary: "Exclui " + recurso, responses: { ...common.responses, 200: response("Item excluído; ordens restantes são preservadas.", "PatrimonioImagemRemovidaResponse") } },
+    };
+}

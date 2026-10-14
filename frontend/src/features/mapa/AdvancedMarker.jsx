@@ -24,7 +24,7 @@ function criarPino(categoria) {
   return img;
 }
 
-export default function AdvancedMarker({ map, position, item, onSelecionar }) {
+export default function AdvancedMarker({ map, position, item, titulo = item.nome, onSelecionar }) {
   const markerRef = useRef(null);
   const clickRef = useRef(null);
   useEffect(() => { clickRef.current = () => onSelecionar(item); }, [onSelecionar, item]);
@@ -44,8 +44,8 @@ export default function AdvancedMarker({ map, position, item, onSelecionar }) {
   useEffect(() => {
     if (!markerRef.current) return;
     markerRef.current.position = { lat: position.lat, lng: position.lng };
-    markerRef.current.title = item.nome;
+    markerRef.current.title = titulo;
     markerRef.current.replaceChildren(criarPino(item.categoria));
-  }, [map, position.lat, position.lng, item.nome, item.categoria]);
+  }, [map, position.lat, position.lng, titulo, item.categoria]);
   return null;
 }

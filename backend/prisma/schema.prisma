@@ -91,6 +91,9 @@ model Patrimonio {
   imagens       PatrimonioImagem[]
   documentos    PatrimonioDocumento[]
   rotas         RotaPatrimonio[]
+  fatos         PatrimonioFato[]
+  ligacoes      PatrimonioLigacao[] @relation("LigacaoOrigem")
+  ligacoesRecebidas PatrimonioLigacao[] @relation("LigacaoDestino")
   categoriasAdicionais PatrimonioCategoria[]
     detalhes      PatrimonioDetalhe[]
 
@@ -113,6 +116,33 @@ model PatrimonioDetalhe {
 
   @@index([patrimonioId, ordem])
   @@map("patrimonio_detalhes")
+}
+
+model PatrimonioFato {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patrimonioId String @map("patrimonio_id") @db.Uuid
+  rotulo       String @db.VarChar(200)
+  valor        String @db.Text
+  ordem        Int
+  patrimonio   Patrimonio @relation(fields: [patrimonioId], references: [id], onDelete: Cascade)
+
+  @@unique([patrimonioId, ordem], map: "patrimonio_fatos_patrimonio_id_ordem_key")
+  @@map("patrimonio_fatos")
+}
+
+model PatrimonioLigacao {
+  id                  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patrimonioOrigemId  String @map("patrimonio_origem_id") @db.Uuid
+  patrimonioDestinoId String @map("patrimonio_destino_id") @db.Uuid
+  texto               String @db.VarChar(2000)
+  ordem               Int
+  origem              Patrimonio @relation("LigacaoOrigem", fields: [patrimonioOrigemId], references: [id], onDelete: Cascade, map: "patrimonio_ligacoes_origem_fkey")
+  destino             Patrimonio @relation("LigacaoDestino", fields: [patrimonioDestinoId], references: [id], onDelete: Cascade, map: "patrimonio_ligacoes_destino_fkey")
+
+  @@unique([patrimonioOrigemId, patrimonioDestinoId], map: "patrimonio_ligacoes_origem_destino_key")
+  @@unique([patrimonioOrigemId, ordem], map: "patrimonio_ligacoes_origem_ordem_key")
+  @@index([patrimonioDestinoId], map: "patrimonio_ligacoes_destino_idx")
+  @@map("patrimonio_ligacoes")
 }
 
 model SiteHero {

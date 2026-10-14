@@ -48,7 +48,7 @@ try {
   await call("Input.dispatchMouseEvent",{type:"mouseReleased",button:"left",clickCount:1,...xy});
   await pause(1000);
   assert.equal(await evaluate('window.smoke.selected'),"smoke-1");
-  assert.equal(await evaluate('!!document.querySelector(".info-window-card")'),true);
+  assert.equal(await evaluate('!!document.querySelector(".info-window-card")'),false);
   await call("Emulation.setDeviceMetricsOverride",{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await evaluate('window.smoke.filter()');await pause(1000);
   assert.equal(await evaluate('document.querySelectorAll("gmp-advanced-marker").length'),1);
@@ -58,7 +58,7 @@ try {
   assert.equal(messages.some(m=>/google\.maps\.Marker.*deprecated/.test(JSON.stringify(m))),false);
   const failures=messages.filter(m=>m.method==="Runtime.exceptionThrown" || /ApiNotActivatedMapError|InvalidKeyMapError|RefererNotAllowedMapError/.test(JSON.stringify(m)));
   assert.equal(failures.length,0,"Console sem falhas da API Google");
-  console.log(JSON.stringify({resultado:"PASS",api:"Google Maps real",marcadores:2,clique:true,infoWindow:true,filtro:true,responsivo:"390px",cleanup:true,warningMarkerDeprecated:false,excecoes:failures.length}));
+  console.log(JSON.stringify({resultado:"PASS",api:"Google Maps real",marcadores:2,clique:true,infoWindow:false,filtro:true,responsivo:"390px",cleanup:true,warningMarkerDeprecated:false,excecoes:failures.length}));
 } catch(error) {
   // Nunca imprimir mensagens de rede completas: podem conter a chave da API.
   console.error("Smoke falhou:",error.message);

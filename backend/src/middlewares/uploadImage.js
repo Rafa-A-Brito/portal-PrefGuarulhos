@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
+import { detectarMimeImagem } from "../utils/imagemBinaria.js";
 
 import { UPLOAD_DIR as uploadDir, UPLOAD_FOLDERS } from "../config/uploadDir.js";
 
@@ -168,6 +169,10 @@ export function uploadImagem(pasta, { opcional = false } = {}) {
 
                         if (content.length > MAX_SIZE) {
                             throw new BaseError("A imagem deve ter no máximo 10 MB.", 413);
+                        }
+
+                        if (detectarMimeImagem(content) !== mime) {
+                            throw new BadRequestError("O conteúdo da imagem não corresponde ao formato declarado.");
                         }
 
                         fs.mkdirSync(destinoUploadDir, {

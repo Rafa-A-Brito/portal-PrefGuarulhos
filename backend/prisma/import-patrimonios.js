@@ -104,7 +104,7 @@ export function parseArgs(args) {
                 options.backfillImages = true;
             }
         } else if (
-            ["--status", "--confirm-db", "--created-by-email"].includes(key) &&
+            ["--status", "--confirm-db", "--created-by-email", "--expected-state-hash"].includes(key) &&
             value.trim()
         ) {
             options[
@@ -112,6 +112,7 @@ export function parseArgs(args) {
                     "--status": "status",
                     "--confirm-db": "confirmDb",
                     "--created-by-email": "createdByEmail",
+                    "--expected-state-hash": "expectedStateHash",
                 }[key]
             ] = value.trim();
         } else {
@@ -133,6 +134,9 @@ export function parseArgs(args) {
 
     validarModosBackfill(options);
     if (options.syncPatrimonios && seen.has("--status")) throw new Error("Sync preserva status; não aceita --status.");
+    if (options.expectedStateHash && (!options.syncPatrimonios || !/^[a-f0-9]{64}$/.test(options.expectedStateHash))) {
+        throw new Error("--expected-state-hash exige --sync-patrimonios e um SHA-256 válido.");
+    }
 
     return options;
 }

@@ -4,13 +4,15 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   XMarkIcon,
-  MapPinIcon,
   InformationCircleIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import MapaPatrimonios from "../../features/mapa/MapaPatrimonios";
 import FiltroBar from "../../features/mapa/FiltroBar";
-import { obterCoordenadas } from "../../features/mapa/coordenadas";
+import { formatarEndereco } from "../../features/mapa/endereco";
+import { criarUrlRota } from "../../features/mapa/rota";
+import { classificarLocalizacao } from "../../features/mapa/politicaLocalizacao";
+import "./Mapa.css";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
@@ -36,9 +38,9 @@ export default function Mapa() {
     [patrimonios, filtro, busca],
   );
 
-  // Sem coordenadas válidas: o item continua na lista, mas não há marcador
-  // nem rota.
-  const coordenadasSelecionado = obterCoordenadas(selecionado);
+  const politica = classificarLocalizacao(selecionado);
+  const rotaUrl = criarUrlRota(selecionado);
+  const endereco = politica.exibirEndereco ? formatarEndereco(selecionado) : [];
 
   const handleFiltro = (novo) => {
     setFiltro(novo);
@@ -96,7 +98,7 @@ export default function Mapa() {
                   />
                   <span className="mapa-sidebar-item-text">
                     <strong>{item.nome}</strong>
-                    <small>{item.bairro}</small>
+                    <small>{classificarLocalizacao(item).aviso || item.bairro}</small>
                   </span>
                 </button>
               ))
@@ -151,9 +153,10 @@ export default function Mapa() {
 
             {/* ===== PAINEL DE DETALHE — sobe ao selecionar um item ===== */}
             {selecionado && (
-              <div className="mapa-detail-panel">
+              <div className="mapa-detail-panel" role="region" aria-label="Patrimônio selecionado">
                 <button
                   className="mapa-detail-close"
+                  aria-label="Fechar detalhes"
                   onClick={() => setSelecionado(null)}
                 >
                   <XMarkIcon width={16} height={16} />
@@ -168,16 +171,13 @@ export default function Mapa() {
                 />
                 <div className="mapa-detail-body">
                   <h3>{selecionado.nome}</h3>
-                  <span className="mapa-detail-bairro">
-                    <MapPinIcon width={14} height={14} /> {selecionado.bairro}
-                  </span>
-                  {selecionado.endereco && (
-                    <span className="mapa-detail-endereco">
-                      {selecionado.endereco}
-                      {selecionado.cep ? ` – CEP ${selecionado.cep}` : ""}
-                    </span>
+                  {endereco.map((linha, i) => (
+                    <span className="mapa-detail-endereco" key={i}>{linha}</span>
+                  ))}
+                  {politica.aviso && (
+                    <p className="local-aproximado">{politica.aviso}</p>
                   )}
-                  {!coordenadasSelecionado && (
+                  {politica.permiteRota && !politica.coordenadasMarcador && (
                     <span className="mapa-detail-endereco">
                       Este patrimônio ainda não tem posição no mapa.
                     </span>
@@ -191,15 +191,15 @@ export default function Mapa() {
                       <InformationCircleIcon width={16} height={16} /> Ver
                       detalhes
                     </Link>
-                    {coordenadasSelecionado && (
+                    {rotaUrl && (
                       <a
                         className="btn-solid"
                         target="_blank"
-                        rel="noreferrer"
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${coordenadasSelecionado.lat},${coordenadasSelecionado.lng}`}
+                        rel="noopener noreferrer"
+                        href={rotaUrl}
                       >
-                        <ArrowTopRightOnSquareIcon width={16} height={16} /> Ver
-                        rota
+                        <ArrowTopRightOnSquareIcon width={16} height={16} />
+                        {politica.rotuloRota}
                       </a>
                     )}
                   </div>

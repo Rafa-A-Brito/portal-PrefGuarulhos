@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Validação responsiva do painel</title>
+  <div id="root"></div>
+  <script type="module">
+    import React from "react";
+    import { createRoot } from "react-dom/client";
+    import { MemoryRouter } from "react-router-dom";
+    import Mapa from "/src/pages/Mapa/Mapa.jsx";
+    import { PatrimoniosContext } from "/src/context/patrimoniosContextInstance.js";
+    const imagem = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#d9e7dc"/></svg>');
+    const itens = [
+      { id: "primeiro", nome: "Parque Bosque Maia", categoria: "ambiental", imagemPrincipal: imagem,
+        endereco: "Av. Paulo Faccini", numero: "s/n", complemento: "Entrada principal do parque", bairro: "Centro", cidade: "Guarulhos", uf: "SP", cep: "07115-260", resumo: "Um parque para conhecer e visitar.", localizacao: { lat: -23.45, lng: -46.53 } },
+      { id: "segundo", nome: "Referência histórica com nome extenso para testar quebra de linha", categoria: "historico", situacao: "DEMOLIDO", imagemPrincipal: imagem,
+        endereco: "Rua de referência histórica com nome extenso", numero: "s/n", complemento: "Local de referência " + "extenso".repeat(20), bairro: "Centro", cidade: "São Paulo", uf: "SP", cep: "01000-000", resumo: "Descrição extensa. ".repeat(30), localizacao: { lat: -23.46, lng: -46.54 } },
+    ];
+    function App() {
+      const [selecionado, setSelecionado] = React.useState(null);
+      return React.createElement(MemoryRouter, null, React.createElement(PatrimoniosContext.Provider, { value: { patrimonios: itens, selecionado, setSelecionado } }, React.createElement(Mapa)));
+    }
+    createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</html>

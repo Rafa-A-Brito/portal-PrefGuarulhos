@@ -6,6 +6,8 @@ import adminImageRoutes from "./adminImageRoute.js";
 import adminPatrimonioRoutes from "./adminPatrimonioRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
 import categoriaRoutes from "./configRoutes.js";
+import dashboardRoutes from "./dashboardRoute.js";
+import patrimonioEditorialRoutes from "./patrimonioEditorialRoute.js";
 
 import exposicaoRoutes from "./exposicaoRoute.js";
 import novidadeRoutes from "./novidadeRoute.js";
@@ -34,6 +36,8 @@ router.use("/admins", adminRoutes);
 router.use("/patrimonios", patrimonioRoutes);
 router.use("/categorias", categoriaRoutes);
 router.use("/admin/patrimonios", adminPatrimonioRoutes);
+router.use("/admin/patrimonios", patrimonioEditorialRoutes);
+router.use("/admin/dashboard", dashboardRoutes);
 router.use("/admin", adminImageRoutes);
 router.use("/admin", adminReferenciaRoutes);
 

@@ -4,12 +4,14 @@ import { createHash } from "node:crypto";
 import { databaseIdentity } from "../scripts/assert-test-db.js";
 import { slugify } from "../src/utils/slug.js";
 import { localizacaoSchema, updatePatrimonioSchema } from "../src/schemas/patrimonioSchema.js";
+import { hashEstado, ordenarRelacoes } from "../src/utils/estadoHash.js";
 import { LEGACY_SLUG_ALIASES, normalizarNome, repararTexto, detailSchema, validarImagem } from "./import-patrimonios.js";
 
 export const SYNC_INCLUDE = {
     localizacao: true, imagens: { orderBy: [{ ordem: "asc" }, { id: "asc" }] },
     detalhes: { orderBy: [{ ordem: "asc" }, { id: "asc" }] }, documentos: true,
     rotas: true, categoriasAdicionais: true,
+    fatos: true, ligacoes: true, ligacoesRecebidas: true,
 };
 const MERGES = new Map([
     ["casa-jose-mauricio", "Casarão da Nossa História"],
@@ -53,6 +55,9 @@ export function planSync({ source, existing, categories, images = new Map() }) {
             const duplicates = duplicateName ? existing.filter(p => p.slug === slugify(duplicateName) || normalizarNome(p.nome) === normalizarNome(duplicateName)) : [];
             if (duplicates.length > 1 || duplicates.some(d => d.id === current.id)) throw new Error("Duplicado de merge ambíguo.");
             const duplicate = duplicates[0];
+            if (duplicate && [duplicate.fatos, duplicate.ligacoes, duplicate.ligacoesRecebidas].some(items => items?.length)) {
+                throw new Error("Legado possui fatos/ligações editoriais; exige revisão manual antes de consolidar.");
+            }
             if (duplicate && claimed.has(duplicate.id)) throw new Error("Duplicado já usado em outra operação.");
             if (duplicate) claimed.add(duplicate.id);
             const changes = {};
@@ -204,6 +209,15 @@ export async function syncPatrimonios({ prisma, databaseUrl, options, source, so
             }
             const { report, operations } = planSync({ source, existing, categories, images });
             Object.assign(report, { modo: options.apply ? "apply" : "dry-run", banco: identity.banco, host: new URL(databaseUrl).hostname, porta: target.port, aplicados: 0 });
+            // Fingerprint do estado lido nesta transação, não de um catálogo antigo.
+            // Arrays da fonte mantêm ordem editorial; relações do banco são conjuntos.
+            report.estado_hash = hashEstado({ versao: 1, banco: target,
+                fonte: source, estado: ordenarRelacoes(plain({ existing, categories })),
+                imagens: [...images].map(([slug, img]) => [slug, img && { sourceHash: img.sourceHash, reuse: img.reuse }]).sort(([a], [b]) => a.localeCompare(b)),
+            });
+            if (options.expectedStateHash && options.expectedStateHash !== report.estado_hash) {
+                report.conflitos.push({ codigo: "ESTADO_DESATUALIZADO", motivo: "Estado ou fonte mudou desde o dry-run aprovado. Gere e revise um novo dry-run." });
+            }
             report.erros.push(...errors);
             if (!options.apply || report.erros.length || report.conflitos.length) return report;
             for (const op of operations) {

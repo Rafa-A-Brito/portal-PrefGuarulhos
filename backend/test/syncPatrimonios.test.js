@@ -75,6 +75,60 @@ test("sync CLI: dry-run padrão, exclusão de backfills e status; confirmação 
     for (const flags of [["--backfill-images"], ["--backfill-location"], ["--backfill-details"], ["--status=PUBLICADO"], ["--status=RASCUNHO"], ["--apply"]]) assert.throws(() => parseArgs(["--sync-patrimonios", ...flags]));
 });
 
+test("hash aprovado protege estado/fonte e mantém o dry-run sem escritas", async t => {
+    const prisma = fake(), paths = await dirs(t);
+    const params = { prisma, databaseUrl, source, ...paths };
+    const initial = await importPatrimonios({ ...params, options: dry() });
+    assert.match(initial.estado_hash, /^[a-f0-9]{64}$/);
+    const repeat = await importPatrimonios({ ...params, options: dry() });
+    assert.equal(repeat.estado_hash, initial.estado_hash);
+    const stale = await importPatrimonios({ ...params, source: source.map((p, i) => i ? p : { ...p, historia: "Revisão após aprovação" }), options: { ...apply(), expectedStateHash: initial.estado_hash } });
+    assert.equal(stale.aplicados, 0);
+    assert.ok(stale.conflitos.some(c => c.codigo === "ESTADO_DESATUALIZADO"));
+    assert.ok(!prisma.calls.includes("write"));
+    assert.deepEqual(await fs.readdir(paths.uploadDir), []);
+    const changed = prisma.state; changed[0].detalhes[0].texto = "Edição concorrente";
+    const other = fake(changed);
+    const blocked = await importPatrimonios({ ...params, prisma: other, options: { ...apply(), expectedStateHash: initial.estado_hash } });
+    assert.equal(blocked.aplicados, 0); assert.ok(blocked.conflitos.length); assert.ok(!other.calls.includes("write"));
+    const applied = await importPatrimonios({ ...params, options: { ...apply(), expectedStateHash: initial.estado_hash } });
+    assert.equal(applied.aplicados, 2);
+});
+
+test("CLI aceita hash apenas no sync e valida SHA-256", () => {
+    const hash = "a".repeat(64);
+    assert.equal(parseArgs(["--sync-patrimonios", "--expected-state-hash=" + hash]).expectedStateHash, hash);
+    assert.throws(() => parseArgs(["--expected-state-hash=" + hash]));
+    assert.throws(() => parseArgs(["--sync-patrimonios", "--expected-state-hash=invalido"]));
+});
+
+test("D1B: hash inclui editoria; sync preserva fatos/ligações e bloqueia consolidação pendente", async t => {
+    const paths = await dirs(t), initial = fixtures();
+    initial[0].fatos = [{ id: randomUUID(), patrimonioId: initial[0].id, rotulo: "Fato editorial", valor: "Preservar", ordem: 0 }];
+    initial[0].ligacoes = [{ id: randomUUID(), patrimonioOrigemId: initial[0].id, patrimonioDestinoId: initial[2].id, texto: "Preservar", ordem: 0 }];
+    const prisma = fake(initial), params = { databaseUrl, source, ...paths };
+    const before = await importPatrimonios({ ...params, prisma, options: dry() });
+    for (const relation of ["fatos", "ligacoes", "ligacoesRecebidas"]) {
+        const changed = structuredClone(initial);
+        if (relation === "ligacoesRecebidas") changed[0][relation] = [{ id: randomUUID(), texto: "Recebida" }];
+        else changed[0][relation][0][relation === "fatos" ? "valor" : "texto"] = "Revisão";
+        const other = fake(changed);
+        const blocked = await importPatrimonios({ ...params, prisma: other, options: { ...apply(), expectedStateHash: before.estado_hash } });
+        assert.ok(blocked.conflitos.some(c => c.codigo === "ESTADO_DESATUALIZADO"));
+        assert.equal(blocked.aplicados, 0); assert.ok(!other.calls.includes("write"));
+    }
+    await importPatrimonios({ ...params, prisma, options: apply() });
+    assert.deepEqual(prisma.state[0].fatos, initial[0].fatos);
+    assert.deepEqual(prisma.state[0].ligacoes, initial[0].ligacoes);
+    for (const relation of ["fatos", "ligacoes", "ligacoesRecebidas"]) {
+        const rows = structuredClone(initial); rows[1][relation] = [{ id: randomUUID() }];
+        const db = fake(rows);
+        const blocked = await importPatrimonios({ ...params, prisma: db, options: apply() });
+        assert.ok(blocked.conflitos.some(c => /revisão manual/.test(c.motivo)));
+        assert.equal(blocked.aplicados, 0); assert.ok(!db.calls.includes("write"));
+    }
+});
+
 test("dry-run tem diff completo, dois merges e zero gravações em banco e disco", async t => {
     const prisma = fake(); const before = prisma.state; const paths = await dirs(t);
     const io = new Proxy(fs, { get(target, key) { if (["mkdir", "copyFile", "writeFile", "unlink"].includes(key)) return () => assert.fail("dry-run tentou escrever"); return target[key]; } });

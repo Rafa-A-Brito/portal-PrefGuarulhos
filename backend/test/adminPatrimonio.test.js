@@ -152,11 +152,12 @@ test("listagem administrativa reutiliza filtros, paginação e ordenação está
         assert.equal(result.status, 200);
         assert.equal(args.where.status, status);
         assert.deepEqual(countWhere, args.where);
-        assert.equal(args.where.OR.length, 5);
+        assert.equal(args.where.OR.length, 8);
         assert.equal(args.where.OR[0].nome.contains, "igreja");
-        assert.equal(args.where.AND[0].OR[0].categoria.nome.equals, "Religioso");
+        assert.equal(args.where.AND[0].OR[0].categoria.OR[0].nome.equals, "Religioso");
+        assert.equal(args.where.AND[0].OR[0].categoria.OR[1].slug.equals, "Religioso");
         assert.equal(
-            args.where.AND[0].OR[1].categoriasAdicionais.some.categoria.nome.equals,
+            args.where.AND[0].OR[1].categoriasAdicionais.some.categoria.OR[0].nome.equals,
             "Religioso"
         );
         assert.equal(args.where.localizacao.is.bairro.equals, "Centro");
