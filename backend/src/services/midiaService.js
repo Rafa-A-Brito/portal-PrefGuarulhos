@@ -1,4 +1,5 @@
 import path from "node:path";
+import { uploadCompartilhado } from "../utils/quarentenaUpload.js";
 import prisma from "../config/prisma.js";
 import { PASTAS, URL_PREFIXO } from "../config/storage.js";
 import BadRequestError from "../errors/BadRequestError.js";
@@ -37,10 +38,11 @@ function exigirPermissao(status, user) {
     }
 }
 
-export async function bloquearEAutorizar(transaction, patrimonioId, user) {
+export async function bloquearEAutorizar(transaction, patrimonioId, user, imagem = false) {
     await transaction.$queryRaw`SELECT id FROM patrimonio WHERE id = ${patrimonioId}::uuid FOR UPDATE`;
     const patrimonio = await exigirPatrimonio(transaction, patrimonioId);
-    exigirPermissao(patrimonio.status, user);
+    if (!imagem) exigirPermissao(patrimonio.status, user);
+    else if (!["ADMIN", "EDITOR"].includes(user.role)) throw new ForbiddenError();
 }
 
 // Converte a URL pública em caminho de disco. URL externa devolve null, o que
@@ -91,12 +93,12 @@ export async function createImagem(patrimonioId, metadados, arquivo, user) {
     if (!arquivo) throw new BadRequestError("Envie uma imagem no campo arquivo.");
 
     try {
-        const patrimonio = await exigirPatrimonio(prisma, patrimonioId);
-        exigirPermissao(patrimonio.status, user);
+        await exigirPatrimonio(prisma, patrimonioId);
+        if (!["ADMIN", "EDITOR"].includes(user.role)) throw new ForbiddenError();
         await validarConteudo(arquivo, TIPOS_IMAGEM);
 
         return await prisma.$transaction(async (transaction) => {
-            await bloquearEAutorizar(transaction, patrimonioId, user);
+            await bloquearEAutorizar(transaction, patrimonioId, user, true);
             // Desmarcar a principal anterior e marcar a nova na mesma transação
             // evita o estado intermediário com duas principais.
             if (metadados.principal) {
@@ -118,11 +120,11 @@ export async function createImagem(patrimonioId, metadados, arquivo, user) {
 }
 
 export async function updateImagem(patrimonioId, imagemId, metadados, user) {
-    const patrimonio = await exigirPatrimonio(prisma, patrimonioId);
-    exigirPermissao(patrimonio.status, user);
+    await exigirPatrimonio(prisma, patrimonioId);
+    if (!["ADMIN", "EDITOR"].includes(user.role)) throw new ForbiddenError();
 
     return prisma.$transaction(async (transaction) => {
-        await bloquearEAutorizar(transaction, patrimonioId, user);
+        await bloquearEAutorizar(transaction, patrimonioId, user, true);
         // O filtro por patrimonioId garante que a mídia pertence ao patrimônio da URL.
         await exigirMidia(transaction, "patrimonioImagem", { id: imagemId, patrimonioId }, "Imagem não encontrada.", "IMAGEM_NOT_FOUND");
 
@@ -138,8 +140,9 @@ export async function updateImagem(patrimonioId, imagemId, metadados, user) {
 }
 
 export async function deleteImagem(patrimonioId, imagemId, user) {
-    const patrimonio = await exigirPatrimonio(prisma, patrimonioId);
-    exigirPermissao(patrimonio.status, user);
+    if (user.role !== "ADMIN") throw new ForbiddenError();
+    await exigirPatrimonio(prisma, patrimonioId);
+    if (!["ADMIN", "EDITOR"].includes(user.role)) throw new ForbiddenError();
 
     return excluirMidiaComQuarentena(patrimonioId, imagemId, user, "patrimonioImagem", "Imagem não encontrada.", "IMAGEM_NOT_FOUND");
 }
@@ -172,6 +175,7 @@ export async function createDocumento(patrimonioId, metadados, arquivo, user) {
 }
 
 export async function updateDocumento(patrimonioId, documentoId, metadados, user) {
+    if (Object.hasOwn(metadados, "tipo")) throw new BadRequestError("O tipo da referencia nao pode ser alterado.");
     const patrimonio = await exigirPatrimonio(prisma, patrimonioId);
     exigirPermissao(patrimonio.status, user);
 
@@ -183,6 +187,7 @@ export async function updateDocumento(patrimonioId, documentoId, metadados, user
 }
 
 export async function deleteDocumento(patrimonioId, documentoId, user) {
+    if (user.role !== "ADMIN") throw new ForbiddenError();
     const patrimonio = await exigirPatrimonio(prisma, patrimonioId);
     exigirPermissao(patrimonio.status, user);
 
@@ -200,7 +205,7 @@ async function excluirMidiaComQuarentena(patrimonioId, midiaId, user, model, men
             const caminho = caminhoDoArquivo(atual.url);
             contexto = { model, midiaId, patrimonioId, url: atual.url, caminhoOriginal: caminho };
             try {
-                arquivo = await moverParaQuarentena(caminho);
+                if (!(await uploadCompartilhado(transaction, atual.url))) arquivo = await moverParaQuarentena(caminho);
             } catch (error) {
                 registrarPendenciaArquivo("mover_quarentena", { ...contexto, registroExcluido: false }, error);
                 const erro = new BaseError("Não foi possível preparar a exclusão do arquivo da mídia.", 500);

@@ -13,7 +13,7 @@ try { databaseName = decodeURIComponent(new URL(databaseUrl).pathname.slice(1));
 const safeDatabase = process.env.TEST_DATABASE_EXCLUSIVE === "1" &&
     /(?:^test_|_test$)/i.test(databaseName ?? "") && databaseUrl !== process.env.DATABASE_URL;
 
-test("PostgreSQL: publicação bloqueia as seis alterações de mídia e EDITOR relê status após commit", {
+test("PostgreSQL: documentos relêem status após commit; imagens e exclusões seguem permissões D1A", {
     skip: !safeDatabase && "Configure TEST_DATABASE_URL para PostgreSQL exclusivo *_test e TEST_DATABASE_EXCLUSIVE=1; bloqueio real não verificado.",
     timeout: 60000,
 }, async () => {
@@ -34,7 +34,7 @@ test("PostgreSQL: publicação bloqueia as seis alterações de mídia e EDITOR 
     try {
         user = await prisma.user.create({ data: { name: "Teste mídia", email: `${key}@example.test`, passwordHash: "unused", role: "ADMIN" } });
         categoria = await prisma.categoria.create({ data: { nome: key, slug: key } });
-        patrimonio = await patrimonioService.createPatrimonio({ nome: key, descricaoResumida: "Resumo", categoriaId: categoria.id }, user.id);
+        patrimonio = await patrimonioService.createPatrimonio({ nome: key, descricao: "Descricao obrigatoria", descricaoResumida: "Resumo", categoriaId: categoria.id }, user.id);
         const editor = { id: user.id, role: "EDITOR" };
         const imagem = await prisma.patrimonioImagem.create({ data: { patrimonioId: patrimonio.id, url: "https://example.test/imagem.jpg", textoAlternativo: "Original", principal: true } });
         const documento = await prisma.patrimonioDocumento.create({ data: { patrimonioId: patrimonio.id, url: "https://example.test/documento.pdf", titulo: "Original", tipo: "inventario", dataDocumento: new Date("2024-02-29") } });
@@ -47,8 +47,16 @@ test("PostgreSQL: publicação bloqueia as seis alterações de mídia e EDITOR 
         await midia.updateDocumento(patrimonio.id, documento.id, updateDocumentoSchema.parse({ dataDocumento: "2026-10-13" }), editor);
         assert.equal((await prisma.patrimonioDocumento.findUnique({ where: { id: documento.id } })).dataDocumento.toISOString(), "2026-10-13T00:00:00.000Z");
 
-        for (const tipo of ["imagem", "documento"]) {
-            for (const operacao of ["create", "update", "delete"]) {
+        for (const status of ["RASCUNHO", "PUBLICADO", "ARQUIVADO"]) {
+            await prisma.patrimonio.update({where:{id:patrimonio.id},data:{status}});
+            const updated = await midia.updateImagem(patrimonio.id, imagem.id, { titulo: status }, editor);
+            assert.equal(updated.id, imagem.id);
+            assert.equal(updated.titulo, status);
+            await assert.rejects(midia.deleteImagem(patrimonio.id, imagem.id, editor), {statusCode:403});
+            await assert.rejects(midia.deleteDocumento(patrimonio.id, documento.id, editor), {statusCode:403});
+        }
+        for (const tipo of ["documento"]) {
+            for (const operacao of ["create", "update"]) {
                 // Reinicia somente a fixture no banco exclusivo; a API não oferece
                 // transição de volta para rascunho.
                 await prisma.patrimonio.update({ where: { id: patrimonio.id }, data: { status: "RASCUNHO", publicadoEm: null } });

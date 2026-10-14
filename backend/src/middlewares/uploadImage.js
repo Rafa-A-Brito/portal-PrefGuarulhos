@@ -191,12 +191,13 @@ export function uploadImagem(pasta, { opcional = false, aceitarArquivo = false }
                         }
 
                         if (detectarMimeImagem(content) !== mime) {
-                            throw new BadRequestError(
-                                "O conteúdo da imagem não corresponde ao formato declarado."
-                            );
+                            const error = new BaseError("O conteúdo da imagem não corresponde ao formato declarado.", contratoArquivo ? 415 : 400);
+                            if (contratoArquivo) error.code = "UNSUPPORTED_MEDIA_TYPE";
+                            throw error;
                         }
 
-                        fs.mkdirSync(destinoUploadDir, {
+                        const pastaArquivo = contratoArquivo ? PASTAS.imagem : destinoUploadDir;
+                        fs.mkdirSync(pastaArquivo, {
                             recursive: true,
                         });
 

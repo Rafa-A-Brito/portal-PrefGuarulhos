@@ -5,3 +5,7 @@ node_modules/
 coverage/
 *.log
 uploads/
+
+# OpenAPI source modules are code, not generated documentation.
+!src/docs/
+!src/docs/*.js

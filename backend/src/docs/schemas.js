@@ -1,16 +1,6 @@
-import { schemas as destino } from "./schemasDestino.js";
-import { RegiaoPatrimonio } from "@prisma/client";
-import { regiaoLabels } from "../utils/regiaoPatrimonio.js";
-const regiaoField = {
-    type: "string", nullable: true, enum: [...Object.values(RegiaoPatrimonio), null],
-    description: "Classificação territorial opcional, separada do bairro. Os primeiros 11 códigos representam as UPRs adotadas como referência pelo projeto; Aeroporto e Parque Estadual da Cantareira são áreas especiais do portal. No cadastro, omitir significa não informada. No PATCH, omitir preserva e null limpa. Não informado é apenas o rótulo de null, nunca um código. Rótulos: " + Object.entries(regiaoLabels).map(([code, label]) => `${code} → ${label}`).join("; ") + ".",
-    "x-enum-labels": regiaoLabels,
-    example: "CUMBICA",
-};
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const string = (description, extra = {}) => ({ type: "string", description, ...extra });
 const nullable = (schema) => ({ ...schema, nullable: true });
-<<<<<<< HEAD
 const uuidEditorial = { type: "string", format: "uuid" };
 
 export const schemas = {
@@ -26,324 +16,766 @@ export const schemas = {
     SystemResponse: {
         type: "object",
         required: ["success", "data"],
-=======
-const sectionFields = { icone: nullable({ type: "string", minLength: 1 }), titulo: { type: "string", minLength: 1 }, texto: { type: "string", minLength: 1 }, ordem: { type: "integer", minimum: 0, maximum: 2147483647 } };
-const factFields = { rotulo: { type: "string", minLength: 1 }, valor: { type: "string", minLength: 1 }, ordem: sectionFields.ordem };
-const linkFields = { patrimonioDestinoId: string("UUID do destino existente", { format: "uuid" }), texto: sectionFields.texto, ordem: sectionFields.ordem };
-
-export const schemas = {
-    Dashboard: {
-        type: "object", additionalProperties: false, required: ["totalPatrimonios", "porCategoria", "localizacao", "meta"],
->>>>>>> 72197f5a4b9c78362672e06b7fb52973e7e7b7f5
         properties: {
-            totalPatrimonios: { type: "integer", minimum: 0, description: "Total geral cadastrado: RASCUNHO, PUBLICADO e ARQUIVADO. Substitui totalPublicados no contrato." },
-            porCategoria: {
-                type: "object", required: ["disponivel", "dados"],
-                properties: {
-                    disponivel: { type: "boolean", enum: [true] },
-                    dados: { type: "array", description: "Todos os status, categoria principal apenas, ordenada por nome e ID. Sem patrimônios, lista vazia.", items: {
-                        type: "object", required: ["id", "nome", "quantidade", "percentual"],
-                        properties: {
-                            id: { type: "string", format: "uuid" }, nome: { type: "string" },
-                            quantidade: { type: "integer", minimum: 1 },
-                            percentual: { type: "number", minimum: 0, maximum: 100, description: "Quantidade / totalPatrimonios × 100, arredondado a duas casas decimais. A soma pode diferir de 100 pelo arredondamento." },
-                        },
-                    } },
-                },
-            },
-            localizacao: {
-                type: "object", required: ["bairros", "regioes"],
-                properties: {
-                    bairros: {
-                        type: "object", required: ["disponivel", "totalBairrosDistintos", "distribuicao"],
-                        properties: {
-                            disponivel: { type: "boolean", enum: [true] },
-                            totalBairrosDistintos: { type: "integer", minimum: 0, description: "Bairros distintos após trim; o grupo sintético Não informado não conta como bairro real." },
-                            distribuicao: { type: "array", description: "Todos os status, ordenada por bairro. Sem localização ou com bairro vazio/nulo entra uma única vez em Não informado. Sem patrimônios, lista vazia. Bairro é obrigatório no schema atual; nulo é tratado defensivamente.", items: {
-                                type: "object", required: ["bairro", "quantidade"],
-                                properties: { bairro: { type: "string" }, quantidade: { type: "integer", minimum: 1 } },
-                            } },
-                        },
-                    },
-                    regioes: {
-                        type: "object", additionalProperties: false, required: ["disponivel", "totalRegioesDistintas", "distribuicao"],
-                        properties: {
-                            disponivel: { type: "boolean", enum: [true] },
-                            totalRegioesDistintas: { type: "integer", minimum: 0, description: "Classificações com patrimônios associados, excluindo Não informado. Inclui as áreas especiais Aeroporto e Parque Estadual da Cantareira." },
-                            distribuicao: { type: "array", description: "Todos os status. Grupos conhecidos ordenados pelo nome em pt-BR; Não informado ao final. Cada patrimônio conta uma vez: região null ou ausência de localização entram no mesmo grupo. Somente quantidades positivas; soma igual a totalPatrimonios. Banco vazio retorna [].", items: {
-                                type: "object", additionalProperties: false, required: ["regiao", "nome", "quantidade"],
-                                properties: {
-                                    regiao: { ...regiaoField, description: "Código da classificação territorial, ou null para Não informado. Os primeiros 11 códigos são UPRs de referência do projeto; os dois últimos são áreas especiais do portal." },
-                                    nome: { type: "string", enum: [...Object.values(regiaoLabels), "Não informado"], description: "Rótulo do código conforme x-enum-labels de regiao; null usa Não informado." },
-                                    quantidade: { type: "integer", minimum: 1 },
-                                },
-                            } },
-                        },
-                    },
-                },
-            },
-            meta: {
-                type: "object", required: ["parcial", "baseContagem", "pendencias"],
-                properties: {
-                    parcial: { type: "boolean", enum: [false], description: "Escopo reduzido concluído: total, categorias, bairros e regiões. Tombamento e rotas retirados desta entrega; não representa atendimento integral à seção 5.5 original." },
-                    baseContagem: { type: "string", enum: ["TODOS_OS_STATUS"] },
-                    pendencias: { type: "array", maxItems: 0, items: { type: "object" }, description: "Sempre vazia no escopo reduzido desta entrega." },
-                },
+            success: { type: "boolean", enum: [true] },
+            data: {
+                type: "object",
+                required: ["name", "version"],
+                properties: { name: { type: "string" }, version: { type: "string" } },
             },
         },
     },
-    DashboardResponse: {
-        type: "object", required: ["success", "data"],
-        properties: { success: { type: "boolean", enum: [true] }, data: ref("Dashboard") },
+    HealthResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+            success: { type: "boolean", enum: [true] },
+            data: {
+                type: "object",
+                required: ["status"],
+                properties: { status: { type: "string", enum: ["ok"] } },
+            },
+        },
     },
-    SystemResponse: { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: { type: "object", required: ["name", "version"], properties: { name: { type: "string" }, version: { type: "string" } } } } },
-    HealthResponse: { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: { type: "object", required: ["status"], properties: { status: { type: "string", enum: ["ok"] } } } } },
     Role: { type: "string", enum: ["ADMIN", "EDITOR"] },
-    Situacao: { type: "string", enum: ["PRESERVADO", "EM_RESTAURACAO", "NECESSITA_RESTAURACAO", "EM_RUINAS", "DEMOLIDO", "NAO_INFORMADO"] },
+    Situacao: {
+        type: "string",
+        enum: [
+            "PRESERVADO",
+            "EM_RESTAURACAO",
+            "NECESSITA_RESTAURACAO",
+            "EM_RUINAS",
+            "DEMOLIDO",
+            "NAO_INFORMADO",
+        ],
+    },
     StatusPublicacao: { type: "string", enum: ["RASCUNHO", "PUBLICADO", "ARQUIVADO"] },
     Error: {
-        type: "object", required: ["success", "message", "details", "error"],
+        type: "object",
+        required: ["success", "message", "details", "error"],
         properties: {
             success: { type: "boolean", enum: [false] },
             message: { type: "string" },
-            details: { type: "array", items: { type: "object", required: ["field", "message"], properties: { field: { type: "string" }, message: { type: "string" } } } },
-            error: { type: "object", required: ["code", "message"], properties: { code: { type: "string" }, message: { type: "string" } } },
+            details: {
+                type: "array",
+                items: {
+                    type: "object",
+                    required: ["field", "message"],
+                    properties: { field: { type: "string" }, message: { type: "string" } },
+                },
+            },
+            error: {
+                type: "object",
+                required: ["code", "message"],
+                properties: { code: { type: "string" }, message: { type: "string" } },
+            },
         },
     },
     LoginRequest: {
-        type: "object", additionalProperties: false, required: ["email", "password"],
+        type: "object",
+        additionalProperties: false,
+        required: ["email", "password"],
         properties: {
-            email: string("E-mail normalizado com trim e letras minúsculas.", { format: "email", maxLength: 254, example: "editor@example.org" }),
-            password: string("Senha sem trim; de 1 a 72 bytes em UTF-8.", { writeOnly: true, minLength: 1, example: "SenhaFicticia123!" }),
+            email: string("E-mail normalizado com trim e letras minúsculas.", {
+                format: "email",
+                maxLength: 254,
+                example: "editor@example.org",
+            }),
+            password: string("Senha sem trim; de 1 a 72 bytes em UTF-8.", {
+                writeOnly: true,
+                minLength: 1,
+                example: "SenhaFicticia123!",
+            }),
         },
     },
     LoginUser: {
-        type: "object", required: ["id", "name", "email", "role"],
-        properties: { id: string("UUID", { format: "uuid" }), name: { type: "string" }, email: string("E-mail", { format: "email" }), role: ref("Role") },
+        type: "object",
+        required: ["id", "name", "email", "role"],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            name: { type: "string" },
+            email: string("E-mail", { format: "email" }),
+            role: ref("Role"),
+        },
     },
     LoginResponse: {
-        type: "object", required: ["success", "data"],
-        properties: { success: { type: "boolean", enum: [true] }, data: { type: "object", required: ["token", "user"], properties: { token: string("JWT para usar em Authorize.", { example: "eyJ...token-ficticio" }), user: ref("LoginUser") } } },
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+            success: { type: "boolean", enum: [true] },
+            data: {
+                type: "object",
+                required: ["token", "user"],
+                properties: {
+                    token: string("JWT para usar em Authorize.", {
+                        example: "eyJ...token-ficticio",
+                    }),
+                    user: ref("LoginUser"),
+                },
+            },
+        },
     },
     AdminRequest: {
-        type: "object", additionalProperties: false, required: ["nome", "email", "role", "password"],
+        type: "object",
+        additionalProperties: false,
+        required: ["nome", "email", "role", "password"],
         properties: {
-            nome: string("Nome com trim.", { minLength: 1, maxLength: 100, example: "Maria Exemplo" }),
-            email: string("E-mail com trim e letras minúsculas.", { format: "email", maxLength: 254, example: "maria@example.org" }),
+            nome: string("Nome com trim.", {
+                minLength: 1,
+                maxLength: 100,
+                example: "Maria Exemplo",
+            }),
+            email: string("E-mail com trim e letras minúsculas.", {
+                format: "email",
+                maxLength: 254,
+                example: "maria@example.org",
+            }),
             role: ref("Role"),
-            password: string("Mínimo de 12 caracteres Unicode e máximo de 72 bytes em UTF-8. Não é transformada.", { writeOnly: true, minLength: 12, example: "SenhaFicticia123!" }),
+            password: string(
+                "Mínimo de 12 caracteres Unicode e máximo de 72 bytes em UTF-8. Não é transformada.",
+                { writeOnly: true, minLength: 12, example: "SenhaFicticia123!" }
+            ),
         },
     },
     Admin: {
-        type: "object", required: ["id", "nome", "email", "role", "ativo"],
-        properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, email: string("E-mail", { format: "email" }), role: ref("Role"), ativo: { type: "boolean", enum: [true] } },
-    },
-    AdminResponse: { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("Admin") } },
-    LocalizacaoRequest: {
-        type: "object", additionalProperties: false, required: ["endereco", "bairro"],
-        description: "Latitude e longitude devem ser informadas juntas ou ambas omitidas. Textos recebem trim.",
+        type: "object",
+        required: ["id", "nome", "email", "role", "ativo", "criadoEm", "atualizadoEm"],
         properties: {
-            regiao: regiaoField,
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            email: string("E-mail", { format: "email" }),
+            role: ref("Role"),
+            ativo: { type: "boolean" },
+            criadoEm: { type: "string", format: "date-time" },
+            atualizadoEm: { type: "string", format: "date-time" },
+        },
+    },
+    AdminResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: { success: { type: "boolean", enum: [true] }, data: ref("Admin") },
+    },
+    LocalizacaoRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["endereco", "bairro"],
+        description:
+            "Latitude e longitude devem ser informadas juntas ou ambas omitidas. Textos recebem trim.",
+        properties: {
             endereco: string("Endereço", { minLength: 1, maxLength: 250, example: "Rua Exemplo" }),
             numero: string("Número", { minLength: 1, maxLength: 30, example: "10" }),
             complemento: string("Complemento", { minLength: 1, maxLength: 150 }),
             bairro: string("Bairro", { minLength: 1, maxLength: 100, example: "Centro" }),
             cidade: string("Cidade", { minLength: 1, maxLength: 100, default: "Guarulhos" }),
-            uf: string("UF convertida para maiúsculas.", { minLength: 2, maxLength: 2, default: "SP" }),
-            cep: string("Aceita 12345678 ou 12345-678; retorna com hífen.", { pattern: "^[0-9]{5}-?[0-9]{3}$", example: "07010-000" }),
+            uf: string("UF convertida para maiúsculas.", {
+                minLength: 2,
+                maxLength: 2,
+                default: "SP",
+            }),
+            cep: string("Aceita 12345678 ou 12345-678; retorna com hífen.", {
+                pattern: "^[0-9]{5}-?[0-9]{3}$",
+                example: "07010-000",
+            }),
             latitude: { type: "number", minimum: -90, maximum: 90, example: -23.4628 },
             longitude: { type: "number", minimum: -180, maximum: 180, example: -46.5333 },
         },
     },
-
-    SecaoRequest: { type: "object", additionalProperties: false, required: ["titulo", "texto", "ordem"], properties: sectionFields },
-    FatoRequest: { type: "object", additionalProperties: false, required: ["rotulo", "valor", "ordem"], properties: factFields },
-    LigacaoRequest: { type: "object", additionalProperties: false, required: ["patrimonioDestinoId", "texto", "ordem"], properties: linkFields },
-    Secao: { type: "object", required: ["id", "icone", "titulo", "texto", "ordem"], properties: { id: string("UUID", { format: "uuid" }), ...sectionFields } },
-    Fato: { type: "object", required: ["id", "rotulo", "valor", "ordem"], properties: { id: string("UUID", { format: "uuid" }), ...factFields } },
-    LigacaoCriada: { type: "object", required: ["id", "patrimonioOrigemId", "patrimonioDestinoId", "texto", "ordem"], properties: { id: string("UUID", { format: "uuid" }), patrimonioOrigemId: string("UUID", { format: "uuid" }), ...linkFields } },
-    Ligacao: { type: "object", required: ["id", "patrimonioDestinoId", "texto", "ordem", "destino"], properties: { id: string("UUID", { format: "uuid" }), ...linkFields, destino: { type: "object", required: ["id", "nome", "slug", "numeroExibicao"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, numeroExibicao: nullable({ type: "integer" }) } } } },
     PatrimonioRequest: {
-        type: "object", additionalProperties: false, required: ["nome", "descricaoResumida", "categoriaId"],
+        type: "object",
+        additionalProperties: false,
+        required: ["nome", "descricao", "descricaoResumida", "categoriaId"],
         properties: {
-            nome: string("Nome com trim.", { minLength: 1, maxLength: 200, example: "Casa da Cultura Exemplo" }),
-            descricao: nullable(string("Legado opcional durante a transição; preferir secoes.", { minLength: 1, example: "Edificação de interesse cultural." })),
-            descricaoResumida: string("Resumo com trim.", { minLength: 1, maxLength: 500, example: "Edificação histórica em Guarulhos." }),
-            numeroExibicao: nullable({ type: "integer", minimum: 1, maximum: 2147483647 }),
-            ordemExibicao: nullable({ type: "integer", minimum: 0, maximum: 2147483647 }),
-            secoes: { type: "array", description: "Ordens únicas e contíguas a partir de zero.", items: ref("SecaoRequest") },
-            fatos: { type: "array", description: "Ordens únicas e contíguas a partir de zero.", items: ref("FatoRequest") },
-            ligacoes: { type: "array", description: "Destinos existentes e distintos, sem ligação consigo mesmo. Ordens únicas e contíguas a partir de zero.", items: ref("LigacaoRequest") },
-            categoriaId: string("UUID da categoria Histórico no banco local de demonstração. Em outro banco, consulte a tabela categoria e substitua o valor.", { format: "uuid", example: "48aa8522-76c4-459b-b86b-8149a74a54fd" }),
-            historia: nullable(string("História legada com trim.", { minLength: 1 })),
-            importanciaCultural: nullable(string("Importância cultural legada com trim.", { minLength: 1 })),
-            categoriasAdicionais: { type: "array", maxItems: 6, uniqueItems: true, description: "UUIDs de categorias adicionais existentes, sem repetir a categoria principal.", items: { type: "string", format: "uuid" } },
+            nome: string("Nome com trim.", {
+                minLength: 1,
+                maxLength: 200,
+                example: "Casa da Cultura Exemplo",
+            }),
+            descricao: string("Descrição com trim.", {
+                minLength: 1,
+                example: "Edificação de interesse cultural.",
+            }),
+            descricaoResumida: string("Resumo com trim.", {
+                minLength: 1,
+                maxLength: 500,
+                example: "Edificação histórica em Guarulhos.",
+            }),
+            categoriaId: string(
+                "UUID de uma categoria existente no seu banco. O valor mostrado é ilustrativo; substitua antes de executar.",
+                { format: "uuid", example: "11111111-1111-4111-8111-111111111111" }
+            ),
+            categoriasAdicionais: {
+                type: "array",
+                maxItems: 6,
+                uniqueItems: true,
+                description:
+                    "UUIDs de categorias adicionais existentes, sem repetir a categoria principal.",
+                items: { type: "string", format: "uuid" },
+            },
+            historia: string("História com trim.", { minLength: 1 }),
+            importanciaCultural: string("Importância cultural com trim.", { minLength: 1 }),
             situacao: { ...ref("Situacao"), default: "NAO_INFORMADO" },
             localizacao: ref("LocalizacaoRequest"),
         },
     },
     Localizacao: {
-        type: "object", required: ["id", "patrimonioId", "endereco", "numero", "complemento", "bairro", "cidade", "uf", "cep", "latitude", "longitude"],
+        type: "object",
+        required: [
+            "id",
+            "patrimonioId",
+            "endereco",
+            "numero",
+            "complemento",
+            "bairro",
+            "cidade",
+            "uf",
+            "cep",
+            "latitude",
+            "longitude",
+        ],
         properties: {
-            regiao: regiaoField,
-            id: string("UUID", { format: "uuid" }), patrimonioId: string("UUID", { format: "uuid" }), endereco: { type: "string" },
-            numero: nullable({ type: "string" }), complemento: nullable({ type: "string" }), bairro: { type: "string" }, cidade: { type: "string" }, uf: { type: "string" },
-            cep: nullable({ type: "string" }), latitude: nullable(string("Decimal serializado como string.", { example: "-23.4628000" })),
-            longitude: nullable(string("Decimal serializado como string.", { example: "-46.5333000" })),
+            id: string("UUID", { format: "uuid" }),
+            patrimonioId: string("UUID", { format: "uuid" }),
+            endereco: { type: "string" },
+            numero: nullable({ type: "string" }),
+            complemento: nullable({ type: "string" }),
+            bairro: { type: "string" },
+            cidade: { type: "string" },
+            uf: { type: "string" },
+            cep: nullable({ type: "string" }),
+            latitude: nullable(
+                string("Decimal serializado como string.", { example: "-23.4628000" })
+            ),
+            longitude: nullable(
+                string("Decimal serializado como string.", { example: "-46.5333000" })
+            ),
         },
     },
-    CategoriaResumo: { type: "object", required: ["id", "nome", "slug"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" } } },
-    CategoriaDetalhe: { type: "object", required: ["id", "nome", "slug", "descricao"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, descricao: nullable({ type: "string" }) } },
-    CategoriaCompleta: { type: "object", required: ["id", "nome", "slug", "descricao", "createdAt", "updatedAt"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, descricao: nullable({ type: "string" }), createdAt: string("Data ISO 8601", { format: "date-time" }), updatedAt: string("Data ISO 8601", { format: "date-time" }) } },
-    ImagemResumo: { type: "object", required: ["id", "url", "titulo", "textoAlternativo", "principal"], properties: { id: string("UUID", { format: "uuid" }), url: { type: "string" }, titulo: nullable({ type: "string" }), textoAlternativo: { type: "string" }, principal: { type: "boolean" } } },
-    ImagemDetalhe: { allOf: [ref("ImagemResumo"), { type: "object", required: ["credito", "fonte", "ordem"], properties: { credito: nullable({ type: "string" }), fonte: nullable({ type: "string" }), ordem: { type: "integer" } } }] },
-    Documento: { type: "object", required: ["id", "titulo", "descricao", "url", "tipo", "fonte", "dataDocumento", "mimeType"], properties: { id: string("UUID", { format: "uuid" }), titulo: { type: "string" }, descricao: nullable({ type: "string" }), url: { type: "string" }, tipo: { type: "string" }, fonte: nullable({ type: "string" }), dataDocumento: nullable(string("Campo de data do banco serializado pelo Prisma como ISO 8601.", { format: "date-time" })), mimeType: nullable({ type: "string" }) } },
-    RotaResumo: { type: "object", required: ["id", "nome", "slug", "descricao"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, descricao: nullable({ type: "string" }) } },
-    RotaPatrimonio: { type: "object", required: ["ordem", "rota"], properties: { ordem: { type: "integer" }, rota: ref("RotaResumo") } },
-    PatrimonioResumo: { type: "object", required: ["id", "nome", "slug", "numeroExibicao", "ordemExibicao", "descricaoResumida", "situacao", "publicadoEm", "categoria", "localizacao", "imagens"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, numeroExibicao: nullable({ type: "integer", minimum: 1 }), ordemExibicao: nullable({ type: "integer", minimum: 0 }), descricaoResumida: { type: "string" }, situacao: ref("Situacao"), publicadoEm: nullable(string("Data ISO 8601", { format: "date-time" })), categoria: ref("CategoriaResumo"), localizacao: nullable({ type: "object", allOf: [ref("Localizacao")] }), imagens: { type: "array", maxItems: 1, items: ref("ImagemResumo") } } },
-    PatrimonioDetalhe: { type: "object", required: ["id", "nome", "slug", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "publicadoEm", "updatedAt", "categoria", "localizacao", "imagens", "documentos", "rotas", "secoes", "fatos", "ligacoes"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, numeroExibicao: nullable({ type: "integer", minimum: 1 }), ordemExibicao: nullable({ type: "integer", minimum: 0 }), descricao: nullable({ type: "string" }), descricaoResumida: { type: "string" }, historia: nullable({ type: "string" }), importanciaCultural: nullable({ type: "string" }), situacao: ref("Situacao"), publicadoEm: nullable(string("Data ISO 8601", { format: "date-time" })), updatedAt: string("Data ISO 8601", { format: "date-time" }), categoria: ref("CategoriaDetalhe"), localizacao: nullable({ type: "object", allOf: [ref("Localizacao")] }), imagens: { type: "array", items: ref("ImagemDetalhe") }, secoes: { type: "array", items: ref("Secao") }, fatos: { type: "array", items: ref("Fato") }, ligacoes: { type: "array", description: "Somente destinos publicados; ordem editorial preservada.", items: ref("Ligacao") }, documentos: { type: "array", items: ref("Documento") }, rotas: { type: "array", description: "Somente rotas publicadas.", items: ref("RotaPatrimonio") } } },
-    Paginacao: { type: "object", required: ["pagina", "limite", "total", "totalPaginas"], properties: { pagina: { type: "integer", minimum: 1 }, limite: { type: "integer", minimum: 1, maximum: 100 }, total: { type: "integer", minimum: 0 }, totalPaginas: { type: "integer", minimum: 0 } } },
-    PatrimonioListaResponse: { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: { type: "object", required: ["itens", "paginacao"], properties: { itens: { type: "array", items: ref("PatrimonioResumo") }, paginacao: ref("Paginacao") } } } },
-    PatrimonioDetalheResponse: { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("PatrimonioDetalhe") } },
-    PatrimonioCriado: { type: "object", required: ["id", "nome", "slug", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "status", "categoriaId", "createdBy", "updatedBy", "createdAt", "updatedAt", "publicadoEm", "arquivadoEm", "categoria", "localizacao", "secoes", "fatos", "ligacoes"], properties: { id: string("UUID", { format: "uuid" }), nome: { type: "string" }, slug: { type: "string" }, numeroExibicao: nullable({ type: "integer", minimum: 1 }), ordemExibicao: nullable({ type: "integer", minimum: 0 }), descricao: nullable({ type: "string" }), descricaoResumida: { type: "string" }, historia: nullable({ type: "string" }), importanciaCultural: nullable({ type: "string" }), situacao: ref("Situacao"), status: { type: "string", enum: ["RASCUNHO"] }, categoriaId: string("UUID", { format: "uuid" }), createdBy: string("UUID do usuário autenticado.", { format: "uuid" }), updatedBy: nullable(string("UUID", { format: "uuid" })), createdAt: string("Data ISO 8601", { format: "date-time" }), updatedAt: string("Data ISO 8601", { format: "date-time" }), publicadoEm: nullable(string("Data ISO 8601", { format: "date-time" })), arquivadoEm: nullable(string("Data ISO 8601", { format: "date-time" })), secoes: { type: "array", items: ref("Secao") }, fatos: { type: "array", items: ref("Fato") }, ligacoes: { type: "array", items: ref("LigacaoCriada") }, categoria: ref("CategoriaCompleta"), localizacao: nullable({ type: "object", allOf: [ref("Localizacao")] }) } },
-    PatrimonioCriadoResponse: { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("PatrimonioCriado") } },
+    CategoriaResumo: {
+        type: "object",
+        required: ["id", "nome", "slug"],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+        },
+    },
+    CategoriaDetalhe: {
+        type: "object",
+        required: ["id", "nome", "slug", "descricao"],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+            descricao: nullable({ type: "string" }),
+        },
+    },
+    CategoriaCompleta: {
+        type: "object",
+        required: ["id", "nome", "slug", "descricao", "createdAt", "updatedAt"],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+            descricao: nullable({ type: "string" }),
+            createdAt: string("Data ISO 8601", { format: "date-time" }),
+            updatedAt: string("Data ISO 8601", { format: "date-time" }),
+        },
+    },
+    ImagemResumo: {
+        type: "object",
+        required: ["id", "url", "titulo", "textoAlternativo", "principal"],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            url: { type: "string" },
+            titulo: nullable({ type: "string" }),
+            textoAlternativo: { type: "string" },
+            principal: { type: "boolean" },
+        },
+    },
+    ImagemDetalhe: {
+        allOf: [
+            ref("ImagemResumo"),
+            {
+                type: "object",
+                required: ["credito", "fonte", "ordem"],
+                properties: {
+                    credito: nullable({ type: "string" }),
+                    fonte: nullable({ type: "string" }),
+                    ordem: { type: "integer" },
+                },
+            },
+        ],
+    },
+    Documento: {
+        type: "object",
+        required: [
+            "id",
+            "titulo",
+            "descricao",
+            "url",
+            "tipo",
+            "fonte",
+            "dataDocumento",
+            "mimeType",
+        ],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            titulo: { type: "string" },
+            descricao: nullable({ type: "string" }),
+            url: { type: "string" },
+            tipo: { type: "string" },
+            fonte: nullable({ type: "string" }),
+            dataDocumento: nullable(
+                string("Campo de data do banco serializado pelo Prisma como ISO 8601.", {
+                    format: "date-time",
+                })
+            ),
+            mimeType: nullable({ type: "string" }),
+        },
+    },
+    RotaResumo: {
+        type: "object",
+        required: ["id", "nome", "slug", "descricao"],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+            descricao: nullable({ type: "string" }),
+        },
+    },
+    RotaPatrimonio: {
+        type: "object",
+        required: ["ordem", "rota"],
+        properties: { ordem: { type: "integer" }, rota: ref("RotaResumo") },
+    },
+    PatrimonioResumo: {
+        type: "object",
+        required: [
+            "id",
+            "nome",
+            "slug",
+            "descricaoResumida",
+            "situacao",
+            "publicadoEm",
+            "categoria",
+            "localizacao",
+            "imagens",
+        ],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+            descricaoResumida: { type: "string" },
+            situacao: ref("Situacao"),
+            publicadoEm: nullable(string("Data ISO 8601", { format: "date-time" })),
+            categoria: ref("CategoriaResumo"),
+            localizacao: nullable({ type: "object", allOf: [ref("Localizacao")] }),
+            imagens: { type: "array", maxItems: 1, items: ref("ImagemResumo") },
+        },
+    },
+    PatrimonioDetalhe: {
+        type: "object",
+        required: [
+            "id",
+            "nome",
+            "slug",
+            "descricao",
+            "descricaoResumida",
+            "historia",
+            "importanciaCultural",
+            "situacao",
+            "publicadoEm",
+            "updatedAt",
+            "categoria",
+            "localizacao",
+            "imagens",
+            "documentos",
+            "rotas",
+        ],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+            descricao: { type: "string" },
+            descricaoResumida: { type: "string" },
+            historia: nullable({ type: "string" }),
+            importanciaCultural: nullable({ type: "string" }),
+            situacao: ref("Situacao"),
+            publicadoEm: nullable(string("Data ISO 8601", { format: "date-time" })),
+            updatedAt: string("Data ISO 8601", { format: "date-time" }),
+            categoria: ref("CategoriaDetalhe"),
+            localizacao: nullable({ type: "object", allOf: [ref("Localizacao")] }),
+            imagens: { type: "array", items: ref("ImagemDetalhe") },
+            documentos: { type: "array", items: ref("Documento") },
+            rotas: {
+                type: "array",
+                description: "Somente rotas publicadas.",
+                items: ref("RotaPatrimonio"),
+            },
+        },
+    },
+    Paginacao: {
+        type: "object",
+        required: ["pagina", "limite", "total", "totalPaginas"],
+        properties: {
+            pagina: { type: "integer", minimum: 1 },
+            limite: { type: "integer", minimum: 1, maximum: 100 },
+            total: { type: "integer", minimum: 0 },
+            totalPaginas: { type: "integer", minimum: 0 },
+        },
+    },
+    PatrimonioListaResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: {
+            success: { type: "boolean", enum: [true] },
+            data: {
+                type: "object",
+                required: ["itens", "paginacao"],
+                properties: {
+                    itens: { type: "array", items: ref("PatrimonioResumo") },
+                    paginacao: ref("Paginacao"),
+                },
+            },
+        },
+    },
+    PatrimonioDetalheResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: { success: { type: "boolean", enum: [true] }, data: ref("PatrimonioDetalhe") },
+    },
+    PatrimonioCriado: {
+        type: "object",
+        required: [
+            "id",
+            "nome",
+            "slug",
+            "descricao",
+            "descricaoResumida",
+            "historia",
+            "importanciaCultural",
+            "situacao",
+            "status",
+            "categoriaId",
+            "createdBy",
+            "updatedBy",
+            "createdAt",
+            "updatedAt",
+            "publicadoEm",
+            "arquivadoEm",
+            "categoria",
+            "localizacao",
+        ],
+        properties: {
+            id: string("UUID", { format: "uuid" }),
+            nome: { type: "string" },
+            slug: { type: "string" },
+            descricao: { type: "string" },
+            descricaoResumida: { type: "string" },
+            historia: nullable({ type: "string" }),
+            importanciaCultural: nullable({ type: "string" }),
+            situacao: ref("Situacao"),
+            status: { type: "string", enum: ["RASCUNHO"] },
+            categoriaId: string("UUID", { format: "uuid" }),
+            createdBy: string("UUID do usuário autenticado.", { format: "uuid" }),
+            updatedBy: nullable(string("UUID", { format: "uuid" })),
+            createdAt: string("Data ISO 8601", { format: "date-time" }),
+            updatedAt: string("Data ISO 8601", { format: "date-time" }),
+            publicadoEm: nullable(string("Data ISO 8601", { format: "date-time" })),
+            arquivadoEm: nullable(string("Data ISO 8601", { format: "date-time" })),
+            categoria: ref("CategoriaCompleta"),
+            localizacao: nullable({ type: "object", allOf: [ref("Localizacao")] }),
+        },
+    },
+    PatrimonioCriadoResponse: {
+        type: "object",
+        required: ["success", "data"],
+        properties: { success: { type: "boolean", enum: [true] }, data: ref("PatrimonioCriado") },
+    },
 };
 
 schemas.LocalizacaoPatch = {
     ...schemas.LocalizacaoRequest,
-    required: undefined, minProperties: 1,
-    description: "Atualização parcial. Campos omitidos são preservados. Ao criar, endereco e bairro são obrigatórios; cidade/uf assumem Guarulhos/SP. O estado final deve ter ambas as coordenadas ou nenhuma.",
-    properties: { ...schemas.LocalizacaoRequest.properties,
+    required: undefined,
+    minProperties: 1,
+    description:
+        "Atualização parcial. Campos omitidos são preservados. Ao criar, endereco e bairro são obrigatórios; cidade/uf assumem Guarulhos/SP. Latitude e longitude devem ser enviadas juntas: dois números atualizam a posição, null/null limpa as coordenadas e ambas omitidas preservam a posição. Misturar null e número é inválido.",
+    properties: {
+        ...schemas.LocalizacaoRequest.properties,
         cidade: { ...schemas.LocalizacaoRequest.properties.cidade, default: undefined },
         uf: { ...schemas.LocalizacaoRequest.properties.uf, default: undefined },
+        latitude: { ...schemas.LocalizacaoRequest.properties.latitude, nullable: true },
+        longitude: { ...schemas.LocalizacaoRequest.properties.longitude, nullable: true },
     },
 };
 schemas.ChangePasswordRequest = {
-    type: "object", additionalProperties: false, required: ["senhaAtual", "novaSenha"],
+    type: "object",
+    additionalProperties: false,
+    required: ["senhaAtual", "novaSenha"],
     properties: {
-        senhaAtual: string("Senha atual sem trim ou outras transformações; de 1 a 72 bytes em UTF-8.", { writeOnly: true, minLength: 1, example: "SenhaAtual123!" }),
-        novaSenha: string("Mesmas regras do cadastro: pelo menos 12 caracteres Unicode e no máximo 72 bytes em UTF-8. Espaços são preservados.", { writeOnly: true, minLength: 12, example: "NovaSenhaSegura123!" }),
+        senhaAtual: string(
+            "Senha atual sem trim ou outras transformações; de 1 a 72 bytes em UTF-8.",
+            { writeOnly: true, minLength: 1, example: "SenhaAtual123!" }
+        ),
+        novaSenha: string(
+            "Mesmas regras do cadastro: pelo menos 12 caracteres Unicode e no máximo 72 bytes em UTF-8. Espaços são preservados.",
+            { writeOnly: true, minLength: 12, example: "NovaSenhaSegura123!" }
+        ),
     },
 };
 schemas.ChangePasswordResponse = {
-    type: "object", required: ["success", "message"],
-    properties: { success: { type: "boolean", enum: [true] }, message: { type: "string", example: "Senha alterada com sucesso." } },
+    type: "object",
+    required: ["success", "message"],
+    properties: {
+        success: { type: "boolean", enum: [true] },
+        message: { type: "string", example: "Senha alterada com sucesso." },
+    },
 };
 schemas.PatrimonioPatch = {
-    ...schemas.PatrimonioRequest, required: undefined, minProperties: 1,
-    properties: { ...schemas.PatrimonioRequest.properties, situacao: ref("Situacao"), localizacao: ref("LocalizacaoPatch") },
+    ...schemas.PatrimonioRequest,
+    required: undefined,
+    minProperties: 1,
+    properties: {
+        ...schemas.PatrimonioRequest.properties,
+        situacao: ref("Situacao"),
+        localizacao: ref("LocalizacaoPatch"),
+    },
 };
 schemas.PatrimonioAdminResumo = {
     ...schemas.PatrimonioResumo,
     required: [...schemas.PatrimonioResumo.required, "status", "arquivadoEm"],
-    properties: { ...schemas.PatrimonioResumo.properties, status: ref("StatusPublicacao"), arquivadoEm: nullable(string("Data ISO 8601", { format: "date-time" })) },
+    properties: {
+        ...schemas.PatrimonioResumo.properties,
+        status: ref("StatusPublicacao"),
+        arquivadoEm: nullable(string("Data ISO 8601", { format: "date-time" })),
+    },
 };
 schemas.PatrimonioAdmin = {
     ...schemas.PatrimonioCriado,
     required: [...schemas.PatrimonioCriado.required, "imagens", "documentos"],
-    properties: { ...schemas.PatrimonioCriado.properties, status: ref("StatusPublicacao"),
-        imagens: { type: "array", items: { allOf: [ref("ImagemDetalhe"), { type: "object", properties: { patrimonioId: string("UUID", { format: "uuid" }), createdAt: string("Data ISO 8601", { format: "date-time" }) } }] } },
-        documentos: { type: "array", items: { allOf: [ref("Documento"), { type: "object", properties: { patrimonioId: string("UUID", { format: "uuid" }), createdAt: string("Data ISO 8601", { format: "date-time" }) } }] } },
+    properties: {
+        ...schemas.PatrimonioCriado.properties,
+        status: ref("StatusPublicacao"),
+        imagens: {
+            type: "array",
+            items: {
+                allOf: [
+                    ref("ImagemDetalhe"),
+                    {
+                        type: "object",
+                        properties: {
+                            patrimonioId: string("UUID", { format: "uuid" }),
+                            createdAt: string("Data ISO 8601", { format: "date-time" }),
+                        },
+                    },
+                ],
+            },
+        },
+        documentos: {
+            type: "array",
+            items: {
+                allOf: [
+                    ref("Documento"),
+                    {
+                        type: "object",
+                        properties: {
+                            patrimonioId: string("UUID", { format: "uuid" }),
+                            createdAt: string("Data ISO 8601", { format: "date-time" }),
+                        },
+                    },
+                ],
+            },
+        },
     },
 };
-schemas.PatrimonioAdminResponse = { ...schemas.PatrimonioCriadoResponse, properties: { success: { type: "boolean", enum: [true] }, data: ref("PatrimonioAdmin") } };
+schemas.PatrimonioAdminResponse = {
+    ...schemas.PatrimonioCriadoResponse,
+    properties: { success: { type: "boolean", enum: [true] }, data: ref("PatrimonioAdmin") },
+};
 schemas.PatrimonioAdminListaResponse = {
     ...schemas.PatrimonioListaResponse,
-    properties: { success: { type: "boolean", enum: [true] }, data: {
-        ...schemas.PatrimonioListaResponse.properties.data,
-        properties: { itens: { type: "array", items: ref("PatrimonioAdminResumo") }, paginacao: ref("Paginacao") },
-    } },
-};
-
-// --- Mídias (envio e gerenciamento) ---
-
-schemas.ImagemUpload = {
-    type: "object", additionalProperties: false, required: ["arquivo", "textoAlternativo"],
-    description: "Envio em multipart/form-data. url é gerada pela API e não é aceita no corpo.",
     properties: {
-        arquivo: string("JPEG, PNG ou WebP até 5 MB. O conteúdo é validado pela assinatura do arquivo.", { type: "string", format: "binary" }),
-        textoAlternativo: string("Obrigatório.", { minLength: 1, maxLength: 300, example: "Fachada da edificação" }),
-        titulo: string("Título com trim.", { minLength: 1, maxLength: 200 }),
-        credito: string("Crédito com trim.", { minLength: 1, maxLength: 200 }),
-        fonte: string("Fonte com trim.", { minLength: 1, maxLength: 500 }),
-        ordem: { type: "integer", minimum: 0, default: 0, description: "Texto convertido para inteiro não negativo." },
-        principal: { type: "boolean", default: false, description: "Aceita true/false/1/0 como texto. Marcar desmarca a principal anterior." },
+        success: { type: "boolean", enum: [true] },
+        data: {
+            ...schemas.PatrimonioListaResponse.properties.data,
+            properties: {
+                itens: { type: "array", items: ref("PatrimonioAdminResumo") },
+                paginacao: ref("Paginacao"),
+            },
+        },
     },
 };
 
-schemas.DocumentoUpload = {
-    type: "object", additionalProperties: false, required: ["arquivo", "titulo", "tipo"],
-    description: "Envio em multipart/form-data. url e mimeType são gerados pela API e não são aceitos no corpo.",
-    properties: {
-        arquivo: string("PDF até 10 MB. O conteúdo é validado pela assinatura do arquivo.", { type: "string", format: "binary" }),
-        titulo: string("Obrigatório.", { minLength: 1, maxLength: 200, example: "Inventário do imóvel" }),
-        tipo: string("Obrigatório.", { minLength: 1, maxLength: 100, example: "inventario" }),
-        descricao: string("Descrição com trim.", { minLength: 1 }),
-        fonte: string("Fonte com trim.", { minLength: 1, maxLength: 500 }),
-        dataDocumento: nullable({ type: "string", format: "date", description: "Data civil ISO (AAAA-MM-DD), sem conversão de fuso. Datas inválidas, texto vazio, números e booleanos são recusados.", example: "2026-01-02" }),
-    },
-};
-
-schemas.ImagemMidia = {
-    type: "object", required: ["id", "patrimonioId", "url", "textoAlternativo", "ordem", "principal"],
-    properties: {
-        id: string("UUID", { format: "uuid" }), patrimonioId: string("UUID", { format: "uuid" }),
-        url: string("URL gerada pela API; use /api/uploads/imagens/<arquivo>."),
-        titulo: nullable({ type: "string" }), textoAlternativo: { type: "string" },
-        credito: nullable({ type: "string" }), fonte: nullable({ type: "string" }),
-        ordem: { type: "integer", minimum: 0 }, principal: { type: "boolean" },
-    },
-};
-
-schemas.DocumentoMidia = {
-    type: "object", required: ["id", "patrimonioId", "titulo", "tipo", "url", "mimeType"],
-    properties: {
-        id: string("UUID", { format: "uuid" }), patrimonioId: string("UUID", { format: "uuid" }),
-        titulo: { type: "string" }, tipo: { type: "string" }, url: string("URL gerada pela API."),
-        descricao: nullable({ type: "string" }), fonte: nullable({ type: "string" }),
-        dataDocumento: nullable(string("Data ISO 8601", { format: "date-time" })),
-        mimeType: string("Determinado a partir do conteúdo validado.", { example: "application/pdf" }),
-    },
-};
-
-schemas.ImagemMidiaResponse = { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("ImagemMidia") } };
-schemas.DocumentoMidiaResponse = { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("DocumentoMidia") } };
-
-schemas.ImagemPatch = (() => {
-    const { arquivo, ...metadados } = schemas.ImagemUpload.properties;
-    for (const campo of ["titulo", "credito", "fonte"]) metadados[campo] = nullable(metadados[campo]);
-    return {
-        type: "object", additionalProperties: false, minProperties: 1,
-        description: "Omissão preserva o valor; null limpa titulo, credito e fonte. Campos obrigatórios não aceitam null. A string null permanece texto. Não troca o arquivo: para isso cadastre o novo e remova o antigo.",
-        properties: metadados,
+for (const name of [
+    "PatrimonioResumo",
+    "PatrimonioDetalhe",
+    "PatrimonioCriado",
+    "PatrimonioAdminResumo",
+    "PatrimonioAdmin",
+]) {
+    schemas[name].properties.categoriasAdicionais = {
+        type: "array",
+        items: ref("CategoriaResumo"),
     };
-})();
-
-schemas.DocumentoPatch = (() => {
-    const { arquivo, ...metadados } = schemas.DocumentoUpload.properties;
-    for (const campo of ["descricao", "fonte"]) metadados[campo] = nullable(metadados[campo]);
-    return {
-        type: "object", additionalProperties: false, minProperties: 1,
-        description: "Omissão preserva o valor; null limpa descricao, fonte e dataDocumento. titulo e tipo não aceitam null. A string null permanece texto e não é uma data válida. Não troca o arquivo: para isso cadastre o novo e remova o antigo.",
-        properties: metadados,
-    };
-})();
-
-for (const name of ["PatrimonioResumo", "PatrimonioDetalhe", "PatrimonioCriado", "PatrimonioAdminResumo", "PatrimonioAdmin"]) {
-    schemas[name].properties.categoriasAdicionais = { type: "array", items: ref("CategoriaResumo") };
     schemas[name].required.push("categoriasAdicionais");
 }
 
-// Une propriedades dos contratos existentes; a origem define os campos compartilhados.
-function unirSchema(antes, novo) {
-    if (!antes || !novo || typeof antes !== "object" || typeof novo !== "object" || Array.isArray(antes) || Array.isArray(novo)) return novo;
-    const result = { ...antes, ...novo };
-    for (const key of Object.keys(novo)) {
-        if (key in antes) result[key] = unirSchema(antes[key], novo[key]);
+schemas.CategoriasResponse = {
+    type: "object",
+    required: ["success", "data"],
+    properties: {
+        success: { type: "boolean", example: true },
+        data: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["id", "nome", "slug", "descricao"],
+                properties: {
+                    id: { type: "string", format: "uuid" },
+                    nome: { type: "string" },
+                    slug: { type: "string" },
+                    descricao: { type: "string", nullable: true },
+                },
+            },
+        },
+    },
+};
+
+const conteudoTexto = (maxLength, minLength = 1) => ({ type: "string", minLength, maxLength });
+const conteudoUrl = { type: "string", format: "uri", pattern: "^https?://" };
+const conteudoStatus = {
+    ...schemas.StatusPublicacao,
+    description: "Omitido no POST: RASCUNHO. EDITOR aceita somente RASCUNHO; ADMIN pode alterar o status.",
+};
+const conteudoImagem = {
+    type: "string", format: "binary",
+    description: "Arquivo JPG, PNG, WEBP ou GIF, até 10 MB, no campo imagem.",
+};
+const exposicaoCampos = {
+    titulo: conteudoTexto(200), artista: conteudoTexto(200), local: conteudoTexto(250),
+    periodo: conteudoTexto(200), bio: conteudoTexto(20000),
+    ctaSaibaMais: { type: "string", nullable: true, pattern: "^(https?://.*|)$", description: "URL HTTP/HTTPS, texto vazio ou null." },
+    status: conteudoStatus,
+};
+schemas.TipoNovidade = { type: "string", enum: ["NOTICIA", "EVENTO"] };
+schemas.NovidadeBloco = {
+    type: "object", nullable: true, additionalProperties: false,
+    properties: {
+        dia: nullable(conteudoTexto(30, 0)),
+        mes: nullable(conteudoTexto(30, 0)),
+        legenda: nullable(conteudoTexto(150, 0)),
+    },
+};
+schemas.NovidadeCta = {
+    type: "object", nullable: true, additionalProperties: false, required: ["rotulo", "url"],
+    properties: { rotulo: conteudoTexto(150), url: conteudoUrl },
+};
+schemas.NovidadeFonte = {
+    type: "object", additionalProperties: false, required: ["veiculo", "url"],
+    properties: {
+        veiculo: conteudoTexto(200), assunto: nullable(conteudoTexto(500, 0)), url: conteudoUrl,
+    },
+};
+const novidadeCampos = {
+    tipo: ref("TipoNovidade"), tag: conteudoTexto(100),
+    data: { type: "string", format: "date", example: "2026-10-06", description: "Data obrigatória, YYYY-MM-DD, sem horário ou conversão de fuso." },
+    titulo: conteudoTexto(200),
+    resumo: { ...nullable(conteudoTexto(2000, 0)), description: "Obrigatório e não vazio para NOTICIA. No PATCH, valida o tipo e o resumo resultantes." },
+    texto: conteudoTexto(20000),
+    quando: nullable(conteudoTexto(250, 0)), local: nullable(conteudoTexto(250, 0)),
+    bloco: ref("NovidadeBloco"), cta: ref("NovidadeCta"),
+    fontes: { type: "array", maxItems: 50, items: ref("NovidadeFonte") },
+    status: conteudoStatus,
+};
+schemas.ExposicaoCreateMultipart = {
+    type: "object", additionalProperties: false,
+    required: ["titulo", "artista", "local", "periodo", "bio", "imagem"],
+    properties: { ...exposicaoCampos, imagem: conteudoImagem },
+};
+schemas.ExposicaoPatch = {
+    type: "object", additionalProperties: false, minProperties: 1,
+    description: "Campos omitidos e slug são preservados. A imagem não pode ser removida.",
+    properties: exposicaoCampos,
+};
+schemas.ExposicaoPatchMultipart = {
+    ...schemas.ExposicaoPatch,
+    properties: { ...exposicaoCampos, imagem: conteudoImagem },
+};
+schemas.NovidadeCreate = {
+    type: "object", additionalProperties: false,
+    required: ["tipo", "tag", "data", "titulo", "texto"],
+    properties: novidadeCampos,
+    oneOf: [
+        { required: ["resumo"], properties: { tipo: { enum: ["NOTICIA"] }, resumo: conteudoTexto(2000) } },
+        { properties: { tipo: { enum: ["EVENTO"] } } },
+    ],
+};
+schemas.NovidadeCreateMultipart = {
+    ...schemas.NovidadeCreate,
+    properties: { ...novidadeCampos, imagem: conteudoImagem },
+};
+schemas.NovidadePatch = {
+    type: "object", additionalProperties: false, minProperties: 1,
+    description: "Campos omitidos e slug são preservados. imagemUrl aceita exclusivamente null para remover a imagem. Não combine remoção e novo upload.",
+    properties: {
+        ...novidadeCampos,
+        imagemUrl: { type: "string", nullable: true, enum: [null], description: "Somente null: remove a imagem atual. Omitir preserva a imagem." },
+    },
+};
+schemas.NovidadePatchMultipart = {
+    ...schemas.NovidadePatch,
+    properties: { ...schemas.NovidadePatch.properties, imagem: conteudoImagem },
+};
+const conteudoMetadados = {
+    id: { type: "string", format: "uuid" }, slug: { type: "string", maxLength: 220 },
+    status: ref("StatusPublicacao"),
+    publicadoEm: { type: "string", format: "date-time", nullable: true },
+    arquivadoEm: { type: "string", format: "date-time", nullable: true },
+    createdAt: { type: "string", format: "date-time" },
+    updatedAt: { type: "string", format: "date-time" },
+};
+schemas.Exposicao = {
+    type: "object",
+    properties: {
+        ...exposicaoCampos, ...conteudoMetadados,
+        imagemUrl: { type: "string", example: "/uploads/exposicoes/arquivo.png" },
+    },
+};
+schemas.Novidade = {
+    type: "object",
+    properties: {
+        ...novidadeCampos, ...conteudoMetadados,
+        imagemUrl: { type: "string", nullable: true, example: "/uploads/novidades/arquivo.png" },
+        bloco: { ...schemas.NovidadeBloco, nullable: false, required: ["dia", "mes", "legenda"] },
+    },
+};
+const conteudoEnvelope = (data) => ({
+    type: "object", required: ["success", "data"],
+    properties: { success: { type: "boolean", enum: [true] }, data },
+});
+for (const nome of ["Exposicao", "Novidade"]) {
+    schemas[nome].required = Object.keys(schemas[nome].properties);
+    schemas[`${nome}Admin`] = {
+        ...schemas[nome],
+        required: [...schemas[nome].required, "createdBy", "updatedBy"],
+        properties: {
+            ...schemas[nome].properties,
+            createdBy: { type: "string", format: "uuid" },
+            updatedBy: { type: "string", format: "uuid", nullable: true },
+        },
+    };
+    for (const sufixo of ["", "Admin"]) {
+        const item = `${nome}${sufixo}`;
+        schemas[`${item}Response`] = conteudoEnvelope(ref(item));
+        schemas[`${item}ListaResponse`] = conteudoEnvelope({
+            type: "object", required: ["itens", "paginacao"],
+            properties: {
+                itens: { type: "array", items: ref(item) },
+                paginacao: ref("Paginacao"),
+            },
+        });
     }
-    return result;
 }
-<<<<<<< HEAD
 schemas.ConteudoExcluidoResponse = conteudoEnvelope({
     type: "object", required: ["id"], properties: { id: { type: "string", format: "uuid" } },
 });
@@ -408,10 +840,76 @@ for (const nome of ["PatrimonioDetalhe", "PatrimonioAdmin"]) {
     schemas[nome].properties.fatos = { type: "array", items: ref("Fato") };
     schemas[nome].properties.ligacoes = { type: "array", items: ref(nome === "PatrimonioAdmin" ? "LigacaoAdmin" : "Ligacao"), description: nome === "PatrimonioAdmin" ? "Inclui destinos em qualquer status para edição." : "Apenas destinos publicados, não legados; ordenadas por ordem e ID." };
 }
-=======
-for (const [name, anterior] of Object.entries(destino)) schemas[name] = name in schemas ? unirSchema(anterior, schemas[name]) : anterior;
-// O DTO administrativo ampliado do destino inclui os timestamps.
-schemas.Admin = destino.Admin;
-for (const campo of ["latitude", "longitude"]) schemas.LocalizacaoPatch.properties[campo] = destino.LocalizacaoPatch.properties[campo];
-schemas.LocalizacaoPatch.description = destino.LocalizacaoPatch.description + " Regiao omitida preserva o valor; null limpa.";
->>>>>>> 72197f5a4b9c78362672e06b7fb52973e7e7b7f5
+
+// Metadados e DTOs adicionais de mídia, sem substituir schemas patrimoniais.
+schemas.ImagemUpload = {
+    type: "object", additionalProperties: false, required: ["arquivo", "textoAlternativo"],
+    description: "Envio em multipart/form-data. url é gerada pela API e não é aceita no corpo.",
+    properties: {
+        arquivo: string("JPEG, PNG ou WebP até 5 MB. O conteúdo é validado pela assinatura do arquivo.", { type: "string", format: "binary" }),
+        textoAlternativo: string("Obrigatório.", { minLength: 1, maxLength: 300, example: "Fachada da edificação" }),
+        titulo: string("Título com trim.", { minLength: 1, maxLength: 200 }),
+        credito: string("Crédito com trim.", { minLength: 1, maxLength: 200 }),
+        fonte: string("Fonte com trim.", { minLength: 1, maxLength: 500 }),
+        ordem: { type: "integer", minimum: 0, default: 0, description: "Texto convertido para inteiro não negativo." },
+        principal: { type: "boolean", default: false, description: "Aceita true/false/1/0 como texto. Marcar desmarca a principal anterior." },
+    },
+};
+
+schemas.DocumentoUpload = {
+    type: "object", additionalProperties: false, required: ["arquivo", "titulo", "tipo"],
+    description: "Envio em multipart/form-data. url e mimeType são gerados pela API e não são aceitos no corpo.",
+    properties: {
+        arquivo: string("PDF até 10 MB. O conteúdo é validado pela assinatura do arquivo.", { type: "string", format: "binary" }),
+        titulo: string("Obrigatório.", { minLength: 1, maxLength: 200, example: "Inventário do imóvel" }),
+        tipo: string("Obrigatório.", { minLength: 1, maxLength: 100, example: "inventario" }),
+        descricao: string("Descrição com trim.", { minLength: 1 }),
+        fonte: string("Fonte com trim.", { minLength: 1, maxLength: 500 }),
+        dataDocumento: nullable({ type: "string", format: "date", description: "Data civil ISO (AAAA-MM-DD), sem conversão de fuso. Datas inválidas, texto vazio, números e booleanos são recusados.", example: "2026-01-02" }),
+    },
+};
+
+schemas.ImagemMidia = {
+    type: "object", required: ["id", "patrimonioId", "url", "textoAlternativo", "ordem", "principal"],
+    properties: {
+        id: string("UUID", { format: "uuid" }), patrimonioId: string("UUID", { format: "uuid" }),
+        url: string("URL gerada pela API; use /api/uploads/imagens/<arquivo>."),
+        titulo: nullable({ type: "string" }), textoAlternativo: { type: "string" },
+        credito: nullable({ type: "string" }), fonte: nullable({ type: "string" }),
+        ordem: { type: "integer", minimum: 0 }, principal: { type: "boolean" },
+    },
+};
+
+schemas.DocumentoMidia = {
+    type: "object", required: ["id", "patrimonioId", "titulo", "tipo", "url", "mimeType"],
+    properties: {
+        id: string("UUID", { format: "uuid" }), patrimonioId: string("UUID", { format: "uuid" }),
+        titulo: { type: "string" }, tipo: { type: "string" }, url: string("URL gerada pela API."),
+        descricao: nullable({ type: "string" }), fonte: nullable({ type: "string" }),
+        dataDocumento: nullable(string("Data ISO 8601", { format: "date-time" })),
+        mimeType: string("Determinado a partir do conteúdo validado.", { example: "application/pdf" }),
+    },
+};
+
+schemas.ImagemMidiaResponse = { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("ImagemMidia") } };
+schemas.DocumentoMidiaResponse = { type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data: ref("DocumentoMidia") } };
+
+schemas.ImagemPatch = (() => {
+    const { arquivo: _arquivo, ...metadados } = schemas.ImagemUpload.properties;
+    for (const campo of ["titulo", "credito", "fonte"]) metadados[campo] = nullable(metadados[campo]);
+    return {
+        type: "object", additionalProperties: false, minProperties: 1,
+        description: "Omissão preserva o valor; null limpa titulo, credito e fonte. Campos obrigatórios não aceitam null. A string null permanece texto. Não troca o arquivo: para isso cadastre o novo e remova o antigo.",
+        properties: metadados,
+    };
+})();
+
+schemas.DocumentoPatch = (() => {
+    const { arquivo: _arquivo, tipo: _tipo, ...metadados } = schemas.DocumentoUpload.properties;
+    for (const campo of ["descricao", "fonte"]) metadados[campo] = nullable(metadados[campo]);
+    return {
+        type: "object", additionalProperties: false, minProperties: 1,
+        description: "Omissão preserva o valor; null limpa descricao, fonte e dataDocumento. titulo não aceita null; tipo é imutável. A string null permanece texto e não é uma data válida. Não troca o arquivo: para isso cadastre o novo e remova o antigo.",
+        properties: metadados,
+    };
+})();

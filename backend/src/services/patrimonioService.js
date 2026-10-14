@@ -11,24 +11,6 @@ import { fatoSelect, ligacaoSelect, ordemEditorial } from "./patrimonioEditorial
 
 const MAX_SLUG_ATTEMPTS = 1000;
 
-function rethrowPatrimonioError(error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        const target = Array.isArray(error.meta?.target)
-            ? error.meta.target.join(",")
-            : String(error.meta?.target ?? "");
-        const conflict = new ConflictError(
-            target.includes("slug")
-                ? "Já existe um patrimônio com este slug."
-                : "Número, ordem ou relação editorial já utilizada."
-        );
-        conflict.code = target.includes("slug")
-            ? "PATRIMONIO_SLUG_CONFLICT"
-            : "PATRIMONIO_EDITORIAL_CONFLICT";
-        throw conflict;
-    }
-    throw error;
-}
-
 const categoriaResumoSelect = { id: true, nome: true, slug: true };
 
 // O Prisma devolve [{ categoria: {...} }]; achatamos para [{...}] antes de responder.
@@ -49,8 +31,6 @@ const publicListSelect = {
     id: true,
     nome: true,
     slug: true,
-    numeroExibicao: true,
-    ordemExibicao: true,
     descricaoResumida: true,
     situacao: true,
     publicadoEm: true,
@@ -73,15 +53,12 @@ const publicListSelect = {
 const publicDetailSelect = {
     fatos: { orderBy: ordemEditorial, select: fatoSelect },
     ligacoes: {
-        where: { destino: destinoPublicoWhere },
-        orderBy: ordemEditorial,
+        where: { destino: destinoPublicoWhere }, orderBy: ordemEditorial,
         select: { ...ligacaoSelect, destino: { select: { id: true, slug: true, nome: true } } },
     },
     id: true,
     nome: true,
     slug: true,
-    numeroExibicao: true,
-    ordemExibicao: true,
     descricao: true,
     descricaoResumida: true,
     historia: true,
@@ -92,25 +69,6 @@ const publicDetailSelect = {
     categoria: { select: { id: true, nome: true, slug: true, descricao: true } },
     categoriasAdicionais: categoriasAdicionaisSelect,
     localizacao: true,
-    secoes: {
-        orderBy: { ordem: "asc" },
-        select: { id: true, icone: true, titulo: true, texto: true, ordem: true },
-    },
-    fatos: {
-        orderBy: { ordem: "asc" },
-        select: { id: true, rotulo: true, valor: true, ordem: true },
-    },
-    ligacoes: {
-        where: { destino: { status: StatusPublicacao.PUBLICADO } },
-        orderBy: { ordem: "asc" },
-        select: {
-            id: true,
-            texto: true,
-            ordem: true,
-            patrimonioDestinoId: true,
-            destino: { select: { id: true, slug: true, nome: true, numeroExibicao: true } },
-        },
-    },
     imagens: {
         orderBy: [{ principal: "desc" }, { ordem: "asc" }],
         select: {
@@ -196,36 +154,18 @@ async function listWithStatus(
                 { descricao: { contains: busca, mode: "insensitive" } },
                 { historia: { contains: busca, mode: "insensitive" } },
                 { importanciaCultural: { contains: busca, mode: "insensitive" } },
-                {
-                    detalhes: {
-                        some: {
-                            OR: [
-                                { titulo: { contains: busca, mode: "insensitive" } },
-                                { texto: { contains: busca, mode: "insensitive" } },
-                            ],
-                        },
-                    },
-                },
-                {
-                    categoria: {
-                        OR: [
-                            { nome: { contains: busca, mode: "insensitive" } },
-                            { slug: { contains: busca, mode: "insensitive" } },
-                        ],
-                    },
-                },
-                {
-                    categoriasAdicionais: {
-                        some: {
-                            categoria: {
-                                OR: [
-                                    { nome: { contains: busca, mode: "insensitive" } },
-                                    { slug: { contains: busca, mode: "insensitive" } },
-                                ],
-                            },
-                        },
-                    },
-                },
+                { detalhes: { some: { OR: [
+                    { titulo: { contains: busca, mode: "insensitive" } },
+                    { texto: { contains: busca, mode: "insensitive" } },
+                ] } } },
+                { categoria: { OR: [
+                    { nome: { contains: busca, mode: "insensitive" } },
+                    { slug: { contains: busca, mode: "insensitive" } },
+                ] } },
+                { categoriasAdicionais: { some: { categoria: { OR: [
+                    { nome: { contains: busca, mode: "insensitive" } },
+                    { slug: { contains: busca, mode: "insensitive" } },
+                ] } } } },
             ],
         }),
         // O filtro de categoria casa com a principal OU com alguma adicional.
@@ -234,23 +174,17 @@ async function listWithStatus(
             AND: [
                 {
                     OR: [
-                        {
-                            categoria: {
-                                OR: [
-                                    { nome: { equals: categoria, mode: "insensitive" } },
-                                    { slug: { equals: categoria, mode: "insensitive" } },
-                                ],
-                            },
-                        },
+                        { categoria: { OR: [
+                            { nome: { equals: categoria, mode: "insensitive" } },
+                            { slug: { equals: categoria, mode: "insensitive" } },
+                        ] } },
                         {
                             categoriasAdicionais: {
                                 some: {
-                                    categoria: {
-                                        OR: [
-                                            { nome: { equals: categoria, mode: "insensitive" } },
-                                            { slug: { equals: categoria, mode: "insensitive" } },
-                                        ],
-                                    },
+                                    categoria: { OR: [
+                                        { nome: { equals: categoria, mode: "insensitive" } },
+                                        { slug: { equals: categoria, mode: "insensitive" } },
+                                    ] },
                                 },
                             },
                         },
@@ -270,11 +204,7 @@ async function listWithStatus(
             where,
             skip: (pagina - 1) * limite,
             take: limite,
-            orderBy: [
-                { ordemExibicao: { sort: "asc", nulls: "last" } },
-                { nome: "asc" },
-                { id: "asc" },
-            ],
+            orderBy: [{ nome: "asc" }, { id: "asc" }],
             select,
         }),
     ]);
@@ -296,9 +226,6 @@ const adminInclude = {
     categoria: true,
     categoriasAdicionais: { include: { categoria: true } },
     localizacao: true,
-    secoes: { orderBy: { ordem: "asc" } },
-    fatos: { orderBy: { ordem: "asc" } },
-    ligacoes: { orderBy: { ordem: "asc" } },
     imagens: { orderBy: [{ principal: "desc" }, { ordem: "asc" }, { id: "asc" }] },
     detalhes: { orderBy: [{ ordem: "asc" }, { id: "asc" }] },
     documentos: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
@@ -324,7 +251,7 @@ function locationInput(localizacao) {
     const { id, patrimonioId, ...fields } = localizacao;
     return Object.fromEntries(
         Object.entries(fields)
-            .filter(([key, value]) => key === "regiao" || value !== null)
+            .filter(([, value]) => value !== null)
             .map(([key, value]) => [
                 key,
                 ["latitude", "longitude"].includes(key) ? Number(value) : value,
@@ -356,91 +283,65 @@ function validarParDeCoordenadas(localizacao) {
 }
 
 export async function updatePatrimonio(id, data, user) {
-    return prisma
-        .$transaction(async (transaction) => {
-            const current = await lockPatrimonio(transaction, id);
-            if (
-                user.role !== "ADMIN" &&
-                (user.role !== "EDITOR" || current.status !== "RASCUNHO")
-            ) {
-                throw new ForbiddenError("Editor pode editar somente rascunhos.");
-            }
-            const categoriaId = data.categoriaId ?? current.categoriaId;
-            const adicionaisIds =
-                data.categoriasAdicionais ?? current.categoriasAdicionais.map((item) => item.id);
-            if (adicionaisIds.includes(categoriaId)) {
-                throw new BadRequestError(
-                    "A categoria principal não deve estar entre as adicionais."
-                );
-            }
-            if (data.categoriaId !== undefined) {
-                const categoria = await transaction.categoria.findUnique({
-                    where: { id: data.categoriaId },
-                });
-                if (!categoria) throw new BadRequestError("Categoria não encontrada.");
-            }
-            if (data.categoriasAdicionais !== undefined && adicionaisIds.length > 0) {
-                const encontradas = await transaction.categoria.findMany({
-                    where: { id: { in: adicionaisIds } },
-                    select: { id: true },
-                });
-                if (encontradas.length !== adicionaisIds.length)
-                    throw new BadRequestError("Categoria adicional não encontrada.");
-            }
-            const { localizacao, categoriasAdicionais, secoes, fatos, ligacoes, ...fields } = data;
-            if (ligacoes !== undefined && ligacoes.length > 0) {
-                const destinos = ligacoes.map((ligacao) => ligacao.patrimonioDestinoId);
-                if (destinos.includes(current.id))
-                    throw new BadRequestError("O patrimônio não pode ter ligação consigo mesmo.");
-                const encontrados = await transaction.patrimonio.findMany({
-                    where: { id: { in: destinos } },
-                    select: { id: true },
-                });
-                if (encontrados.length !== new Set(destinos).size) {
-                    throw new BadRequestError("Destino de ligação não encontrado.");
-                }
-            }
-            let locationUpdate;
-            if (localizacao !== undefined) {
-                validarParDeCoordenadas(localizacao);
-                const finalLocation = localizacaoSchema.parse(
-                    semCoordenadasNulas({ ...locationInput(current.localizacao), ...localizacao })
-                );
-                locationUpdate = current.localizacao
-                    ? { update: localizacao }
-                    : { create: finalLocation };
-            }
-            const updated = await transaction.patrimonio.update({
-                where: { id },
-                data: {
-                    ...fields,
-                    updatedBy: user.id,
-                    ...(secoes !== undefined && { secoes: { deleteMany: {}, create: secoes } }),
-                    ...(fatos !== undefined && { fatos: { deleteMany: {}, create: fatos } }),
-                    ...(ligacoes !== undefined && {
-                        ligacoes: { deleteMany: {}, create: ligacoes },
-                    }),
-                    ...(locationUpdate && { localizacao: locationUpdate }),
-                    ...(categoriasAdicionais !== undefined && {
-                        categoriasAdicionais: {
-                            deleteMany: {},
-                            create: categoriasAdicionais.map((categoriaId) => ({ categoriaId })),
-                        },
-                    }),
-                },
-                include: adminInclude,
+    if (Object.hasOwn(data, "fatos") || Object.hasOwn(data, "ligacoes")) {
+        throw new BadRequestError("Use o CRUD editorial dedicado para fatos e ligacoes.");
+    }
+    return prisma.$transaction(async (transaction) => {
+        const current = await lockPatrimonio(transaction, id);
+        if (user.role !== "ADMIN" && (user.role !== "EDITOR" || current.status !== "RASCUNHO")) {
+            throw new ForbiddenError("Editor pode editar somente rascunhos.");
+        }
+        const categoriaId = data.categoriaId ?? current.categoriaId;
+        const adicionaisIds =
+            data.categoriasAdicionais ?? current.categoriasAdicionais.map((item) => item.id);
+        if (adicionaisIds.includes(categoriaId)) {
+            throw new BadRequestError("A categoria principal não deve estar entre as adicionais.");
+        }
+        if (data.categoriaId !== undefined) {
+            const categoria = await transaction.categoria.findUnique({
+                where: { id: data.categoriaId },
             });
-            return achatarCategorias(updated);
-        })
-        .catch(rethrowPatrimonioError);
+            if (!categoria) throw new BadRequestError("Categoria não encontrada.");
+        }
+        if (data.categoriasAdicionais !== undefined && adicionaisIds.length > 0) {
+            const encontradas = await transaction.categoria.findMany({
+                where: { id: { in: adicionaisIds } },
+                select: { id: true },
+            });
+            if (encontradas.length !== adicionaisIds.length)
+                throw new BadRequestError("Categoria adicional não encontrada.");
+        }
+        const { localizacao, categoriasAdicionais, ...fields } = data;
+        let locationUpdate;
+        if (localizacao !== undefined) {
+            validarParDeCoordenadas(localizacao);
+            const finalLocation = localizacaoSchema.parse(
+                semCoordenadasNulas({ ...locationInput(current.localizacao), ...localizacao })
+            );
+            locationUpdate = current.localizacao
+                ? { update: localizacao }
+                : { create: finalLocation };
+        }
+        const updated = await transaction.patrimonio.update({
+            where: { id },
+            data: {
+                ...fields,
+                updatedBy: user.id,
+                ...(locationUpdate && { localizacao: locationUpdate }),
+                ...(categoriasAdicionais !== undefined && {
+                    categoriasAdicionais: {
+                        deleteMany: {},
+                        create: categoriasAdicionais.map((categoriaId) => ({ categoriaId })),
+                    },
+                }),
+            },
+            include: adminInclude,
+        });
+        return achatarCategorias(updated);
+    });
 }
 
-export async function changePatrimonioStatus(
-    id,
-    status,
-    user,
-    { transaction, dryRun = false } = {}
-) {
+export async function changePatrimonioStatus(id, status, user, { transaction, dryRun = false } = {}) {
     if (user.role !== "ADMIN") throw new ForbiddenError();
     const change = async (transaction) => {
         const current = dryRun
@@ -451,20 +352,6 @@ export async function changePatrimonioStatus(
             createPatrimonioSchema.parse({
                 nome: current.nome,
                 descricao: current.descricao,
-                numeroExibicao: current.numeroExibicao,
-                ordemExibicao: current.ordemExibicao,
-                secoes: current.secoes?.map(({ icone, titulo, texto, ordem }) => ({
-                    icone,
-                    titulo,
-                    texto,
-                    ordem,
-                })),
-                fatos: current.fatos?.map(({ rotulo, valor, ordem }) => ({ rotulo, valor, ordem })),
-                ligacoes: current.ligacoes?.map(({ patrimonioDestinoId, texto, ordem }) => ({
-                    patrimonioDestinoId,
-                    texto,
-                    ordem,
-                })),
                 descricaoResumida: current.descricaoResumida,
                 categoriaId: current.categoriaId,
                 categoriasAdicionais: current.categoriasAdicionais.map((item) => item.id),
@@ -473,9 +360,6 @@ export async function changePatrimonioStatus(
                 situacao: current.situacao,
                 localizacao: locationInput(current.localizacao),
             });
-            if (current.ligacoes?.some((ligacao) => ligacao.patrimonioDestinoId === current.id)) {
-                throw new BadRequestError("O patrimônio não pode ter ligação consigo mesmo.");
-            }
         } else if (status !== StatusPublicacao.ARQUIVADO) {
             throw new BadRequestError("Transição de status inválida.");
         }
@@ -509,15 +393,13 @@ export async function getPatrimonioBySlug(slug) {
         throw error;
     }
 
-    return achatarCategorias({
-        ...patrimonio,
-        secoes: patrimonio.secoes ?? [],
-        fatos: patrimonio.fatos ?? [],
-        ligacoes: patrimonio.ligacoes ?? [],
-    });
+    return achatarCategorias(patrimonio);
 }
 
 export async function createPatrimonio(data, createdBy) {
+    if (Object.hasOwn(data, "fatos") || Object.hasOwn(data, "ligacoes")) {
+        throw new BadRequestError("Use o CRUD editorial dedicado para fatos e ligacoes.");
+    }
     try {
         return await prisma.$transaction(async (transaction) => {
             const categoria = await transaction.categoria.findUnique({
@@ -550,26 +432,12 @@ export async function createPatrimonio(data, createdBy) {
             }
 
             const slug = await generateUniqueSlug(transaction, data.nome);
-            const destinos = (data.ligacoes ?? []).map((l) => l.patrimonioDestinoId);
-            if (destinos.length) {
-                const encontrados = await transaction.patrimonio.findMany({
-                    where: { id: { in: destinos } },
-                    select: { id: true },
-                });
-                if (encontrados.length !== new Set(destinos).size) {
-                    const error = new NotFoundError("Destino de ligação não encontrado.");
-                    error.code = "LIGACAO_DESTINO_NOT_FOUND";
-                    throw error;
-                }
-            }
 
             const criado = await transaction.patrimonio.create({
                 data: {
                     nome: data.nome,
                     slug,
                     descricao: data.descricao,
-                    numeroExibicao: data.numeroExibicao,
-                    ordemExibicao: data.ordemExibicao,
                     descricaoResumida: data.descricaoResumida,
                     historia: data.historia,
                     importanciaCultural: data.importanciaCultural,
@@ -578,9 +446,6 @@ export async function createPatrimonio(data, createdBy) {
                     categoriaId: data.categoriaId,
                     createdBy,
                     ...(data.localizacao && { localizacao: { create: data.localizacao } }),
-                    ...(data.secoes?.length && { secoes: { create: data.secoes } }),
-                    ...(data.fatos?.length && { fatos: { create: data.fatos } }),
-                    ...(data.ligacoes?.length && { ligacoes: { create: data.ligacoes } }),
                     ...(adicionaisIds.length > 0 && {
                         categoriasAdicionais: {
                             create: adicionaisIds.map((categoriaId) => ({ categoriaId })),
@@ -591,15 +456,24 @@ export async function createPatrimonio(data, createdBy) {
                     categoria: true,
                     categoriasAdicionais: { include: { categoria: true } },
                     localizacao: true,
-                    secoes: { orderBy: { ordem: "asc" } },
-                    fatos: { orderBy: { ordem: "asc" } },
-                    ligacoes: { orderBy: { ordem: "asc" } },
                 },
             });
 
             return achatarCategorias(criado);
         });
     } catch (error) {
-        rethrowPatrimonioError(error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            const target = Array.isArray(error.meta?.target)
+                ? error.meta.target.join(",")
+                : String(error.meta?.target ?? "");
+
+            if (target.includes("slug")) {
+                const conflict = new ConflictError("Já existe um patrimônio com este slug.");
+                conflict.code = "PATRIMONIO_SLUG_CONFLICT";
+                throw conflict;
+            }
+        }
+
+        throw error;
     }
 }

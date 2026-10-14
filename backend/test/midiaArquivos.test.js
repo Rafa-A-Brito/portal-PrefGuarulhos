@@ -109,18 +109,23 @@ for (const caso of casos) {
         assert.equal((await caso.excluir(midia.patrimonioId, midia.id, user)).arquivoRemovido, true);
     });
 
-    test(`${caso.tipo}: permissão definitiva após lock impede cadastro e limpa upload`, async (t) => {
+    test(`${caso.tipo}: permissão definitiva após lock segue contrato D1A`, async (t) => {
         const file = await arquivo(caso);
         stub(t, prisma.patrimonio, "findUnique", async () => ({ status: "RASCUNHO" }));
         let locked = false;
         const tx = {
             $queryRaw: async (sql, id) => { assert.match(sql.join("?"), /FOR UPDATE/); assert.equal(id, "patrimonio"); locked = true; },
             patrimonio: { findUnique: async () => { assert.equal(locked, true); return { status: "PUBLICADO" }; } },
-            [caso.model]: { create: async () => assert.fail("Não cadastrar após publicação") },
+            [caso.model]: { create: async ({ data }) => { assert.equal(caso.tipo, "imagem"); return data; } },
         };
         stub(t, prisma, "$transaction", async (callback) => callback(tx));
-        await assert.rejects(caso.criar("patrimonio", caso.metadados, file, { role: "EDITOR" }), { statusCode: 403 });
-        await ausente(file.path);
+        if (caso.tipo === "documento") {
+            await assert.rejects(caso.criar("patrimonio", caso.metadados, file, { role: "EDITOR" }), { statusCode: 403 });
+            await ausente(file.path);
+        } else {
+            await caso.criar("patrimonio", caso.metadados, file, { role: "EDITOR" });
+            assert.deepEqual(await fs.readFile(file.path), caso.bytes);
+        }
     });
 
     for (const status of ["RASCUNHO", "PUBLICADO", "ARQUIVADO"]) {
@@ -130,7 +135,7 @@ for (const caso of casos) {
                 stub(t, prisma.patrimonio, "findUnique", async () => ({ status: "RASCUNHO" }));
                 let locked = false, authorized = false, unmarked = false;
                 const tx = {
-                    $queryRaw: async () => { locked = true; },
+                    $queryRaw: async () => { locked = true; return []; },
                     patrimonio: { findUnique: async () => { assert.equal(locked, true); authorized = true; return { status }; } },
                     [caso.model]: {
                         updateMany: async ({ data }) => { assert.equal(authorized, true); assert.deepEqual(data, { principal: false }); unmarked = true; },
@@ -143,7 +148,7 @@ for (const caso of casos) {
                 };
                 stub(t, prisma, "$transaction", async (callback) => callback(tx));
                 const metadados = { ...caso.metadados, ...(caso.tipo === "imagem" ? { principal: true } : {}) };
-                if (role === "EDITOR" && status !== "RASCUNHO") {
+                if (caso.tipo === "documento" && role === "EDITOR" && status !== "RASCUNHO") {
                     await assert.rejects(caso.criar("patrimonio", metadados, file, { role }), { statusCode: 403 });
                     assert.equal(unmarked, false);
                     await ausente(file.path);
@@ -165,7 +170,7 @@ for (const caso of casos) {
                     : { titulo: "Original", descricao: "Descrição", fonte: "Fonte", dataDocumento: new Date("2024-02-29") };
                 let locked;
                 const tx = {
-                    $queryRaw: async () => { locked = true; },
+                    $queryRaw: async () => { locked = true; return []; },
                     patrimonio: { findUnique: async () => { assert.equal(locked, true); return { status }; } },
                     [caso.model]: {
                         findFirst: async () => midia,
@@ -174,7 +179,7 @@ for (const caso of casos) {
                     },
                 };
                 stub(t, prisma, "$transaction", async (callback) => { locked = false; return callback(tx); });
-                if (role === "EDITOR" && status !== "RASCUNHO") {
+                if (caso.tipo === "documento" && role === "EDITOR" && status !== "RASCUNHO") {
                     await assert.rejects(atualizar(midia.patrimonioId, midia.id, { fonte: null }, { role }), { statusCode: 403 });
                     await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, { role }), { statusCode: 403 });
                     assert.deepEqual(await fs.readFile(file.path), caso.bytes);
@@ -190,7 +195,11 @@ for (const caso of casos) {
                         const result = await atualizar(midia.patrimonioId, midia.id, schema.parse({ dataDocumento: "2026-10-13" }), { role });
                         assert.equal(result.dataDocumento.toISOString(), "2026-10-13T00:00:00.000Z");
                     }
-                    assert.equal((await caso.excluir(midia.patrimonioId, midia.id, { role })).arquivoRemovido, true);
+                    if (role === "ADMIN") assert.equal((await caso.excluir(midia.patrimonioId, midia.id, { role })).arquivoRemovido, true);
+                    else {
+                        await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, { role }), { statusCode: 403 });
+                        assert.deepEqual(await fs.readFile(file.path), caso.bytes);
+                    }
                 }
             });
         }

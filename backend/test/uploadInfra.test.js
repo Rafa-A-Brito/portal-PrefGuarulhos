@@ -170,7 +170,9 @@ test("upload de rascunho exige token para leitura, DELETE remove registro e arqu
     const response = await upload();
     assert.equal(response.status, 201);
     const { data } = await response.json();
-    assert.deepEqual(Buffer.from(await (await fetch(base + data.url)).arrayBuffer()), png);
+    stub(t, prisma.patrimonioImagem, "findFirst", async () => record && ({ patrimonio: { status: "RASCUNHO" } }));
+    assert.equal((await fetch(base + data.url)).status, 401);
+    assert.deepEqual(Buffer.from(await (await fetch(base + data.url, { headers: { authorization: "Bearer " + generateToken(admin.id) } })).arrayBuffer()), png);
     stub(t, prisma.patrimonioImagem, "findUnique", async () => record);
     stub(t, prisma.patrimonioImagem, "delete", async () => {
         const deleted = record;
@@ -234,7 +236,7 @@ test("campo arquivo mantém validação de assinatura, metadados obrigatórios e
     assert.deepEqual(await fs.readFile(path.join(imageDir, path.basename(saved.url))), png);
 });
 
-test("imagem legada conserva GIF e texto derivado sem permitir EDITOR após publicação", async (t) => {
+test("imagem legada conserva GIF e texto derivado permitindo EDITOR após publicação conforme D1A", async (t) => {
     auth(t);
     const body = () => {
         const data = new FormData();
@@ -265,11 +267,11 @@ test("imagem legada conserva GIF e texto derivado sem permitir EDITOR após publ
                 return { id: patrimonioId, status: "PUBLICADO" };
             },
         },
-        patrimonioImagem: { create: async () => assert.fail("Não gravar após publicação") },
+        patrimonioImagem: { create: async ({ data }) => ({ id: randomUUID(), ...data }) },
     };
     stub(t, prisma, "$transaction", async (callback) => callback(tx));
-    assert.equal((await upload(body())).status, 403);
-    assert.deepEqual(await list(), before);
+    assert.equal((await upload(body())).status, 201);
+    assert.equal((await list()).length, before.length + 1);
 });
 
 test("exclusão legada restaura arquivo se houver rollback após o DELETE", async (t) => {

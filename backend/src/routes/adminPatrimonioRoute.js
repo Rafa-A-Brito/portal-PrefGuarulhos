@@ -26,18 +26,18 @@ router.patch("/:id/arquivar", authorize("ADMIN"), validateParams(patrimonioIdPar
 // Imagens. A ordem dos middlewares importa: o UUID e a permissão sobre o
 // patrimônio são recusados antes de qualquer gravação em disco, os metadados só
 // existem depois que o multer lê o corpo, e um metadata inválido apaga o arquivo.
-router.post("/:id/imagens", validateParams(patrimonioIdParamsSchema), verificarPatrimonioMidia(),
+router.post("/:id/imagens", validateParams(patrimonioIdParamsSchema),
     uploadImagem("patrimonios", { aceitarArquivo: true }),
     (req, res, next) => req.file?.fieldname === "arquivo"
         ? validateComLimpezaDeArquivo(createImagemSchema)(req, res, next) : next(),
     (req, res) => req.file?.fieldname === "arquivo" ? midia.createImagem(req, res) : uploadImagemAnterior(req, res));
 router.patch("/:id/imagens/:imagemId", validateParams(imagemParamsSchema), validate(updateImagemSchema), midia.updateImagem);
-router.delete("/:id/imagens/:imagemId", validateParams(imagemParamsSchema), midia.deleteImagem);
+router.delete("/:id/imagens/:imagemId", authorize("ADMIN"), validateParams(imagemParamsSchema), midia.deleteImagem);
 
 // Documentos.
 router.post("/:id/documentos", validateParams(patrimonioIdParamsSchema), verificarPatrimonioMidia(), uploadArquivo("documento"), validateComLimpezaDeArquivo(createDocumentoSchema), midia.createDocumento);
 router.patch("/:id/documentos/:documentoId", validateParams(documentoParamsSchema), validate(updateDocumentoSchema), midia.updateDocumento);
-router.delete("/:id/documentos/:documentoId", validateParams(documentoParamsSchema), midia.deleteDocumento);
+router.delete("/:id/documentos/:documentoId", authorize("ADMIN"), validateParams(documentoParamsSchema), midia.deleteDocumento);
 
 router.use(descartarUploadEmFalha);
 

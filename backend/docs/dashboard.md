@@ -1,3 +1,5 @@
+> R1: este documento registra o contrato/histórico da equipe e pode descrever recursos adiados. O contrato operacional reconciliado está em `src/docs/openapi.js`; decisões, trilhas de migrations e validações estão em `../reports/R1-reconciliacao.md`. Não executar cargas ou deploys com base isoladamente neste documento. A fonte canônica continua `prisma/patrimonioSeedData.js`.
+
 # Dashboard estatístico
 
 Inicie a aplicação com `npm run dev` e consulte com token de um usuário ADMIN ou EDITOR

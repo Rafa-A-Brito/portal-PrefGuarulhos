@@ -1,3 +1,5 @@
+> R1: este documento registra o contrato/histórico da equipe e pode descrever recursos adiados. O contrato operacional reconciliado está em `src/docs/openapi.js`; decisões, trilhas de migrations e validações estão em `../reports/R1-reconciliacao.md`. Não executar cargas ou deploys com base isoladamente neste documento. A fonte canônica continua `prisma/patrimonioSeedData.js`.
+
 # Classificação territorial dos patrimônios
 
 `localizacao.regiao` é opcional e nullable, separado de `bairro`. O backend aceita somente os códigos abaixo ou `null`. Os primeiros 11 códigos representam as UPRs adotadas como referência pelo projeto. Aeroporto e Parque Estadual da Cantareira são áreas especiais incluídas na classificação do portal.

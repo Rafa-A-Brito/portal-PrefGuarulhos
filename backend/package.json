@@ -34,7 +34,8 @@
         "test:db:integrity": "node scripts/test-db.js integrity",
         "import:patrimonios": "node prisma/import-patrimonios.js",
         "test:uploads:e2e": "node scripts/upload-e2e.js",
-        "seed:pesquisa": "node prisma/seed.patrimonios.js"
+        "seed:pesquisa": "node prisma/seed.patrimonios.js",
+        "lint": "eslint ."
     },
     "dependencies": {
         "@prisma/adapter-pg": "7.10.0",
@@ -52,6 +53,9 @@
     "devDependencies": {
         "@apidevtools/swagger-parser": "^11.0.1",
         "nodemon": "^3.1.14",
-        "prisma": "7.10.0"
+        "prisma": "7.10.0",
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.8.1",
+        "globals": "^17.11.0"
     }
 }

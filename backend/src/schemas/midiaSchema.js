@@ -44,7 +44,7 @@ export const updateImagemSchema = createImagemSchema.extend({
 }).partial()
     .refine(nonEmpty, "Informe algum campo para atualizar.");
 
-export const updateDocumentoSchema = createDocumentoSchema.extend({
+export const updateDocumentoSchema = createDocumentoSchema.omit({ tipo: true }).extend({
     descricao: createDocumentoSchema.shape.descricao.nullable(),
     fonte: createDocumentoSchema.shape.fonte.nullable(),
 }).partial()

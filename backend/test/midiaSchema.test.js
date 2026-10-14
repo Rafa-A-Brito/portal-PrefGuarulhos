@@ -8,7 +8,7 @@ test("data civil: null, omissão e texto multipart preservam a semântica", () =
     assert.equal(createDocumentoSchema.parse({ titulo: "Teste", tipo: "pdf", dataDocumento: null }).dataDocumento, null);
     assert.equal("dataDocumento" in updateDocumentoSchema.parse({ titulo: "Teste" }), false);
     for (const schema of [createDocumentoSchema, updateDocumentoSchema]) {
-        const parsed = schema.parse({ titulo: "Teste", tipo: "pdf", dataDocumento: "2024-02-29" });
+        const parsed = schema.parse({ titulo: "Teste", ...(schema === createDocumentoSchema ? { tipo: "pdf" } : {}), dataDocumento: "2024-02-29" });
         assert.equal(parsed.dataDocumento.toISOString(), "2024-02-29T00:00:00.000Z");
     }
 });

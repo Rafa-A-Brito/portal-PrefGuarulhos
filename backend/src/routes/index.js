@@ -7,7 +7,6 @@ import adminPatrimonioRoutes from "./adminPatrimonioRoute.js";
 import dashboardRoutes from "./dashboardRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
 import categoriaRoutes from "./configRoutes.js";
-import dashboardRoutes from "./dashboardRoute.js";
 import patrimonioEditorialRoutes from "./patrimonioEditorialRoute.js";
 
 import exposicaoRoutes from "./exposicaoRoute.js";
@@ -43,7 +42,6 @@ router.use("/categorias", categoriaRoutes);
 router.use("/admin/dashboard", dashboardRoutes);
 router.use("/admin/patrimonios", adminPatrimonioRoutes);
 router.use("/admin/patrimonios", patrimonioEditorialRoutes);
-router.use("/admin/dashboard", dashboardRoutes);
 router.use("/admin", adminImageRoutes);
 router.use("/admin", adminReferenciaRoutes);
 

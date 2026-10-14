@@ -8,10 +8,16 @@ process.env.JWT_SECRET = "test-secret-with-at-least-32-characters";
 const { default: app } = await import("../src/app.js");
 const { Prisma } = await import("@prisma/client");
 const { default: prisma } = await import("../src/config/prisma.js");
-const { createPatrimonioSchema, listPatrimoniosQuerySchema, patrimonioSlugParamsSchema } =
-    await import("../src/schemas/patrimonioSchema.js");
-const { createPatrimonio, getPatrimonioBySlug, listPatrimonios } =
-    await import("../src/services/patrimonioService.js");
+const {
+    createPatrimonioSchema,
+    listPatrimoniosQuerySchema,
+    patrimonioSlugParamsSchema,
+} = await import("../src/schemas/patrimonioSchema.js");
+const {
+    createPatrimonio,
+    getPatrimonioBySlug,
+    listPatrimonios,
+} = await import("../src/services/patrimonioService.js");
 const { generateToken } = await import("../src/utils/token.js");
 
 let server;
@@ -29,22 +35,19 @@ after(async () => {
 });
 
 test("normaliza os filtros públicos e aplica paginação padrão", () => {
-    assert.deepEqual(
-        listPatrimoniosQuerySchema.parse({
-            busca: "  igreja  ",
-            categoria: "  Religioso ",
-            situacao: "DEMOLIDO",
-            bairro: " Centro ",
-        }),
-        {
-            busca: "igreja",
-            categoria: "Religioso",
-            situacao: "DEMOLIDO",
-            bairro: "Centro",
-            pagina: 1,
-            limite: 20,
-        }
-    );
+    assert.deepEqual(listPatrimoniosQuerySchema.parse({
+        busca: "  igreja  ",
+        categoria: "  Religioso ",
+        situacao: "DEMOLIDO",
+        bairro: " Centro ",
+    }), {
+        busca: "igreja",
+        categoria: "Religioso",
+        situacao: "DEMOLIDO",
+        bairro: "Centro",
+        pagina: 1,
+        limite: 20,
+    });
 
     assert.deepEqual(listPatrimoniosQuerySchema.parse({ pagina: "2", limite: "10" }), {
         pagina: 2,
@@ -95,28 +98,29 @@ test("consulta apenas patrimônios publicados com filtros e paginação", async 
         assert.deepEqual(countArguments.where, findManyArguments.where);
         assert.equal(findManyArguments.where.status, "PUBLICADO");
         assert.deepEqual(findManyArguments.where.situacao, "PRESERVADO");
-        const categoriaFilter = {
-            OR: [
-                { nome: { equals: "Religioso", mode: "insensitive" } },
-                { slug: { equals: "Religioso", mode: "insensitive" } },
-            ],
-        };
         // categoria casa com a principal OU com uma adicional (dentro de AND, para não colidir com o OR da busca)
         assert.deepEqual(findManyArguments.where.AND[0].OR, [
-            { categoria: categoriaFilter },
+            { categoria: { OR: [
+                { nome: { equals: "Religioso", mode: "insensitive" } },
+                { slug: { equals: "Religioso", mode: "insensitive" } },
+            ] } },
             {
                 categoriasAdicionais: {
-                    some: { categoria: categoriaFilter },
+                    some: { categoria: { OR: [
+                        { nome: { equals: "Religioso", mode: "insensitive" } },
+                        { slug: { equals: "Religioso", mode: "insensitive" } },
+                    ] } },
                 },
             },
         ]);
         assert.deepEqual(findManyArguments.where.localizacao, {
             is: { bairro: { equals: "Centro", mode: "insensitive" } },
         });
-        assert.equal(findManyArguments.where.OR.length, 6);
-        assert.deepEqual(findManyArguments.orderBy[0], {
-            ordemExibicao: { sort: "asc", nulls: "last" },
-        });
+        assert.equal(findManyArguments.where.OR.length, 8);
+        assert.deepEqual(findManyArguments.where.OR[5], { detalhes: { some: { OR: [
+            { titulo: { contains: "igreja", mode: "insensitive" } },
+            { texto: { contains: "igreja", mode: "insensitive" } },
+        ] } } });
         assert.equal(findManyArguments.skip, 10);
         assert.equal(findManyArguments.take, 10);
         assert.deepEqual(resultado.paginacao, {
@@ -147,14 +151,6 @@ test("consulta detalhe público por slug e oculta registros não encontrados", a
             slug: "igreja-matriz",
             status: "PUBLICADO",
         });
-        assert.deepEqual(findFirstArguments.select.ligacoes.where, {
-            destino: { status: "PUBLICADO" },
-        });
-        for (const field of ["secoes", "fatos", "ligacoes"]) {
-            assert.deepEqual(findFirstArguments.select[field].orderBy, { ordem: "asc" });
-            assert.deepEqual(patrimonio[field], []);
-        }
-        assert.ok(findFirstArguments.select.categoriasAdicionais);
 
         prisma.patrimonio.findFirst = async () => null;
         await assert.rejects(
@@ -172,14 +168,12 @@ test("expõe listagem e detalhe em rotas públicas", async () => {
     const originalFindFirst = prisma.patrimonio.findFirst;
 
     prisma.patrimonio.count = async () => 1;
-    prisma.patrimonio.findMany = async () => [
-        {
-            id: randomUUID(),
-            nome: "Casarão Lima",
-            slug: "casarao-lima",
-            situacao: "DEMOLIDO",
-        },
-    ];
+    prisma.patrimonio.findMany = async () => [{
+        id: randomUUID(),
+        nome: "Casarão Lima",
+        slug: "casarao-lima",
+        situacao: "DEMOLIDO",
+    }];
     prisma.patrimonio.findFirst = async ({ where }) => ({
         id: randomUUID(),
         nome: "Casarão Lima",
@@ -272,37 +266,14 @@ test("rejeita situação, coordenadas e campos controlados pelo servidor inváli
         { nome: valid.nome, descricao: valid.descricao, categoriaId: valid.categoriaId },
         { ...valid, situacao: "DESCONHECIDA" },
         { ...valid, localizacao: { endereco: "Rua A", bairro: "Centro", latitude: -23 } },
-        {
-            ...valid,
-            localizacao: { endereco: "Rua A", bairro: "Centro", latitude: -91, longitude: 0 },
-        },
-        {
-            ...valid,
-            localizacao: { endereco: "Rua A", bairro: "Centro", latitude: 0, longitude: 181 },
-        },
+        { ...valid, localizacao: { endereco: "Rua A", bairro: "Centro", latitude: -91, longitude: 0 } },
+        { ...valid, localizacao: { endereco: "Rua A", bairro: "Centro", latitude: 0, longitude: 181 } },
         { ...valid, status: "PUBLICADO" },
         { ...valid, id: randomUUID() },
         { ...valid, createdBy: randomUUID() },
         { ...valid, updatedBy: randomUUID() },
         { ...valid, publicadoEm: new Date().toISOString() },
         { ...valid, arquivadoEm: new Date().toISOString() },
-        { ...valid, numeroExibicao: 0 },
-        { ...valid, ordemExibicao: -1 },
-        { ...valid, secoes: [{ titulo: "T", texto: "X", ordem: 1 }] },
-        {
-            ...valid,
-            fatos: [
-                { rotulo: "R", valor: "V", ordem: 0 },
-                { rotulo: "R2", valor: "V2", ordem: 0 },
-            ],
-        },
-        {
-            ...valid,
-            ligacoes: [
-                { patrimonioDestinoId: valid.categoriaId, texto: "X", ordem: 0 },
-                { patrimonioDestinoId: valid.categoriaId, texto: "Y", ordem: 1 },
-            ],
-        },
     ];
 
     for (const body of invalidBodies) {
@@ -317,38 +288,34 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
     let createArguments;
     let slugSearches = 0;
 
-    prisma.$transaction = async (callback) =>
-        callback({
-            categoria: {
-                findUnique: async () => ({ id: categoriaId }),
+    prisma.$transaction = async (callback) => callback({
+        categoria: {
+            findUnique: async () => ({ id: categoriaId }),
+        },
+        patrimonio: {
+            findUnique: async () => {
+                slugSearches += 1;
+                return slugSearches === 1 ? { id: randomUUID() } : null;
             },
-            patrimonio: {
-                findUnique: async () => {
-                    slugSearches += 1;
-                    return slugSearches === 1 ? { id: randomUUID() } : null;
-                },
-                create: async (args) => {
-                    createArguments = args;
-                    return { id: randomUUID(), ...args.data };
-                },
+            create: async (args) => {
+                createArguments = args;
+                return { id: randomUUID(), ...args.data };
             },
-        });
+        },
+    });
 
     try {
-        await createPatrimonio(
-            {
-                nome: "Igreja Matriz",
-                descricao: "Patrimônio histórico",
-                descricaoResumida: "Resumo do patrimônio",
-                importanciaCultural: "Referência cultural da cidade",
-                categoriaId,
-                situacao: "PRESERVADO",
-                localizacao: { endereco: "Rua A", bairro: "Centro", cidade: "Guarulhos", uf: "SP" },
-                status: "PUBLICADO",
-                createdBy: randomUUID(),
-            },
-            createdBy
-        );
+        await createPatrimonio({
+            nome: "Igreja Matriz",
+            descricao: "Patrimônio histórico",
+            descricaoResumida: "Resumo do patrimônio",
+            importanciaCultural: "Referência cultural da cidade",
+            categoriaId,
+            situacao: "PRESERVADO",
+            localizacao: { endereco: "Rua A", bairro: "Centro", cidade: "Guarulhos", uf: "SP" },
+            status: "PUBLICADO",
+            createdBy: randomUUID(),
+        }, createdBy);
 
         assert.equal(createArguments.data.slug, "igreja-matriz-2");
         assert.equal(createArguments.data.descricaoResumida, "Resumo do patrimônio");
@@ -358,13 +325,10 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
         assert.deepEqual(createArguments.data.localizacao, {
             create: { endereco: "Rua A", bairro: "Centro", cidade: "Guarulhos", uf: "SP" },
         });
-        assert.equal(createArguments.include.categoria, true);
-        assert.equal(createArguments.include.localizacao, true);
-        assert.deepEqual(createArguments.include.secoes, { orderBy: { ordem: "asc" } });
-        assert.deepEqual(createArguments.include.fatos, { orderBy: { ordem: "asc" } });
-        assert.deepEqual(createArguments.include.ligacoes, { orderBy: { ordem: "asc" } });
-        assert.deepEqual(createArguments.include.categoriasAdicionais, {
-            include: { categoria: true },
+        assert.deepEqual(createArguments.include, {
+            categoria: true,
+            categoriasAdicionais: { include: { categoria: true } },
+            localizacao: true,
         });
         assert.equal("categoriasAdicionais" in createArguments.data, false);
         assert.equal("updatedBy" in createArguments.data, false);
@@ -375,23 +339,19 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
 
 test("retorna erro quando a categoria não existe", async () => {
     const originalTransaction = prisma.$transaction;
-    prisma.$transaction = async (callback) =>
-        callback({
-            categoria: { findUnique: async () => null },
-            patrimonio: {},
-        });
+    prisma.$transaction = async (callback) => callback({
+        categoria: { findUnique: async () => null },
+        patrimonio: {},
+    });
 
     try {
         await assert.rejects(
-            createPatrimonio(
-                {
-                    nome: "Igreja Matriz",
-                    descricao: "Patrimônio histórico",
-                    descricaoResumida: "Resumo do patrimônio",
-                    categoriaId: randomUUID(),
-                },
-                randomUUID()
-            ),
+            createPatrimonio({
+                nome: "Igreja Matriz",
+                descricao: "Patrimônio histórico",
+                descricaoResumida: "Resumo do patrimônio",
+                categoriaId: randomUUID(),
+            }, randomUUID()),
             (error) => error.statusCode === 404 && error.code === "CATEGORIA_NOT_FOUND"
         );
     } finally {
@@ -411,15 +371,12 @@ test("traduz conflito de slug para o padrão da API", async () => {
 
     try {
         await assert.rejects(
-            createPatrimonio(
-                {
-                    nome: "Igreja Matriz",
-                    descricao: "Patrimônio histórico",
-                    descricaoResumida: "Resumo do patrimônio",
-                    categoriaId: randomUUID(),
-                },
-                randomUUID()
-            ),
+            createPatrimonio({
+                nome: "Igreja Matriz",
+                descricao: "Patrimônio histórico",
+                descricaoResumida: "Resumo do patrimônio",
+                categoriaId: randomUUID(),
+            }, randomUUID()),
             (error) => error.statusCode === 409 && error.code === "PATRIMONIO_SLUG_CONFLICT"
         );
     } finally {
@@ -455,18 +412,17 @@ test("ADMIN e EDITOR podem cadastrar patrimônio pela rota protegida", async () 
         role: currentRole,
         isActive: true,
     });
-    prisma.$transaction = async (callback) =>
-        callback({
-            categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
-            patrimonio: {
-                findUnique: async () => null,
-                create: async ({ data }) => {
-                    assert.equal(data.createdBy, currentUserId);
-                    assert.equal(data.status, "RASCUNHO");
-                    return { id: randomUUID(), ...data, localizacao: null };
-                },
+    prisma.$transaction = async (callback) => callback({
+        categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
+        patrimonio: {
+            findUnique: async () => null,
+            create: async ({ data }) => {
+                assert.equal(data.createdBy, currentUserId);
+                assert.equal(data.status, "RASCUNHO");
+                return { id: randomUUID(), ...data, localizacao: null };
             },
-        });
+        },
+    });
 
     try {
         for (const role of ["ADMIN", "EDITOR"]) {
@@ -507,10 +463,7 @@ test("valida categorias adicionais no cadastro de patrimônio", () => {
     };
     const outra = randomUUID();
 
-    assert.equal(
-        createPatrimonioSchema.safeParse({ ...base, categoriasAdicionais: [outra] }).success,
-        true
-    );
+    assert.equal(createPatrimonioSchema.safeParse({ ...base, categoriasAdicionais: [outra] }).success, true);
     assert.equal(createPatrimonioSchema.safeParse(base).success, true);
 
     for (const categoriasAdicionais of [
@@ -519,10 +472,7 @@ test("valida categorias adicionais no cadastro de patrimônio", () => {
         ["nao-e-uuid"],
         Array.from({ length: 7 }, () => randomUUID()),
     ]) {
-        assert.equal(
-            createPatrimonioSchema.safeParse({ ...base, categoriasAdicionais }).success,
-            false
-        );
+        assert.equal(createPatrimonioSchema.safeParse({ ...base, categoriasAdicionais }).success, false);
     }
 });
 
@@ -533,26 +483,23 @@ test("cria patrimônio com categorias adicionais e rejeita adicional inexistente
     let createArguments;
     let encontradas = [{ id: adicional }];
 
-    prisma.$transaction = async (callback) =>
-        callback({
-            categoria: {
-                findUnique: async () => ({ id: categoriaId }),
-                findMany: async () => encontradas,
+    prisma.$transaction = async (callback) => callback({
+        categoria: {
+            findUnique: async () => ({ id: categoriaId }),
+            findMany: async () => encontradas,
+        },
+        patrimonio: {
+            findUnique: async () => null,
+            create: async (args) => {
+                createArguments = args;
+                return {
+                    id: randomUUID(),
+                    ...args.data,
+                    categoriasAdicionais: [{ categoria: { id: adicional, nome: "Histórico", slug: "historico" } }],
+                };
             },
-            patrimonio: {
-                findUnique: async () => null,
-                create: async (args) => {
-                    createArguments = args;
-                    return {
-                        id: randomUUID(),
-                        ...args.data,
-                        categoriasAdicionais: [
-                            { categoria: { id: adicional, nome: "Histórico", slug: "historico" } },
-                        ],
-                    };
-                },
-            },
-        });
+        },
+    });
 
     try {
         const dados = {
@@ -567,14 +514,10 @@ test("cria patrimônio com categorias adicionais e rejeita adicional inexistente
         assert.deepEqual(createArguments.data.categoriasAdicionais, {
             create: [{ categoriaId: adicional }],
         });
-        assert.deepEqual(criado.categoriasAdicionais, [
-            { id: adicional, nome: "Histórico", slug: "historico" },
-        ]);
+        assert.deepEqual(criado.categoriasAdicionais, [{ id: adicional, nome: "Histórico", slug: "historico" }]);
 
         encontradas = [];
-        await assert.rejects(() => createPatrimonio(dados, randomUUID()), {
-            code: "CATEGORIA_NOT_FOUND",
-        });
+        await assert.rejects(() => createPatrimonio(dados, randomUUID()), { code: "CATEGORIA_NOT_FOUND" });
     } finally {
         prisma.$transaction = originalTransaction;
     }
@@ -584,15 +527,11 @@ test("lista achata as categorias adicionais", async () => {
     const originalCount = prisma.patrimonio.count;
     const originalFindMany = prisma.patrimonio.findMany;
     prisma.patrimonio.count = async () => 1;
-    prisma.patrimonio.findMany = async () => [
-        {
-            id: randomUUID(),
-            nome: "Estação",
-            categoriasAdicionais: [
-                { categoria: { id: "1", nome: "Arquitetônico", slug: "arquitetonico" } },
-            ],
-        },
-    ];
+    prisma.patrimonio.findMany = async () => [{
+        id: randomUUID(),
+        nome: "Estação",
+        categoriasAdicionais: [{ categoria: { id: "1", nome: "Arquitetônico", slug: "arquitetonico" } }],
+    }];
 
     try {
         const resultado = await listPatrimonios({ pagina: 1, limite: 20 });
@@ -603,63 +542,4 @@ test("lista achata as categorias adicionais", async () => {
         prisma.patrimonio.count = originalCount;
         prisma.patrimonio.findMany = originalFindMany;
     }
-});
-
-test("cadastro combina pesquisa, categorias e textos legados opcionais ou nulos", async (t) => {
-    const categoriaId = randomUUID(),
-        adicional = randomUUID(),
-        destino = randomUUID();
-    const base = {
-        nome: "Pesquisa",
-        descricaoResumida: "Resumo",
-        categoriaId,
-        numeroExibicao: 34,
-        ordemExibicao: 33,
-        categoriasAdicionais: [adicional],
-        secoes: [{ icone: null, titulo: "História", texto: "Texto", ordem: 0 }],
-        fatos: [{ rotulo: "Ano", valor: "1900", ordem: 0 }],
-        ligacoes: [{ patrimonioDestinoId: destino, texto: "Veja também", ordem: 0 }],
-    };
-    assert.equal(createPatrimonioSchema.safeParse(base).success, true);
-    const dados = createPatrimonioSchema.parse({
-        ...base,
-        descricao: null,
-        historia: null,
-        importanciaCultural: null,
-    });
-    let args,
-        existentes = [{ id: destino }];
-    const original = prisma.$transaction;
-    t.after(() => {
-        prisma.$transaction = original;
-    });
-    prisma.$transaction = async (fn) =>
-        fn({
-            categoria: {
-                findUnique: async () => ({ id: categoriaId }),
-                findMany: async () => [{ id: adicional }],
-            },
-            patrimonio: {
-                findUnique: async () => null,
-                findMany: async () => existentes,
-                create: async (input) => {
-                    args = input;
-                    return { ...dados, categoriasAdicionais: [{ categoria: { id: adicional } }] };
-                },
-            },
-        });
-    const result = await createPatrimonio(dados, randomUUID());
-    for (const field of ["secoes", "fatos", "ligacoes"]) {
-        assert.deepEqual(args.data[field], { create: dados[field] });
-        assert.deepEqual(result[field], dados[field]);
-    }
-    assert.equal(args.data.numeroExibicao, 34);
-    assert.equal(args.data.ordemExibicao, 33);
-    assert.equal(args.data.descricao, null);
-    assert.deepEqual(args.data.categoriasAdicionais, { create: [{ categoriaId: adicional }] });
-    assert.deepEqual(result.categoriasAdicionais, [{ id: adicional }]);
-    existentes = [];
-    await assert.rejects(createPatrimonio(dados, randomUUID()), {
-        code: "LIGACAO_DESTINO_NOT_FOUND",
-    });
 });
