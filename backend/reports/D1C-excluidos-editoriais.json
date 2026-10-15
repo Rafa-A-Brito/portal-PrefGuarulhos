@@ -1,0 +1,2697 @@
+{
+  "fatos": [
+    {
+      "auditoriaId": "F-1-0",
+      "idEquipe": "1",
+      "patrimonioEquipe": "Estação Ferroviária de Guarulhos",
+      "slugCanonico": "estacao-ferroviaria-central-de-guarulhos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Inauguração",
+      "valorOriginal": "24 de fevereiro de 1915",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "A data completa ja esta explicitada no detalhe.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "estacao-ferroviaria-central-de-guarulhos",
+          "campo": "Inauguração em 1915",
+          "trecho": "Inaugurada em 24 de fevereiro de 1915, a estação fazia parte do ramal de Guarulhos da Estrada de Ferro da Cantareira, o Tramway da Cantareira.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-1-1",
+      "idEquipe": "1",
+      "patrimonioEquipe": "Estação Ferroviária de Guarulhos",
+      "slugCanonico": "estacao-ferroviaria-central-de-guarulhos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Ramal",
+      "valorOriginal": "Tramway da Cantareira",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "O mesmo detalhe identifica o ramal e o Tramway.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "estacao-ferroviaria-central-de-guarulhos",
+          "campo": "Inauguração em 1915",
+          "trecho": "Inaugurada em 24 de fevereiro de 1915, a estação fazia parte do ramal de Guarulhos da Estrada de Ferro da Cantareira, o Tramway da Cantareira.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-1-2",
+      "idEquipe": "1",
+      "patrimonioEquipe": "Estação Ferroviária de Guarulhos",
+      "slugCanonico": "estacao-ferroviaria-central-de-guarulhos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Ramal desativado",
+      "valorOriginal": "1965",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "1965 ja e informado como encerramento do ramal.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "estacao-ferroviaria-central-de-guarulhos",
+          "campo": "O fim do ramal",
+          "trecho": "O ramal foi desativado em 1965, mas a antiga estação permanece como um dos principais elementos da memória ferroviária da cidade.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-1-3",
+      "idEquipe": "1",
+      "patrimonioEquipe": "Estação Ferroviária de Guarulhos",
+      "slugCanonico": "estacao-ferroviaria-central-de-guarulhos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 3,
+      "decisao": "REJEITAR",
+      "justificativa": "Repete o decreto e o ano ja expostos na descricao; nao acrescenta informacao editorial.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "estacao-ferroviaria-central-de-guarulhos",
+          "campo": "$descricao",
+          "trecho": "Edificação remanescente da antiga estação ferroviária de Guarulhos, no conjunto historicamente referido como Praça IV Centenário. Sua fachada passou por alterações e a AAPAH registra intervenções de restauro. O imóvel é protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-2-0",
+      "idEquipe": "2",
+      "patrimonioEquipe": "Parque Bosque Maia",
+      "slugCanonico": "bosque-maia",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tipo",
+      "valorOriginal": "Parque urbano",
+      "ordemOriginal": 0,
+      "decisao": "REJEITAR",
+      "justificativa": "Tipo generico ja expresso no cadastro e na descricao.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "bosque-maia",
+          "campo": "$descricao",
+          "trecho": "Parque urbano e área de preservação ambiental/paisagística situado na Avenida Paulo Faccini, figurando como a maior área verde central da cidade. Preserva remanescentes de Mata Atlântica e ecossistema de várzea do Rio Baquirivu-Guaçu. Abriga obras de arte pública como a escultura \"Índio Guaru\" (em concreto, de Oswaldo Alves) e a Gruta dos Orixás. É tombado municipalmente pelo Decreto nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-2-1",
+      "idEquipe": "2",
+      "patrimonioEquipe": "Parque Bosque Maia",
+      "slugCanonico": "bosque-maia",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Bioma",
+      "valorOriginal": "Mata Atlântica",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Bioma ja explicado no detalhe ambiental.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "bosque-maia",
+          "campo": "Mata Atlântica no centro",
+          "trecho": "Preserva espécies nativas da Mata Atlântica e serve como pulmão verde no centro urbano.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-2-2",
+      "idEquipe": "2",
+      "patrimonioEquipe": "Parque Bosque Maia",
+      "slugCanonico": "bosque-maia",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano de protecao ja explicado; o fato perde o escopo paisagistico/ambiental.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "bosque-maia",
+          "campo": "Proteção paisagística e ambiental",
+          "trecho": "O parque possui tombamento de caráter paisagístico e ambiental. Já constava, em 1990, na relação de imóveis de interesse de preservação da Lei Orgânica do Município e foi tombado em 2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-3-0",
+      "idEquipe": "3",
+      "patrimonioEquipe": "Catedral Nossa Senhora da Conceição",
+      "slugCanonico": "catedral-nossa-senhora-da-conceicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Sede",
+      "valorOriginal": "Diocese de Guarulhos",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "A funcao diocesana ja esta explicitada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "catedral-nossa-senhora-da-conceicao",
+          "campo": "Sede da diocese",
+          "trecho": "Igreja Matriz e sede da Diocese de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-3-1",
+      "idEquipe": "3",
+      "patrimonioEquipe": "Catedral Nossa Senhora da Conceição",
+      "slugCanonico": "catedral-nossa-senhora-da-conceicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Estilo",
+      "valorOriginal": "Neoclássico/eclético",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Repete a classificacao arquitetonica.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "catedral-nossa-senhora-da-conceicao",
+          "campo": "Estilo neoclássico e eclético",
+          "trecho": "A atual edificação, em estilo neoclássico/eclético, foi erguida em meados do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-3-2",
+      "idEquipe": "3",
+      "patrimonioEquipe": "Catedral Nossa Senhora da Conceição",
+      "slugCanonico": "catedral-nossa-senhora-da-conceicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Construção atual",
+      "valorOriginal": "Meados do século XX",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "A datacao aproximada ja esta no detalhe; nao converter em data precisa.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "catedral-nossa-senhora-da-conceicao",
+          "campo": "Estilo neoclássico e eclético",
+          "trecho": "A atual edificação, em estilo neoclássico/eclético, foi erguida em meados do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-4-0",
+      "idEquipe": "4",
+      "patrimonioEquipe": "Complexo Sanatório Padre Bento",
+      "slugCanonico": "sanatorio-padre-bento",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Inauguração",
+      "valorOriginal": "Década de 1930",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Decada e funcao historica ja contextualizadas.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sanatorio-padre-bento",
+          "campo": "Um asilo-colônia",
+          "trecho": "Inaugurado na década de 1930 como leprosário/asilo-colônia para isolamento compulsório de pacientes de hanseníase.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-4-1",
+      "idEquipe": "4",
+      "patrimonioEquipe": "Complexo Sanatório Padre Bento",
+      "slugCanonico": "sanatorio-padre-bento",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Estilo",
+      "valorOriginal": "Art déco/neocolonial",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Repete a explicacao arquitetonica.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sanatorio-padre-bento",
+          "campo": "Art déco e neocolonial",
+          "trecho": "Constitui um dos conjuntos arquitetônicos em estilo art déco/neocolonial mais importantes da cidade.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-4-2",
+      "idEquipe": "4",
+      "patrimonioEquipe": "Complexo Sanatório Padre Bento",
+      "slugCanonico": "sanatorio-padre-bento",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento estadual",
+      "valorOriginal": "Condephaat, proc. 33.189/95",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "O processo ja consta no detalhe; a descricao delimita a protecao estadual ao Cine-Teatro/Capela. Nao ampliar a abrangencia.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sanatorio-padre-bento",
+          "campo": "Proteção estadual e municipal",
+          "trecho": "O complexo é tombado pelo Condephaat (processo nº 33.189/95). No município, a igreja e o cineteatro foram tombados em 1990, e os demais imóveis e a vegetação, em 2000. O campo de futebol do hospital também foi tombado, em 1993.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-6-0",
+      "idEquipe": "6",
+      "patrimonioEquipe": "Igreja de Nossa Senhora de Bonsucesso",
+      "slugCanonico": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Origem",
+      "valorOriginal": "Século XVIII",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Datacao ja explicada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+          "campo": "Fundada no século XVIII",
+          "trecho": "Fundada no século XVIII no antigo bairro do Bonsucesso.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-6-1",
+      "idEquipe": "6",
+      "patrimonioEquipe": "Igreja de Nossa Senhora de Bonsucesso",
+      "slugCanonico": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano e decreto ja explicados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+          "campo": "Tombada em 2000",
+          "trecho": "A igreja é de propriedade da Mitra Diocesana de Guarulhos e foi tombada pelo município em 2000 (Decreto nº 21.143).",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-6-2",
+      "idEquipe": "6",
+      "patrimonioEquipe": "Igreja de Nossa Senhora de Bonsucesso",
+      "slugCanonico": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Festa",
+      "valorOriginal": "Agosto",
+      "ordemOriginal": 2,
+      "decisao": "REJEITAR",
+      "justificativa": "Agosto e calendario da manifestacao, nao fato proprio do edificio. A ligacao editorial leva a ficha da Festa.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+          "campo": "Romarias e festa",
+          "trecho": "A igreja é associada às romarias e à Festa do Bonsucesso.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-7-0",
+      "idEquipe": "7",
+      "patrimonioEquipe": "Festa de Nossa Senhora de Bonsucesso",
+      "slugCanonico": "festa-de-nossa-senhora-de-bonsucesso",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Quando",
+      "valorOriginal": "Agosto",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Mes ja registrado; nao equivale a agenda confirmada de todas as edicoes.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "festa-de-nossa-senhora-de-bonsucesso",
+          "campo": "Quase três séculos de tradição",
+          "trecho": "Celebrada ininterruptamente desde meados do século XVIII no Bairro do Bonsucesso, em agosto, em louvor a Nossa Senhora do Bonsucesso.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-7-1",
+      "idEquipe": "7",
+      "patrimonioEquipe": "Festa de Nossa Senhora de Bonsucesso",
+      "slugCanonico": "festa-de-nossa-senhora-de-bonsucesso",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Origem",
+      "valorOriginal": "Meados do século XVIII",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Origem aproximada ja contextualizada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "festa-de-nossa-senhora-de-bonsucesso",
+          "campo": "Quase três séculos de tradição",
+          "trecho": "Celebrada ininterruptamente desde meados do século XVIII no Bairro do Bonsucesso, em agosto, em louvor a Nossa Senhora do Bonsucesso.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-7-2",
+      "idEquipe": "7",
+      "patrimonioEquipe": "Festa de Nossa Senhora de Bonsucesso",
+      "slugCanonico": "festa-de-nossa-senhora-de-bonsucesso",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Local",
+      "valorOriginal": "Bairro do Bonsucesso",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "C2 distingue realizacao/referencia de endereco exclusivo. Nao reduzir o bem imaterial ao bairro/edificio.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "festa-de-nossa-senhora-de-bonsucesso",
+          "campo": "Local de realização e referência",
+          "trecho": "O Santuário de Nossa Senhora de Bonsucesso e as áreas associadas à celebração constituem local de realização e referência da festa, sem identificar o patrimônio imaterial com o edifício. Rua Dona Catharina Maria de Jesus, 109, CEP 07175-500, é referência postal do Santuário, não endereço exclusivo da festa. A referência anterior à Rua Silva Bueno e as coordenadas existentes não foram confirmadas como ponto específico de realização. Fontes: https://portaleducacao.guarulhos.sp.gov.br/siseduc/portal/site/detalhar/conteudo/3525/ e https://diocesedeguarulhos.org.br/paroquias/santuario-nossa-senhora-do-bonsucesso/",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": [
+            "https://portaleducacao.guarulhos.sp.gov.br/siseduc/portal/site/detalhar/conteudo/3525/",
+            "https://diocesedeguarulhos.org.br/paroquias/santuario-nossa-senhora-do-bonsucesso/"
+          ]
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-8-0",
+      "idEquipe": "8",
+      "patrimonioEquipe": "Sítio da Candinha (Casa da Candinha)",
+      "slugCanonico": "sitio-da-candinha-casa-da-candinha",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Casa-sede",
+      "valorOriginal": "Provavelmente de 1825",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "A estimativa de 1825 ja consta com a ressalva provavelmente.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sitio-da-candinha-casa-da-candinha",
+          "campo": "Taipa de pilão e bambu",
+          "trecho": "A casa foi feita em taipa de pilão entrelaçada com bambu e é datada provavelmente de 1825. Guarda um oratório colonial com imagens e objetos religiosos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-8-1",
+      "idEquipe": "8",
+      "patrimonioEquipe": "Sítio da Candinha (Casa da Candinha)",
+      "slugCanonico": "sitio-da-candinha-casa-da-candinha",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Técnica",
+      "valorOriginal": "Taipa de pilão",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Tecnica construtiva ja descrita.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sitio-da-candinha-casa-da-candinha",
+          "campo": "Taipa de pilão e bambu",
+          "trecho": "A casa foi feita em taipa de pilão entrelaçada com bambu e é datada provavelmente de 1825. Guarda um oratório colonial com imagens e objetos religiosos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-8-2",
+      "idEquipe": "8",
+      "patrimonioEquipe": "Sítio da Candinha (Casa da Candinha)",
+      "slugCanonico": "sitio-da-candinha-casa-da-candinha",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Singularidade",
+      "valorOriginal": "Senzala preservada",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "O tema ja esta explicado; nao transformar singularidade historica em nova verificacao de conservacao atual.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sitio-da-candinha-casa-da-candinha",
+          "campo": "A senzala que resiste",
+          "trecho": "É a única remanescente do período escravagista que ainda possui senzala na região metropolitana de São Paulo, o que a torna um raro registro da ocupação rural e da escravidão na região.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-8-3",
+      "idEquipe": "8",
+      "patrimonioEquipe": "Sítio da Candinha (Casa da Candinha)",
+      "slugCanonico": "sitio-da-candinha-casa-da-candinha",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000",
+      "ordemOriginal": 3,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano e atos de protecao ja discriminados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "sitio-da-candinha-casa-da-candinha",
+          "campo": "Proteção",
+          "trecho": "O sítio foi tombado pelo Decreto Municipal nº 21.143/2000 e desapropriado pela prefeitura em 2004 (Decreto nº 22.787/2004).",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-9-0",
+      "idEquipe": "9",
+      "patrimonioEquipe": "Casa José Maurício",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Construída",
+      "valorOriginal": "1925",
+      "ordemOriginal": 0,
+      "decisao": "CONTRADIZ_C1_C2",
+      "justificativa": "1925 absoluto elimina a divergencia 1925 (fontes municipais) / 1937 (AAPAH), preservada em C1/C2.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "Residência de um prefeito",
+          "trecho": "Foi residência de José Maurício de Oliveira Sobrinho. Fontes municipais associam a construção a 1925, enquanto a AAPAH registra 1937; a divergência documental permanece registrada.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-9-1",
+      "idEquipe": "9",
+      "patrimonioEquipe": "Casa José Maurício",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 1,
+      "decisao": "SEM_SUPORTE_SUFFICIENTE",
+      "justificativa": "O numero do decreto atribuido a este imovel nao e demonstrado pelos detalhes atuais. Exige ato com identificacao individual do bem.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-9-2",
+      "idEquipe": "9",
+      "patrimonioEquipe": "Casa José Maurício",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Comprada pela prefeitura",
+      "valorOriginal": "2013",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Compra em junho de 2013 ja contextualizada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "Abandono e compra pela prefeitura",
+          "trecho": "Em janeiro de 2011, a AAPAH fez um abraço simbólico no casarão para tentar evitar o destombamento e a demolição, mas o ato teve pouca adesão. Para os herdeiros, restaurar era caro e o terreno valia mais que a casa. Em junho de 2013, a prefeitura comprou o imóvel por R$ 3 milhões, e ele continuou abandonado por anos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-9-3",
+      "idEquipe": "9",
+      "patrimonioEquipe": "Casa José Maurício",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Reabertura",
+      "valorOriginal": "2025",
+      "ordemOriginal": 3,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Reabertura em 2025 ja contextualizada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "O lugar hoje",
+          "trecho": "Após o restauro, o imóvel passou a funcionar como o Casarão da Nossa História, espaço de formação, visitação, exposições e atividades relacionadas à história e à memória de Guarulhos. Reaberto em 2025, reúne salas temáticas, maquetes de edificações históricas e exposições de fotografias.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-10-0",
+      "idEquipe": "10",
+      "patrimonioEquipe": "Casa Amarela (Casa do Chefe da Estação)",
+      "slugCanonico": "casa-amarela-casa-do-chefe-da-estacao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Construída",
+      "valorOriginal": "Início do século XX",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Periodo e funcao original ja descritos.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-amarela-casa-do-chefe-da-estacao",
+          "campo": "Casa do chefe da estação",
+          "trecho": "Construída no início do século XX para servir de moradia ao chefe da estação ferroviária do antigo ramal Tramway da Cantareira.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-10-1",
+      "idEquipe": "10",
+      "patrimonioEquipe": "Casa Amarela (Casa do Chefe da Estação)",
+      "slugCanonico": "casa-amarela-casa-do-chefe-da-estacao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Tombamento conjunto em 2000 ja explicado; descricao cita o decreto.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-amarela-casa-do-chefe-da-estacao",
+          "campo": "Depois da ferrovia",
+          "trecho": "A casa também pertenceu à escola municipal que funcionou na estação e chegou a sediar o Arquivo Histórico de Guarulhos. Foi tombada em 2000, junto com a estação.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-10-2",
+      "idEquipe": "10",
+      "patrimonioEquipe": "Casa Amarela (Casa do Chefe da Estação)",
+      "slugCanonico": "casa-amarela-casa-do-chefe-da-estacao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Usos",
+      "valorOriginal": "Moradia, escola e arquivo",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Usos historicos ja explicados; evitar confusao com o uso atual.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-amarela-casa-do-chefe-da-estacao",
+          "campo": "Depois da ferrovia",
+          "trecho": "A casa também pertenceu à escola municipal que funcionou na estação e chegou a sediar o Arquivo Histórico de Guarulhos. Foi tombada em 2000, junto com a estação.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-11-0",
+      "idEquipe": "11",
+      "patrimonioEquipe": "Antigo Paço Municipal",
+      "slugCanonico": "antigo-paco-municipal",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Construção",
+      "valorOriginal": "1919 a 1923",
+      "ordemOriginal": 0,
+      "decisao": "CONTRADIZ_C1_C2",
+      "justificativa": "1919 a 1923 conflita com o inicio das obras em 1921 adotado na fonte canonica.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "Sede do poder municipal",
+          "trecho": "As obras do Antigo Paço Municipal tiveram início em 1921. O edifício abrigou a Prefeitura, a Câmara e a Delegacia, além de receber, em diferentes períodos, o Departamento de Educação e Cultura, o Conservatório, o setor de Obras, parte do Fórum e a primeira Biblioteca Municipal. É protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-11-1",
+      "idEquipe": "11",
+      "patrimonioEquipe": "Antigo Paço Municipal",
+      "slugCanonico": "antigo-paco-municipal",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Estilo",
+      "valorOriginal": "Neoclássico",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Estilo ja descrito com caracteristicas construtivas.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "Neoclássico, em tijolo maciço",
+          "trecho": "Com obras iniciadas em 1921, o prédio da Rua Sete de Setembro é um exemplar de arquitetura neoclássica em tijolos maciços e com porão. A fachada apresenta frontão, pináculos e escultura de rosto feminino.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-11-2",
+      "idEquipe": "11",
+      "patrimonioEquipe": "Antigo Paço Municipal",
+      "slugCanonico": "antigo-paco-municipal",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Prefeitura até",
+      "valorOriginal": "1958",
+      "ordemOriginal": 2,
+      "decisao": "SEM_SUPORTE_SUFFICIENTE",
+      "justificativa": "A saida do Paço nao e datada neste detalhe. A mudanca para a Praca em 1958 nao comprova, sozinha, ocupacao continua deste predio ate esse ano.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "Depois da prefeitura",
+          "trecho": "Com a saída da prefeitura, o prédio recebeu o Departamento de Educação e Cultura, o Conservatório Municipal, o Departamento de Obras e a Junta de Alistamento Militar.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-11-3",
+      "idEquipe": "11",
+      "patrimonioEquipe": "Antigo Paço Municipal",
+      "slugCanonico": "antigo-paco-municipal",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 3,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Decreto ja identificado no detalhe.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "Sede do poder municipal",
+          "trecho": "As obras do Antigo Paço Municipal tiveram início em 1921. O edifício abrigou a Prefeitura, a Câmara e a Delegacia, além de receber, em diferentes períodos, o Departamento de Educação e Cultura, o Conservatório, o setor de Obras, parte do Fórum e a primeira Biblioteca Municipal. É protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-12-0",
+      "idEquipe": "12",
+      "patrimonioEquipe": "Centro Municipal de Educação Adamastor",
+      "slugCanonico": "antiga-fabrica-adamastor",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Construção",
+      "valorOriginal": "Meados do século XX",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Periodo aproximado ja descrito.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-fabrica-adamastor",
+          "campo": "Antiga Fábrica Adamastor",
+          "trecho": "Relevante complexo fabril construído em meados do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-12-1",
+      "idEquipe": "12",
+      "patrimonioEquipe": "Centro Municipal de Educação Adamastor",
+      "slugCanonico": "antiga-fabrica-adamastor",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 1,
+      "decisao": "SEM_SUPORTE_SUFFICIENTE",
+      "justificativa": "A descricao protege elementos como chamine/pavilhao; nao sustenta por si so ano/decreto nem tombamento de todo o complexo. Exige ato e delimitacao.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-fabrica-adamastor",
+          "campo": "$descricao",
+          "trecho": "Complexo de patrimônio industrial reabilitado localizado próximo à Rodovia Presidente Dutra. O projeto de reciclagem arquitetônica, assinado pelo arquiteto Ruy Ohtake no início dos anos 2000, manteve elementos estruturais originais, com destaque para a chaminé e o pavilhão central com colunas de tijolos aparentes, que contam com proteção por tombamento municipal.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-12-2",
+      "idEquipe": "12",
+      "patrimonioEquipe": "Centro Municipal de Educação Adamastor",
+      "slugCanonico": "antiga-fabrica-adamastor",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Uso atual",
+      "valorOriginal": "Polo cultural e educacional",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Funcao cultural/educacional ja exposta.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-fabrica-adamastor",
+          "campo": "O lugar hoje",
+          "trecho": "Polo cultural, educacional e de convenções gerido pela Prefeitura.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-13-0",
+      "idEquipe": "13",
+      "patrimonioEquipe": "Casarão da Nossa História",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "ALIAS",
+      "rotuloOriginal": "Construída",
+      "valorOriginal": "1925",
+      "ordemOriginal": 0,
+      "decisao": "CONTRADIZ_C1_C2",
+      "justificativa": "Repete F-9-0 na mesma identidade e igualmente apaga a divergencia 1925/1937. Nao recriar o legado.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "Residência de um prefeito",
+          "trecho": "Foi residência de José Maurício de Oliveira Sobrinho. Fontes municipais associam a construção a 1925, enquanto a AAPAH registra 1937; a divergência documental permanece registrada.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null,
+      "comparadoCom": [
+        "F-9-0",
+        "F-9-3",
+        "detalhes C2: Numeração documental divergente"
+      ]
+    },
+    {
+      "auditoriaId": "F-13-1",
+      "idEquipe": "13",
+      "patrimonioEquipe": "Casarão da Nossa História",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "ALIAS",
+      "rotuloOriginal": "Reabertura",
+      "valorOriginal": "2025",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Repete F-9-3 e o detalhe da mesma Casa Jose Mauricio; nenhuma segunda identidade.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "O lugar hoje",
+          "trecho": "Após o restauro, o imóvel passou a funcionar como o Casarão da Nossa História, espaço de formação, visitação, exposições e atividades relacionadas à história e à memória de Guarulhos. Reaberto em 2025, reúne salas temáticas, maquetes de edificações históricas e exposições de fotografias.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null,
+      "comparadoCom": [
+        "F-9-0",
+        "F-9-3",
+        "detalhes C2: Numeração documental divergente"
+      ]
+    },
+    {
+      "auditoriaId": "F-13-2",
+      "idEquipe": "13",
+      "patrimonioEquipe": "Casarão da Nossa História",
+      "slugCanonico": "casa-jose-mauricio",
+      "resolucao": "ALIAS",
+      "rotuloOriginal": "Esquina",
+      "valorOriginal": "Sete de Setembro com Felício Marcondes",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Esquina ja documentada na nota C2; preservar a distincao 150 historico / 207 atual sem converter a esquina em novo cadastro.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "Numeração documental divergente",
+          "trecho": "O campo numero permanece 150, referência histórica/documental apresentada pela AAPAH. O número 207 é informado pela Prefeitura para o endereço atual do Casarão da Nossa História, na Rua Sete de Setembro, esquina com a Rua Felício Marcondes, e fica preservado nesta nota. As fontes não confirmam uma renumeração oficial; nenhum dos números deve ser descartado ou tratado como equivalência comprovada. CEP, coordenadas e destino de navegação ainda exigem confirmação específica. Fontes: https://aapah.org.br/patrimonio/casa-jose-mauricio/ e https://portaleducacao.guarulhos.sp.gov.br/siseduc/portal/site/detalhar/conteudo/7184/",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": [
+            "https://aapah.org.br/patrimonio/casa-jose-mauricio/",
+            "https://portaleducacao.guarulhos.sp.gov.br/siseduc/portal/site/detalhar/conteudo/7184/"
+          ]
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null,
+      "comparadoCom": [
+        "F-9-0",
+        "F-9-3",
+        "detalhes C2: Numeração documental divergente"
+      ]
+    },
+    {
+      "auditoriaId": "F-14-0",
+      "idEquipe": "14",
+      "patrimonioEquipe": "E.E. Conselheiro Crispiniano",
+      "slugCanonico": "escola-estadual-conselheiro-crispiniano",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Projeto",
+      "valorOriginal": "1960",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano do projeto ja explicitado.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "escola-estadual-conselheiro-crispiniano",
+          "campo": "Projeto de Vilanova Artigas",
+          "trecho": "O prédio foi projetado pelo renomado arquiteto modernista João Batista Vilanova Artigas em 1960.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-14-1",
+      "idEquipe": "14",
+      "patrimonioEquipe": "E.E. Conselheiro Crispiniano",
+      "slugCanonico": "escola-estadual-conselheiro-crispiniano",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Arquiteto",
+      "valorOriginal": "Vilanova Artigas",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Autoria ja exposta; a descricao tambem registra Carlos Cascaldi, que o fato isolado omite.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "escola-estadual-conselheiro-crispiniano",
+          "campo": "Projeto de Vilanova Artigas",
+          "trecho": "O prédio foi projetado pelo renomado arquiteto modernista João Batista Vilanova Artigas em 1960.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-14-2",
+      "idEquipe": "14",
+      "patrimonioEquipe": "E.E. Conselheiro Crispiniano",
+      "slugCanonico": "escola-estadual-conselheiro-crispiniano",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento estadual",
+      "valorOriginal": "Condephaat, proc. 54.292/05",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Processo ja citado; nao confundir numero de processo com data do ato.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "escola-estadual-conselheiro-crispiniano",
+          "campo": "Marco da arquitetura moderna",
+          "trecho": "O projeto é marco da arquitetura moderna brasileira, tombado pelo Condephaat (processo nº 54.292/05) e também pelo município, em 2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-15-0",
+      "idEquipe": "15",
+      "patrimonioEquipe": "E.E. Capistrano de Abreu",
+      "slugCanonico": "escola-estadual-capistrano-de-abreu",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Técnica",
+      "valorOriginal": "Alvenaria de tijolos",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Tecnica ja descrita.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "escola-estadual-capistrano-de-abreu",
+          "campo": "Arquitetura acadêmica em tijolos",
+          "trecho": "Apresenta arquitetura acadêmica em alvenaria de tijolos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-15-1",
+      "idEquipe": "15",
+      "patrimonioEquipe": "E.E. Capistrano de Abreu",
+      "slugCanonico": "escola-estadual-capistrano-de-abreu",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Tombamento em 2000 ja contextualizado; descricao informa decreto.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "escola-estadual-capistrano-de-abreu",
+          "campo": "Expansão da rede pública",
+          "trecho": "O prédio é representativo da expansão da rede pública de ensino paulista no século XX. Já constava, em 1990, na Lei Orgânica e foi tombado pelo município em 2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-16-0",
+      "idEquipe": "16",
+      "patrimonioEquipe": "E.E. Dulce Breves Neves",
+      "slugCanonico": "e-e-dulce-breves-neves",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "Lei nº 7.014/2012",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Lei e data completas ja constam no detalhe; coordenadas SEDUC nao sao alteradas.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "e-e-dulce-breves-neves",
+          "campo": "Tombada em 2012",
+          "trecho": "A escola foi tombada pelo município pela Lei nº 7.014, de 2 de abril de 2012.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-17-0",
+      "idEquipe": "17",
+      "patrimonioEquipe": "Igreja de N. Sra. do Rosário dos Homens Pretos",
+      "slugCanonico": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Fundação",
+      "valorOriginal": "Meados do século XVIII",
+      "ordemOriginal": 0,
+      "decisao": "CONTRADIZ_C1_C2",
+      "justificativa": "Rotulo Fundacao atribui ao edificio atual a origem do templo anterior. C2 separa a igreja atual do sitio primitivo de 1717; ha divergencia cronologica interna que nao deve ser achatada.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+          "campo": "Quase 200 anos na Rua Dom Pedro II",
+          "trecho": "Fundada em meados do século XVIII, a igreja permaneceu por quase 200 anos no mesmo lugar, na atual Rua Dom Pedro II.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-17-1",
+      "idEquipe": "17",
+      "patrimonioEquipe": "Igreja de N. Sra. do Rosário dos Homens Pretos",
+      "slugCanonico": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Reconstruída",
+      "valorOriginal": "1930",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Transicao historica ja explicada; o fato isolado perde demolicao/realocacao e distincao dos dois bens.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+          "campo": "Demolida e reconstruída em 1930",
+          "trecho": "Em 1930, o templo foi demolido, realocado, renomeado e reconstruído nas proximidades do sítio original.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-17-2",
+      "idEquipe": "17",
+      "patrimonioEquipe": "Igreja de N. Sra. do Rosário dos Homens Pretos",
+      "slugCanonico": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Local original",
+      "valorOriginal": "Rua Dom Pedro II",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Rua Dom Pedro II e sitio anterior/memorial, nao endereco atual. Detalhes e ficha primitiva preservam essa distincao.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+          "campo": "Memória e apagamento",
+          "trecho": "Historiadores locais relacionam a mudança ao afastamento da presença negra da região central. Em 2006, uma mancha escura foi aplicada ao calçamento da Rua Dom Pedro II para marcar o provável local da igreja original; segundo estudo publicado em 2017, o sítio ainda não tinha reconhecimento oficial como patrimônio.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-18-0",
+      "idEquipe": "18",
+      "patrimonioEquipe": "Igreja do Bom Jesus da Cabeça",
+      "slugCanonico": "igreja-do-bom-jesus-da-cabeca",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Decreto e ano ja explicitados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-do-bom-jesus-da-cabeca",
+          "campo": "Tombada em 2000",
+          "trecho": "A igreja é de propriedade da Mitra Diocesana de Guarulhos e foi tombada pelo município em 2000 (Decreto nº 21.143).",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-18-1",
+      "idEquipe": "18",
+      "patrimonioEquipe": "Igreja do Bom Jesus da Cabeça",
+      "slugCanonico": "igreja-do-bom-jesus-da-cabeca",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Bairro",
+      "valorOriginal": "Cabuçu",
+      "ordemOriginal": 1,
+      "decisao": "REJEITAR",
+      "justificativa": "Repete campo cadastral de bairro; nao e novo conteudo editorial.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "igreja-do-bom-jesus-da-cabeca",
+          "campo": "$bairro",
+          "trecho": "Cabuçu",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-19-0",
+      "idEquipe": "19",
+      "patrimonioEquipe": "Capela do Bom Jesus do Macedo",
+      "slugCanonico": "capela-do-bom-jesus-do-macedo",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Proteção",
+      "valorOriginal": "Lei Orgânica, 1990",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "A inclusao na Lei Organica ja esta explicada; nao ampliar para ato de tombamento especifico.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "capela-do-bom-jesus-do-macedo",
+          "campo": "Protegida desde 1990",
+          "trecho": "A igreja já constava, em 1990, na relação de imóveis de interesse de preservação cultural da Lei Orgânica do Município.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-20-0",
+      "idEquipe": "20",
+      "patrimonioEquipe": "Locomotiva Maria Fumaça (Nº 33) e Vagão",
+      "slugCanonico": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Local",
+      "valorOriginal": "Praça IV Centenário",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Local do conjunto ja informado; nao confirmar coordenada/entrada exata.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+          "campo": "Um conjunto ferroviário",
+          "trecho": "Conjunto formado pela locomotiva, pelo vagão e pela caixa d'água, na Praça IV Centenário.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-20-1",
+      "idEquipe": "20",
+      "patrimonioEquipe": "Locomotiva Maria Fumaça (Nº 33) e Vagão",
+      "slugCanonico": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Memória",
+      "valorOriginal": "Tramway da Cantareira",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "A funcao de memoria do Tramway ja explicada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+          "campo": "Memória do Trenzinho",
+          "trecho": "O monumento preserva a memória do Tramway da Cantareira (âTrenzinho de Guarulhosâ), operante até a década de 1960.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-20-2",
+      "idEquipe": "20",
+      "patrimonioEquipe": "Locomotiva Maria Fumaça (Nº 33) e Vagão",
+      "slugCanonico": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Operou até",
+      "valorOriginal": "Década de 1960",
+      "ordemOriginal": 2,
+      "decisao": "SEM_SUPORTE_SUFFICIENTE",
+      "justificativa": "O detalhe atribui operacao ate os anos 1960 ao Tramway; nao prova que a locomotiva numero 33 operou nessa linha ou ate essa data. Exige proveniencia do equipamento.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+          "campo": "Memória do Trenzinho",
+          "trecho": "O monumento preserva a memória do Tramway da Cantareira (âTrenzinho de Guarulhosâ), operante até a década de 1960.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-21-0",
+      "idEquipe": "21",
+      "patrimonioEquipe": "Dia da Carpição",
+      "slugCanonico": "dia-da-carpicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Quando",
+      "valorOriginal": "Antes da Festa de agosto",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Precedencia em relacao a Festa ja explicada; nao criar calendario fixo.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "dia-da-carpicao",
+          "campo": "Tradição centenária",
+          "trecho": "Tradição religiosa e comunitária centenária que antecede a Festa do Bonsucesso.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-21-1",
+      "idEquipe": "21",
+      "patrimonioEquipe": "Dia da Carpição",
+      "slugCanonico": "dia-da-carpicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Origem",
+      "valorOriginal": "Tradição centenária",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Qualificacao temporal ja descrita, sem nova datacao documental.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "dia-da-carpicao",
+          "campo": "Tradição centenária",
+          "trecho": "Tradição religiosa e comunitária centenária que antecede a Festa do Bonsucesso.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-24-0",
+      "idEquipe": "24",
+      "patrimonioEquipe": "Praça Getúlio Vargas",
+      "slugCanonico": "praca-getulio-vargas",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2000 (Decreto nº 21.143)",
+      "ordemOriginal": 0,
+      "decisao": "REJEITAR",
+      "justificativa": "Decreto e ano ja presentes na descricao.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "praca-getulio-vargas",
+          "campo": "$descricao",
+          "trecho": "Espaço público e conjunto urbano situado no centro expandido de Guarulhos, estruturado por traçado paisagístico e protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-24-1",
+      "idEquipe": "24",
+      "patrimonioEquipe": "Praça Getúlio Vargas",
+      "slugCanonico": "praca-getulio-vargas",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Prefeitura desde",
+      "valorOriginal": "1958",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "O detalhe relata a mudanca em 1958. Desde poderia sugerir sede atual ininterrupta, que nao e certificada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "praca-getulio-vargas",
+          "campo": "Sede do poder municipal",
+          "trecho": "A Prefeitura mudou-se para a Praça Getúlio Vargas em 1958 e a Câmara Municipal, em 1976.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-25-0",
+      "idEquipe": "25",
+      "patrimonioEquipe": "Cemitério São João Batista",
+      "slugCanonico": "cemiterio-sao-joao-batista",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Fundação",
+      "valorOriginal": "Século XIX",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Periodo de fundacao ja informado.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "cemiterio-sao-joao-batista",
+          "campo": "O mais antigo da cidade",
+          "trecho": "O cemitério público mais antigo de Guarulhos, fundado no século XIX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-25-1",
+      "idEquipe": "25",
+      "patrimonioEquipe": "Cemitério São João Batista",
+      "slugCanonico": "cemiterio-sao-joao-batista",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "Lei nº 3.642/1990",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Lei e ano ja explicitados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "cemiterio-sao-joao-batista",
+          "campo": "Um dos primeiros tombados",
+          "trecho": "A Lei nº 3.642, de 1990, determinou o tombamento do cemitério, um dos poucos bens tombados pelo município antes do grande decreto de 2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-26-0",
+      "idEquipe": "26",
+      "patrimonioEquipe": "Reserva e Represa do Cabuçu",
+      "slugCanonico": "represa-do-cabucu",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Projeto da barragem",
+      "valorOriginal": "Edward Wegmann",
+      "ordemOriginal": 0,
+      "decisao": "SEM_SUPORTE_SUFFICIENTE",
+      "justificativa": "Uso do perfil de Edward Wegmann nao comprova autoria direta do projeto da barragem. Exige fonte tecnica de autoria.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "represa-do-cabucu",
+          "campo": "Uma represa pioneira",
+          "trecho": "A barragem da Represa do Cabuçu foi projetada com o perfil do engenheiro norte-americano Edward Wegmann, solução considerada revolucionária na época. Foi a primeira vez que o concreto armado foi usado em estruturas no Brasil, segundo tese da USP.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-26-1",
+      "idEquipe": "26",
+      "patrimonioEquipe": "Reserva e Represa do Cabuçu",
+      "slugCanonico": "represa-do-cabucu",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento estadual",
+      "valorOriginal": "Condephaat, proc. 20.536/78",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Processo estadual ja informado e vinculado a reserva.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "represa-do-cabucu",
+          "campo": "Abastecimento e proteção",
+          "trecho": "O conjunto é essencial para a história do abastecimento de água. A Reserva Estadual da Cantareira é tombada pelo Condephaat (processo nº 20.536/78), e o trecho do Cabuçu ao Bonsucesso também foi tombado pelo município em 2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-26-2",
+      "idEquipe": "26",
+      "patrimonioEquipe": "Reserva e Represa do Cabuçu",
+      "slugCanonico": "represa-do-cabucu",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento municipal",
+      "valorOriginal": "2000",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Tombamento municipal ja descrito com abrangencia territorial.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "represa-do-cabucu",
+          "campo": "Abastecimento e proteção",
+          "trecho": "O conjunto é essencial para a história do abastecimento de água. A Reserva Estadual da Cantareira é tombada pelo Condephaat (processo nº 20.536/78), e o trecho do Cabuçu ao Bonsucesso também foi tombado pelo município em 2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-32-0",
+      "idEquipe": "32",
+      "patrimonioEquipe": "Complexo do Lago dos Patos",
+      "slugCanonico": "complexo-do-lago-dos-patos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Área",
+      "valorOriginal": "Mais de 20 mil m²",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Area aproximada ja explicitada; nao e nova medicao.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "complexo-do-lago-dos-patos",
+          "campo": "Um lago na Vila Galvão",
+          "trecho": "O Lago da Vila Galvão, também conhecido como Lago dos Patos, tem mais de 20 mil m², com água doce e vegetação.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-32-1",
+      "idEquipe": "32",
+      "patrimonioEquipe": "Complexo do Lago dos Patos",
+      "slugCanonico": "complexo-do-lago-dos-patos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Também chamado de",
+      "valorOriginal": "Lago da Vila Galvão",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Denominacao alternativa ja explicada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "complexo-do-lago-dos-patos",
+          "campo": "Um lago na Vila Galvão",
+          "trecho": "O Lago da Vila Galvão, também conhecido como Lago dos Patos, tem mais de 20 mil m², com água doce e vegetação.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-32-2",
+      "idEquipe": "32",
+      "patrimonioEquipe": "Complexo do Lago dos Patos",
+      "slugCanonico": "complexo-do-lago-dos-patos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombamento",
+      "valorOriginal": "2019",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano ja informado; descricao tambem registra o decreto.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "complexo-do-lago-dos-patos",
+          "campo": "Tombado desde 2019",
+          "trecho": "O complexo é tombado como patrimônio cultural do município desde 2019.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-28-0",
+      "idEquipe": "28",
+      "patrimonioEquipe": "Casarão Saraceni (Demolido em 2010)",
+      "slugCanonico": "casarao-saraceni",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Tombado",
+      "valorOriginal": "2000",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Protecao historica ja explicada com posterior destombamento.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "Tombado em 2000",
+          "trecho": "O casarão foi tombado em 2000 pelo Decreto Municipal nº 21.143. O lote pertencia ao Internacional Shopping Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-28-1",
+      "idEquipe": "28",
+      "patrimonioEquipe": "Casarão Saraceni (Demolido em 2010)",
+      "slugCanonico": "casarao-saraceni",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Estilo",
+      "valorOriginal": "Art Nouveau",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Estilo ja descrito.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "Art Nouveau",
+          "trecho": "Apresentava características do estilo Art Nouveau, com elementos decorativos na fachada, grandes esquadrias, varandas e outros detalhes que representavam a arquitetura residencial do início do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-28-2",
+      "idEquipe": "28",
+      "patrimonioEquipe": "Casarão Saraceni (Demolido em 2010)",
+      "slugCanonico": "casarao-saraceni",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Demolido",
+      "valorOriginal": "5 de novembro de 2010",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Data completa ja explicitada.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "A demolição",
+          "trecho": "Na madrugada de 5 de novembro de 2010, o casarão foi demolido em poucas horas. O episódio causou grande polêmica na cidade, e seus ecos ainda eram sentidos anos depois no conselho do patrimônio.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-28-3",
+      "idEquipe": "28",
+      "patrimonioEquipe": "Casarão Saraceni (Demolido em 2010)",
+      "slugCanonico": "casarao-saraceni",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Condenações",
+      "valorOriginal": "Acórdão de março de 2024",
+      "ordemOriginal": 3,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Evento judicial ja descrito; nao certificar situacao processual atual nem transito em julgado nesta curadoria.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "Condenações em 2024",
+          "trecho": "Em ação do Ministério Público iniciada em 2011, o Tribunal de Justiça de São Paulo condenou por improbidade administrativa, em acórdão publicado em março de 2024, o município, duas empresas e 39 pessoas físicas, entre elas o prefeito e ex-vereadores, pelo destombamento irregular. As penas incluem perda da função pública, suspensão dos direitos políticos por três anos e multa.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-29-0",
+      "idEquipe": "29",
+      "patrimonioEquipe": "Casarão Lima (Demolido em 2026)",
+      "slugCanonico": "casarao-lima",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Pedido de tombamento",
+      "valorOriginal": "2021",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano e numero do processo ja informados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-lima",
+          "campo": "Pedido de tombamento",
+          "trecho": "Em 2021, a Associação Amigos do Patrimônio e Arquivo Histórico (AAPAH) formalizou o pedido de tombamento municipal sob o Processo Administrativo nº 48.324/2021.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-29-1",
+      "idEquipe": "29",
+      "patrimonioEquipe": "Casarão Lima (Demolido em 2026)",
+      "slugCanonico": "casarao-lima",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Demolição",
+      "valorOriginal": "2026",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Ano ja informado; sitio historico e navegacao aproximada permanecem intactos.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-lima",
+          "campo": "A demolição",
+          "trecho": "Em meados de 2026, o casarão foi inteiramente demolido.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-30-0",
+      "idEquipe": "30",
+      "patrimonioEquipe": "Casarão da Família Albertis (Demolido em 2023)",
+      "slugCanonico": "casarao-da-familia-albertis",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Construção",
+      "valorOriginal": "Década de 1940",
+      "ordemOriginal": 0,
+      "decisao": "CONTRADIZ_C1_C2",
+      "justificativa": "Omitir provavelmente transforma a datacao estimada em certeza. A ressalva consta tambem no detalhe Historia.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "Um casarão dos anos 1940",
+          "trecho": "Provavelmente construído na década de 1940, era remanescente e sede do antigo Sítio Ponte Alta, associado à família Alberts/Albertis e à história de Ponte Alta, Anita Garibaldi e Santa Paula.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-30-1",
+      "idEquipe": "30",
+      "patrimonioEquipe": "Casarão da Família Albertis (Demolido em 2023)",
+      "slugCanonico": "casarao-da-familia-albertis",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Estilo",
+      "valorOriginal": "Neocolonial Missões",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Estilo ja explicitado.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "Neocolonial Missões",
+          "trecho": "Em estilo Neocolonial Missões, o casarão era único e uma evidência do processo de ocupação da região na primeira metade do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-30-2",
+      "idEquipe": "30",
+      "patrimonioEquipe": "Casarão da Família Albertis (Demolido em 2023)",
+      "slugCanonico": "casarao-da-familia-albertis",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Pedido de tombamento",
+      "valorOriginal": "19 de setembro de 2022",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Data e processo ja explicitados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "Pedido de tombamento",
+          "trecho": "A AAPAH solicitou o tombamento do imóvel em 19 de setembro de 2022, sob o Processo Administrativo nº 49.511/2022.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-30-3",
+      "idEquipe": "30",
+      "patrimonioEquipe": "Casarão da Família Albertis (Demolido em 2023)",
+      "slugCanonico": "casarao-da-familia-albertis",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Demolição",
+      "valorOriginal": "20 de abril de 2023",
+      "ordemOriginal": 3,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Data completa e contexto ja explicitados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "A demolição",
+          "trecho": "Em 20 de abril de 2023, antes da deliberação do conselho, o novo proprietário optou pela demolição completa da casa. Da construção restou o entulho, levado em um cortejo de caminhões.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-31-0",
+      "idEquipe": "31",
+      "patrimonioEquipe": "Antiga Carbonell Fiação e Tecelagem e Casarões Gêmeos (Demolidos)",
+      "slugCanonico": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Fábrica inaugurada",
+      "valorOriginal": "1923",
+      "ordemOriginal": 0,
+      "decisao": "CONTRADIZ_C1_C2",
+      "justificativa": "1923 nao e a data adotada: C1/C2 preservam divergencia entre 1917 e 2 de abril de 1925.",
+      "verificacao": "EXIGE_VERIFICACAO_DOCUMENTAL",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+          "campo": "Datas históricas divergentes",
+          "trecho": "As fontes consultadas não são unânimes quanto ao início da fábrica: há registro municipal de 1917 e pesquisa acadêmica baseada em João Ranali que aponta 2 de abril de 1925. Por isso, o cadastro preserva a divergência em vez de adotar uma única data como absoluta.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-31-1",
+      "idEquipe": "31",
+      "patrimonioEquipe": "Antiga Carbonell Fiação e Tecelagem e Casarões Gêmeos (Demolidos)",
+      "slugCanonico": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Fábrica fechada",
+      "valorOriginal": "Década de 1990",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Periodo de fechamento ja informado.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+          "campo": "O fim da fábrica",
+          "trecho": "A fábrica fechou as portas na década de 1990 e já havia desaparecido do terreno quando o último casarão foi demolido.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-31-2",
+      "idEquipe": "31",
+      "patrimonioEquipe": "Antiga Carbonell Fiação e Tecelagem e Casarões Gêmeos (Demolidos)",
+      "slugCanonico": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Último casarão",
+      "valorOriginal": "Demolido em 2009",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Demolicao do ultimo casarao ja descrita; nao confundir com a fabrica.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+          "campo": "A demolição em 2009",
+          "trecho": "O último casarão foi demolido em poucos dias, em 2009, com a anuência da prefeitura, para dar lugar a torres residenciais de uma construtora. Segundo o site São Paulo Antiga, nenhum jornal da cidade noticiou o fato.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-34-0",
+      "idEquipe": "34",
+      "patrimonioEquipe": "Antiga Igreja Matriz Colonial de N. Sra. da Conceição (Demolida)",
+      "slugCanonico": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Origem",
+      "valorOriginal": "Cerca de 1560",
+      "ordemOriginal": 0,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Origem aproximada ja descrita; nao equiparar a data de todas as fases construtivas.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+          "campo": "A missão jesuítica",
+          "trecho": "A primeira edificação religiosa no local data de meados do século XVI (por volta de 1560), originada na missão jesuítica junto aos povos indígenas nativos (Maromomis/Guarus).",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-34-1",
+      "idEquipe": "34",
+      "patrimonioEquipe": "Antiga Igreja Matriz Colonial de N. Sra. da Conceição (Demolida)",
+      "slugCanonico": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Estrutura em taipa",
+      "valorOriginal": "Século XVII",
+      "ordemOriginal": 1,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Periodo e tecnica ja explicados.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+          "campo": "A matriz em taipa de pilão",
+          "trecho": "Ao longo do século XVII, uma estrutura definitiva em taipa de pilão foi erguida, tornando-se a Igreja Matriz da Freguesia de Nossa Senhora da Conceição dos Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "F-34-2",
+      "idEquipe": "34",
+      "patrimonioEquipe": "Antiga Igreja Matriz Colonial de N. Sra. da Conceição (Demolida)",
+      "slugCanonico": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+      "resolucao": "DIRETA",
+      "rotuloOriginal": "Desmanche",
+      "valorOriginal": "Entre as décadas de 1930 e 1950",
+      "ordemOriginal": 2,
+      "decisao": "DUPLICADO_DE_DETALHE",
+      "justificativa": "Demolicao gradual ja contextualizada; marcador continua referencia historica.",
+      "verificacao": null,
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+          "campo": "Desmanchada em etapas",
+          "trecho": "Entre as décadas de 1930 e meados de 1950, a ancestral matriz de taipa foi gradualmente desmanchada e demolida em etapas para dar lugar à atual Catedral em estilo neoclássico.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "rotuloFinal": null,
+      "valorFinal": null,
+      "ordemFinal": null
+    }
+  ],
+  "ligacoes": [
+    {
+      "auditoriaId": "L-9>13",
+      "origemEquipe": "9",
+      "origemCanonica": "casa-jose-mauricio",
+      "destinoEquipe": "13",
+      "destinoCanonico": "casa-jose-mauricio",
+      "textoOriginal": "O mesmo imóvel, como Casarão da Nossa História.",
+      "ordemOriginal": 0,
+      "decisao": "REJEITAR_AUTORRELACAO",
+      "justificativa": "As duas pontas resolvem para casa-jose-mauricio.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-9>11",
+      "origemEquipe": "9",
+      "origemCanonica": "casa-jose-mauricio",
+      "destinoEquipe": "11",
+      "destinoCanonico": "antigo-paco-municipal",
+      "textoOriginal": "O antigo Paço, na mesma esquina.",
+      "ordemOriginal": 1,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Mesma esquina nao demonstra relacao editorial especifica alem da proximidade; residencia de prefeito nao prova vinculo com este Paco.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "$descricao",
+          "trecho": "Edifício histórico da Rua Sete de Setembro, 164, ligado à administração municipal e a diferentes serviços públicos de Guarulhos. As obras começaram em 1921 e o imóvel é protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-10>20",
+      "origemEquipe": "10",
+      "origemCanonica": "casa-amarela-casa-do-chefe-da-estacao",
+      "destinoEquipe": "20",
+      "destinoCanonico": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "textoOriginal": "A Maria Fumaça, na mesma praça.",
+      "ordemOriginal": 1,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Mesma praca e tema ferroviario nao provam vinculo direto entre esta casa e o equipamento exposto; a Estacao ja serve de referencia documentada.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-amarela-casa-do-chefe-da-estacao",
+          "campo": "$descricao",
+          "trecho": "Antiga Casa do Chefe da Estação, situada na Praça Prefeito Paschoal Thomeu, no Jardim Santa Francisca, junto à Avenida Antônio de Souza e à antiga estação ferroviária. O conjunto é historicamente referido como Praça IV Centenário. Apresenta linguagem arquitetônica funcional das infraestruturas ferroviárias paulistas do início do século XX e proteção municipal pelo Decreto nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+          "campo": "$descricao",
+          "trecho": "Conjunto patrimonial móvel e monumento urbano situado na Praça IV Centenário, composto pela locomotiva a vapor nº 33, um vagão de passageiros e uma caixa d'água metálica para abastecimento de caldeiras.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-11>9",
+      "origemEquipe": "11",
+      "origemCanonica": "antigo-paco-municipal",
+      "destinoEquipe": "9",
+      "destinoCanonico": "casa-jose-mauricio",
+      "textoOriginal": "A casa do ex-prefeito, na mesma esquina.",
+      "ordemOriginal": 0,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Vizinhanca e referencia generica ao ex-prefeito nao sustentam vinculo funcional individual com este edificio.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "$descricao",
+          "trecho": "Edifício histórico da Rua Sete de Setembro, 164, ligado à administração municipal e a diferentes serviços públicos de Guarulhos. As obras começaram em 1921 e o imóvel é protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-13>9",
+      "origemEquipe": "13",
+      "origemCanonica": "casa-jose-mauricio",
+      "destinoEquipe": "9",
+      "destinoCanonico": "casa-jose-mauricio",
+      "textoOriginal": "A mesma casa, vista como Casa José Maurício.",
+      "ordemOriginal": 0,
+      "decisao": "REJEITAR_AUTORRELACAO",
+      "justificativa": "As duas pontas resolvem para casa-jose-mauricio.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-13>11",
+      "origemEquipe": "13",
+      "origemCanonica": "casa-jose-mauricio",
+      "destinoEquipe": "11",
+      "destinoCanonico": "antigo-paco-municipal",
+      "textoOriginal": "O antigo Paço, na mesma esquina.",
+      "ordemOriginal": 1,
+      "decisao": "REJEITAR_DUPLICATA",
+      "justificativa": "Repete o par canonico 9>11 apos consolidacao, independentemente da rejeicao editorial desse par.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-jose-mauricio",
+          "campo": "$descricao",
+          "trecho": "Casarão histórico de arquitetura eclética que serviu de residência a José Maurício de Oliveira Sobrinho e, após diferentes usos públicos, abandono e um longo processo de restauração, foi reaberto como Casarão da Nossa História, espaço cultural e educativo dedicado à memória de Guarulhos.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "antigo-paco-municipal",
+          "campo": "$descricao",
+          "trecho": "Edifício histórico da Rua Sete de Setembro, 164, ligado à administração municipal e a diferentes serviços públicos de Guarulhos. As obras começaram em 1921 e o imóvel é protegido pelo Decreto Municipal nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-20>10",
+      "origemEquipe": "20",
+      "origemCanonica": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "destinoEquipe": "10",
+      "destinoCanonico": "casa-amarela-casa-do-chefe-da-estacao",
+      "textoOriginal": "A casa do chefe da estação.",
+      "ordemOriginal": 1,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Titulo da moradia nao demonstra vinculo direto com esta locomotiva; nao inferir proveniencia do equipamento.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+          "campo": "$descricao",
+          "trecho": "Conjunto patrimonial móvel e monumento urbano situado na Praça IV Centenário, composto pela locomotiva a vapor nº 33, um vagão de passageiros e uma caixa d'água metálica para abastecimento de caldeiras.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casa-amarela-casa-do-chefe-da-estacao",
+          "campo": "$descricao",
+          "trecho": "Antiga Casa do Chefe da Estação, situada na Praça Prefeito Paschoal Thomeu, no Jardim Santa Francisca, junto à Avenida Antônio de Souza e à antiga estação ferroviária. O conjunto é historicamente referido como Praça IV Centenário. Apresenta linguagem arquitetônica funcional das infraestruturas ferroviárias paulistas do início do século XX e proteção municipal pelo Decreto nº 21.143/2000.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-28>29",
+      "origemEquipe": "28",
+      "origemCanonica": "casarao-saraceni",
+      "destinoEquipe": "29",
+      "destinoCanonico": "casarao-lima",
+      "textoOriginal": "Outro casarão demolido durante pedido de tombamento.",
+      "ordemOriginal": 0,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Analogia entre demolicoes/processos nao demonstra vinculo historico individual entre os bens.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana em estilo *Art Nouveau* de alta relevância arquitetônica, com varandas e vitrais florais, localizada historicamente no bairro do Itapegica.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-lima",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana construída na Avenida Monteiro Lobato, centro de Guarulhos, representativa do padrão construtivo residencial da primeira metade do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-28>30",
+      "origemEquipe": "28",
+      "origemCanonica": "casarao-saraceni",
+      "destinoEquipe": "30",
+      "destinoCanonico": "casarao-da-familia-albertis",
+      "textoOriginal": "Casarão demolido em 2023, com acervo resgatado.",
+      "ordemOriginal": 1,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Data da demolicao e resgate de acervo de outro bem nao demonstram relacao direta.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana em estilo *Art Nouveau* de alta relevância arquitetônica, com varandas e vitrais florais, localizada historicamente no bairro do Itapegica.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "$descricao",
+          "trecho": "Casarão residencial da década de 1940, remanescente e sede do antigo Sítio Ponte Alta, associado à família Alberts/Albertis e marcado por elementos artísticos integrados, como vitrais da Casa Conrado e painel de azulejos de Lisbeth Forell.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-29>28",
+      "origemEquipe": "29",
+      "origemCanonica": "casarao-lima",
+      "destinoEquipe": "28",
+      "destinoCanonico": "casarao-saraceni",
+      "textoOriginal": "O caso Saraceni, que abriu o debate.",
+      "ordemOriginal": 0,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Nao ha apoio especifico para a causalidade abriu o debate entre estes dois casos.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-lima",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana construída na Avenida Monteiro Lobato, centro de Guarulhos, representativa do padrão construtivo residencial da primeira metade do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana em estilo *Art Nouveau* de alta relevância arquitetônica, com varandas e vitrais florais, localizada historicamente no bairro do Itapegica.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-29>30",
+      "origemEquipe": "29",
+      "origemCanonica": "casarao-lima",
+      "destinoEquipe": "30",
+      "destinoCanonico": "casarao-da-familia-albertis",
+      "textoOriginal": "Outro casarão demolido antes da decisão do conselho.",
+      "ordemOriginal": 1,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Semelhanca de conflitos de preservacao nao basta para uma ligacao individual.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-lima",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana construída na Avenida Monteiro Lobato, centro de Guarulhos, representativa do padrão construtivo residencial da primeira metade do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "$descricao",
+          "trecho": "Casarão residencial da década de 1940, remanescente e sede do antigo Sítio Ponte Alta, associado à família Alberts/Albertis e marcado por elementos artísticos integrados, como vitrais da Casa Conrado e painel de azulejos de Lisbeth Forell.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-30>28",
+      "origemEquipe": "30",
+      "origemCanonica": "casarao-da-familia-albertis",
+      "destinoEquipe": "28",
+      "destinoCanonico": "casarao-saraceni",
+      "textoOriginal": "O caso Saraceni, de 2010.",
+      "ordemOriginal": 0,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Referencia generica a outro caso de demolicao, sem vinculo especifico.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "$descricao",
+          "trecho": "Casarão residencial da década de 1940, remanescente e sede do antigo Sítio Ponte Alta, associado à família Alberts/Albertis e marcado por elementos artísticos integrados, como vitrais da Casa Conrado e painel de azulejos de Lisbeth Forell.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-saraceni",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana em estilo *Art Nouveau* de alta relevância arquitetônica, com varandas e vitrais florais, localizada historicamente no bairro do Itapegica.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    },
+    {
+      "auditoriaId": "L-30>29",
+      "origemEquipe": "30",
+      "origemCanonica": "casarao-da-familia-albertis",
+      "destinoEquipe": "29",
+      "destinoCanonico": "casarao-lima",
+      "textoOriginal": "Outro casarão demolido durante o processo de tombamento.",
+      "ordemOriginal": 1,
+      "decisao": "RELACAO_FRACA",
+      "justificativa": "Mesma situacao de demolicao durante protecao pendente nao comprova relacao direta.",
+      "fonteApoio": [
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-da-familia-albertis",
+          "campo": "$descricao",
+          "trecho": "Casarão residencial da década de 1940, remanescente e sede do antigo Sítio Ponte Alta, associado à família Alberts/Albertis e marcado por elementos artísticos integrados, como vitrais da Casa Conrado e painel de azulejos de Lisbeth Forell.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        },
+        {
+          "arquivo": "prisma/patrimonioSeedData.js",
+          "sha256": "c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8",
+          "slug": "casarao-lima",
+          "campo": "$descricao",
+          "trecho": "Edificação residencial urbana construída na Avenida Monteiro Lobato, centro de Guarulhos, representativa do padrão construtivo residencial da primeira metade do século XX.",
+          "natureza": "CONTEUDO_CANONICO_INCORPORADO",
+          "urls": []
+        }
+      ],
+      "textoFinal": null,
+      "ordemFinal": null
+    }
+  ]
+}
