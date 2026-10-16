@@ -153,6 +153,8 @@ export function normalizarPatrimonio(p) {
     })),
     localizacao: lat !== null && lng !== null ? { lat, lng } : null,
     detalhes,
+    // O detalhe público já traz destinos filtrados e relações na ordem editorial.
+    ligacoes: Array.isArray(p.ligacoes) ? p.ligacoes : [],
     rotas: (p.rotas ?? []).slice().sort((a, b) => a.ordem - b.ordem)
       .map((vinculo) => vinculo.rota),
   };

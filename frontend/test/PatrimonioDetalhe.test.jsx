@@ -39,7 +39,7 @@ function abrir(contexto = {}, strict = false) {
   const pagina = <MemoryRouter initialEntries={["/patrimonios/parque-teste"]}>
     <PatrimoniosContext.Provider value={{ patrimonios: [], setSelecionado: vi.fn(), ...contexto }}>
       <Link to="/patrimonios/outro">Outro patrimônio</Link>
-      <Routes><Route path="/patrimonios/:id" element={<PatrimonioDetalhe />} /></Routes>
+      <Routes><Route path="/patrimonios/:id" element={<PatrimonioDetalhe />} /><Route path="/mapa" element={<p>Mapa de teste</p>} /></Routes>
     </PatrimoniosContext.Provider>
   </MemoryRouter>;
   return render(strict ? <StrictMode>{pagina}</StrictMode> : pagina);
@@ -196,4 +196,63 @@ test("troca de slug ignora resposta atrasada do patrimônio anterior", async () 
   await act(async () => resolverAntigo({ data: { data: registro } }));
   await waitFor(() => expect(screen.queryByRole("heading", { name: registro.nome })).toBeNull());
   expect(get).toHaveBeenCalledTimes(2);
+});
+
+const relacaoEditorial = {
+  id: "uuid-editorial", ordem: 0, texto: "Relação funcional documentada entre os bens.",
+  destino: { id: "uuid-destino", slug: "casa-amarela", nome: "Casa Amarela" },
+};
+
+test("detalhe consome destino da API sem listagem e navega usando slug público", async () => {
+  get.mockResolvedValueOnce({ data: { data: { ...registro, ligacoes: [relacaoEditorial] } } });
+  get.mockResolvedValueOnce({ data: { data: { ...registro, id: "uuid-destino", slug: "casa-amarela", nome: "Casa Amarela", ligacoes: [] } } });
+  abrir(); await carregado();
+  expect(screen.getByRole("region", { name: "Patrimônios relacionados" })).toBeTruthy();
+  expect(screen.getByText(relacaoEditorial.texto)).toBeTruthy();
+  expect(document.body.textContent).not.toContain("uuid-editorial");
+  expect(document.body.textContent).not.toContain("uuid-destino");
+  fireEvent.click(screen.getByRole("link", { name: "Conhecer patrimônio: Casa Amarela" }));
+  await screen.findByRole("heading", { level: 1, name: "Casa Amarela" });
+  expect(get).toHaveBeenLastCalledWith("/patrimonios/casa-amarela");
+  expect(screen.queryByRole("region", { name: "Patrimônios relacionados" })).toBeNull();
+});
+
+test("sem ligações não deduz relacionados pela categoria nem renderiza fatos", async () => {
+  responder({ ...registro, fatos: [{ rotulo: "Fato não aprovado", valor: "Ignorar" }], ligacoes: [] });
+  abrir({ patrimonios: [{ id: "bem-mesma-categoria", nome: "Sugestão deduzida", categoria: "historico" }] });
+  await carregado();
+  expect(screen.queryByRole("region", { name: "Patrimônios relacionados" })).toBeNull();
+  expect(screen.queryByText("Sugestão deduzida")).toBeNull();
+  expect(screen.queryByText("Fato não aprovado")).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Em resumo" })).toBeNull();
+});
+
+test("normalização preserva ligações e ordem retornadas, sem consumir fatos", () => {
+  const ligacoes = [relacaoEditorial, { ...relacaoEditorial, id: "segunda", ordem: -1 }];
+  const normalizado = normalizarPatrimonio({ ...registro, ligacoes, fatos: [{ rotulo: "Não usar" }] });
+  expect(normalizado.ligacoes).toEqual(ligacoes);
+  expect(normalizado.fatos).toBeUndefined();
+  expect(normalizarPatrimonio({ ...registro, ligacoes: {} }).ligacoes).toEqual([]);
+});
+
+test("ligações preservam referência, endereço, rota e seleção do patrimônio no mapa", async () => {
+  const setSelecionado = vi.fn();
+  responder({ ...registro, ligacoes: [null, relacaoEditorial, { destino: null }] });
+  abrir({ setSelecionado }); await carregado();
+  expect(screen.getByRole("heading", { name: "Fontes e referências" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: /Abrir documento/ })).toBeTruthy();
+  expect(screen.getByText("Av. Paulo Faccini, s/n — Portão principal")).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Ver rota" }).href).toBe(criarUrlRota(normalizarPatrimonio(registro)));
+  fireEvent.click(screen.getByRole("button", { name: "Ver no mapa" }));
+  expect(setSelecionado).toHaveBeenCalledWith(expect.objectContaining({ id: registro.slug }));
+  expect(screen.getByText("Mapa de teste")).toBeTruthy();
+});
+
+test.each(SEM_DESTINO_C3)("relacionados não reativam endereço/mapa/rota para $slug", async ({ slug, aviso }) => {
+  responder({ ...registro, slug, ligacoes: [relacaoEditorial] }); abrir(); await carregado();
+  expect(screen.getByRole("region", { name: "Patrimônios relacionados" })).toBeTruthy();
+  expect(screen.getByText(aviso)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Ver no mapa" })).toBeNull();
+  expect(screen.queryByRole("link", { name: /Ver rota|Ver local aproximado/ })).toBeNull();
+  expect(document.querySelector(".detalhe-endereco-card")).toBeNull();
 });

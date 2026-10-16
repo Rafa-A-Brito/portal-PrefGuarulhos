@@ -16,11 +16,10 @@ import {
   HeartIcon,
   MusicalNoteIcon,
   ExclamationTriangleIcon,
-  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import { CATEGORIA_META } from "../../features/categoriaMeta";
-import PlaquetaCard from "../../features/mapa/PlaquetaCard";
+import PatrimoniosRelacionados from "./PatrimoniosRelacionados";
 import { buscarPatrimonioPorId } from "../../services/fakeApi";
 import { formatarEndereco } from "../../features/mapa/endereco";
 import { criarUrlRota } from "../../features/mapa/rota";
@@ -128,15 +127,6 @@ function DetalhePorSlug({ slug }) {
     { titulo: "Importância cultural", icone: "importancia", texto: item.importanciaCultural },
   ].filter((sec) => sec.texto?.trim() && !detalhes.some((d) => d.texto.trim() === sec.texto.trim()))
     .concat(detalhes);
-  const ligacoes = (item.ligacoes ?? [])
-    .map((l) => ({
-      ...l,
-      alvo: patrimonios.find((p) => String(p.id) === String(l.id)),
-    }))
-    .filter((l) => l.alvo);
-  const relacionados = patrimonios
-    .filter((p) => p.categoria === item.categoria && p.id !== item.id)
-    .slice(0, 3);
   const rotaUrl = criarUrlRota(item);
   const politica = classificarLocalizacao(item);
   const endereco = politica.exibirEndereco ? formatarEndereco(item) : [];
@@ -226,19 +216,6 @@ function DetalhePorSlug({ slug }) {
           </div>}
         </div>
 
-        {item.fatos?.length > 0 && (
-          <div className="detalhe-fatos">
-            <h2 className="detalhe-bloco-titulo">Em resumo</h2>
-            <div className="detalhe-fatos-grid">
-              {item.fatos.map((f) => (
-                <div className="detalhe-fato" key={f.rotulo}>
-                  <span className="detalhe-fato-rotulo">{f.rotulo}</span>
-                  <strong className="detalhe-fato-valor">{f.valor}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {secoes.length > 0 && (
@@ -313,35 +290,7 @@ function DetalhePorSlug({ slug }) {
             ))}</ul>
           </section>
         )}
-        {ligacoes.length > 0 && (
-          <div className="detalhe-ligacoes">
-            <h2 className="detalhe-bloco-titulo">Continue explorando</h2>
-            <div className="detalhe-ligacoes-grid">
-              {ligacoes.map((l) => (
-                <Link
-                  key={l.id}
-                  to={`/patrimonios/${l.id}`}
-                  className="detalhe-ligacao"
-                >
-                  <strong>{l.alvo.nome}</strong>
-                  <span>{l.texto}</span>
-                  <ArrowRightIcon width={20} height={20} aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {relacionados.length > 0 && (
-          <div className="detalhe-relacionados">
-            <h2>Outros patrimônios {meta?.label.toLowerCase()}</h2>
-            <div className="plaque-grid">
-              {relacionados.map((rel) => (
-                <PlaquetaCard key={rel.id} item={rel} />
-              ))}
-            </div>
-          </div>
-        )}
+        <PatrimoniosRelacionados ligacoes={item.ligacoes} />
       </div>
     </div>
   );
