@@ -1,12 +1,404 @@
-.detalhe-page { overflow-wrap: anywhere; }
-.detalhe-page .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.detalhe-descricao p { margin-bottom: 1rem; white-space: pre-line; }
-.detalhe-galeria, .detalhe-referencias, .detalhe-rotas { margin-bottom: 2rem; }
-.detalhe-galeria-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; }
-.detalhe-galeria figure { margin: 0; min-width: 0; }
-.detalhe-galeria img { display: block; width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; }
-.detalhe-galeria figcaption { margin-top: 0.5rem; color: var(--ink-soft); }
-.detalhe-referencias ul, .detalhe-rotas ul { padding-left: 1.25rem; }
-.detalhe-referencias li, .detalhe-rotas li { margin-top: 1rem; }
-.detalhe-referencias a { display: block; width: fit-content; margin-top: 0.25rem; }
-.detalhe-page .local-aproximado { color: var(--ink-soft); font-size: 0.875rem; margin-bottom: 1rem; }
+/* =========================================================
+   Detalhe do patrimônio — ficha cultural
+   Somente tokens de global.css. Seletores prefixados com
+   .detalhe-page para vencer as regras globais legadas de
+   .detalhe-* sem alterar o global.css.
+   ========================================================= */
+.detalhe-page {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+.detalhe-page .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Hero ---------- */
+.detalhe-page .detalhe-hero {
+  min-height: clamp(340px, 52vh, 520px);
+  background-color: var(--navy); /* sem foto, o texto branco continua legível */
+  padding-bottom: clamp(28px, 5vw, 48px);
+}
+.detalhe-page .detalhe-voltar {
+  margin-bottom: clamp(28px, 6vw, 72px);
+  padding: 8px 14px 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(23, 19, 49, 0.55);
+  color: #fff;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.detalhe-page .detalhe-voltar:hover {
+  background: var(--navy);
+  border-color: #fff;
+}
+.detalhe-page .detalhe-voltar:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+.detalhe-page .detalhe-hero-info .cat-badge {
+  margin: 0 6px 6px 0;
+}
+.detalhe-page .detalhe-hero-info h1 {
+  max-width: 22ch;
+  margin: 12px 0 6px;
+  font-size: clamp(28px, 4.6vw, 50px);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.detalhe-page .detalhe-bairro {
+  font-size: 14px;
+}
+.detalhe-page .situacao-demolido {
+  background: var(--orange);
+  color: var(--navy);
+}
+
+/* ---------- Introdução + localização ---------- */
+.detalhe-page .detalhe-body--ficha {
+  padding-top: clamp(28px, 5vw, 56px);
+  padding-bottom: clamp(24px, 4vw, 40px);
+}
+.detalhe-ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 40px);
+}
+.detalhe-page .detalhe-content {
+  max-width: 68ch;
+  min-width: 0;
+}
+.detalhe-page .detalhe-resumo {
+  margin: 0 0 1.25rem;
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.65;
+  font-weight: 500;
+  color: var(--navy);
+}
+.detalhe-descricao p {
+  margin: 0 0 1rem;
+  font-size: 15.5px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+.detalhe-descricao p:last-child {
+  margin-bottom: 0;
+}
+
+.detalhe-local {
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--navy);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-plaque);
+}
+.detalhe-local-rotulo {
+  margin: 0 0 14px;
+  color: var(--accent-dark);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.detalhe-page .detalhe-endereco-card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  gap: 12px;
+}
+.detalhe-page .detalhe-endereco-card strong {
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.detalhe-page .detalhe-endereco-card span {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.detalhe-page .local-aproximado {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--orange);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.detalhe-local-rotulo + .local-aproximado {
+  margin-top: 0;
+}
+.detalhe-page .detalhe-actions {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 18px;
+  gap: 10px;
+}
+.detalhe-page .detalhe-actions .btn-solid,
+.detalhe-page .detalhe-actions .btn-outline {
+  min-height: 44px;
+}
+.detalhe-page .detalhe-actions .btn-outline:hover {
+  background: var(--paper);
+}
+@media (min-width: 880px) {
+  .detalhe-ficha--com-local {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    align-items: start;
+  }
+}
+
+/* ---------- Seções editoriais: accordion em barras ---------- */
+.detalhe-page .detalhe-body--secoes {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.acordeao {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* Fundo em gradiente azul da paleta (navy-soft -> indigo); texto branco. */
+.acordeao-item {
+  background: linear-gradient(100deg, var(--navy-soft) 0%, var(--indigo) 100%);
+  color: #fff;
+}
+.acordeao-titulo {
+  margin: 0;
+  font-size: inherit;
+  letter-spacing: normal;
+}
+.acordeao-gatilho {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 16px clamp(14px, 3vw, 24px);
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.acordeao-gatilho:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.acordeao-gatilho:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: -3px;
+}
+.acordeao-icone {
+  flex: none;
+  color: #fff;
+}
+.acordeao-rotulo {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(17px, 2.2vw, 21px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+.acordeao-chevron {
+  flex: none;
+  color: rgba(255, 255, 255, 0.8);
+  transition:
+    transform 0.25s ease,
+    color 0.2s ease;
+}
+.acordeao-item[data-aberta="true"] .acordeao-chevron {
+  transform: rotate(90deg);
+  color: #fff;
+}
+
+/* Altura animada sem JS de medição: 0fr -> 1fr. Fechado = invisível para teclado e leitor de tela. */
+.acordeao-painel {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.28s ease,
+    visibility 0s linear 0.28s;
+}
+.acordeao-item[data-aberta="true"] .acordeao-painel {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.28s ease,
+    visibility 0s;
+}
+.acordeao-painel-miolo {
+  min-height: 0;
+  overflow: hidden;
+}
+.acordeao-texto {
+  max-width: 68ch;
+  padding: 0 clamp(14px, 3vw, 24px) 32px calc(clamp(14px, 3vw, 24px) + 34px);
+}
+.acordeao-texto p {
+  margin: 0 0 1rem;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: #fff;
+  white-space: pre-line;
+}
+.acordeao-texto p:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 560px) {
+  .acordeao-texto {
+    padding-left: clamp(14px, 3vw, 24px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .acordeao-painel,
+  .acordeao-item[data-aberta="true"] .acordeao-painel,
+  .acordeao-chevron {
+    transition: none;
+  }
+}
+
+/* ---------- Blocos finais ---------- */
+.detalhe-page .detalhe-body--fim {
+  padding-top: clamp(24px, 4vw, 40px);
+}
+.detalhe-galeria,
+.detalhe-referencias,
+.detalhe-rotas {
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+.detalhe-galeria > h2,
+.detalhe-referencias > h2,
+.detalhe-rotas > h2 {
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--navy);
+  font-size: clamp(20px, 2.4vw, 24px);
+}
+
+/* Galeria */
+.detalhe-galeria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 20px 16px;
+}
+.detalhe-galeria figure {
+  margin: 0;
+  min-width: 0;
+}
+.detalhe-galeria img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  background: var(--line);
+}
+.detalhe-galeria figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.detalhe-legenda-titulo {
+  color: var(--ink);
+  font-weight: 500;
+}
+.detalhe-legenda-credito {
+  font-size: 12px;
+}
+
+/* Referências: aparência de bibliografia */
+.detalhe-referencias-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: fonte;
+}
+.detalhe-referencias-lista li {
+  counter-increment: fonte;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.detalhe-referencias-lista li::before {
+  content: counter(fonte, decimal-leading-zero);
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.detalhe-referencia-titulo {
+  font-weight: 500;
+  line-height: 1.5;
+}
+.detalhe-referencias a {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 32px;
+  margin-top: 4px;
+  color: var(--indigo);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.detalhe-referencias a:hover {
+  color: var(--navy);
+}
+.detalhe-referencias a:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Rotas culturais */
+.detalhe-rotas-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.detalhe-rotas-lista li {
+  margin: 0;
+  padding: 4px 0 4px 16px;
+  border-left: 3px solid var(--green);
+}
+.detalhe-rotas-lista strong {
+  display: block;
+  color: var(--navy);
+  font-size: 16px;
+  line-height: 1.4;
+}
+.detalhe-rotas-lista p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}

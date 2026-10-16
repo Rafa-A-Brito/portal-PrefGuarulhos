@@ -1,9 +1,15 @@
-.patrimonios-relacionados { margin-block: 2rem; }
-.patrimonios-relacionados > h2 { margin-bottom: 1rem; color: var(--navy); }
+.patrimonios-relacionados { margin-block: 0 clamp(16px, 3vw, 24px); }
+.patrimonios-relacionados > h2 {
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--navy);
+  font-size: clamp(20px, 2.4vw, 24px);
+}
 .patrimonios-relacionados-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 1rem;
+  gap: 16px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -12,16 +18,20 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 10px;
   min-width: 0;
-  padding: clamp(18px, 3vw, 26px);
+  padding: clamp(18px, 3vw, 24px);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-top: 3px solid var(--navy);
+  border-radius: var(--radius-card);
   background: var(--paper);
+  box-shadow: var(--shadow-plaque);
   overflow-wrap: anywhere;
+  transition: border-color 0.15s ease;
 }
-.patrimonio-relacionado h3 { margin: 0; color: var(--navy); font-size: 1.125rem; line-height: 1.4; }
-.patrimonio-relacionado p { margin: 0 0 0.25rem; color: var(--ink); line-height: 1.6; }
+.patrimonio-relacionado:hover { border-top-color: var(--blue); }
+.patrimonio-relacionado h3 { margin: 0; color: var(--navy); font-size: 1.125rem; line-height: 1.35; }
+.patrimonio-relacionado p { margin: 0 0 0.25rem; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; }
 .patrimonio-relacionado-link {
   display: inline-flex;
   align-items: center;
@@ -34,6 +44,12 @@
   text-underline-offset: 0.2em;
   border-radius: 4px;
 }
-.patrimonio-relacionado-link svg { flex: none; }
+.patrimonio-relacionado-link svg { flex: none; transition: transform 0.15s ease; }
 .patrimonio-relacionado-link:hover { text-decoration-thickness: 2px; }
+.patrimonio-relacionado-link:hover svg { transform: translateX(3px); }
 .patrimonio-relacionado-link:focus-visible { outline: 3px solid var(--navy); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .patrimonio-relacionado,
+  .patrimonio-relacionado-link svg { transition: none; }
+  .patrimonio-relacionado-link:hover svg { transform: none; }
+}
