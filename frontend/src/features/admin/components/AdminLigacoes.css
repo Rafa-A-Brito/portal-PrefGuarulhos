@@ -1,0 +1,18 @@
+.admin-ligacoes { color: var(--navy, #2b255c); }
+.admin-ligacoes p, .admin-ligacoes h3, .admin-ligacoes small { overflow-wrap: anywhere; }
+.admin-ligacoes-lista { list-style: none; padding: 0; display: grid; gap: 1rem; }
+.admin-ligacoes-lista > li { border: 1px solid #c7c5d5; border-radius: 10px; padding: 1rem; min-width: 0; }
+.admin-ligacoes-lista h3 { margin: 0 0 .5rem; }
+.admin-ligacoes-status { font-size: .875rem; font-weight: 600; }
+.admin-ligacoes-acoes { display: flex; flex-wrap: wrap; gap: .6rem; margin: .75rem 0; }
+.admin-ligacoes button { min-height: 44px; padding: .5rem .8rem; border: 1px solid currentColor; border-radius: 6px; background: #f7f8fa; color: #2b255c; cursor: pointer; font: inherit; }
+.admin-ligacoes button:disabled { opacity: .55; cursor: not-allowed; }
+.admin-ligacoes :is(button, input, textarea):focus-visible { outline: 3px solid #2b255c; outline-offset: 3px; }
+.admin-ligacoes fieldset { min-width: 0; margin-top: 1.25rem; border: 1px solid #c7c5d5; border-radius: 8px; padding: 1rem; }
+.admin-ligacoes legend { font-weight: 700; }
+.admin-ligacoes input:not([type=radio]), .admin-ligacoes textarea { min-width: 0; width: 100%; box-sizing: border-box; }
+.admin-ligacoes textarea { resize: vertical; }
+.admin-ligacoes .admin-ligacoes-opcao { flex-direction: row; align-items: center; gap: .75rem; padding: .6rem 0; }
+.admin-ligacoes-opcao input { width: 20px; height: 20px; flex-shrink: 0; }
+.admin-ligacoes-opcao span { min-width: 0; overflow-wrap: anywhere; }
+.admin-ligacoes-opcao small { display: block; margin-top: .25rem; }

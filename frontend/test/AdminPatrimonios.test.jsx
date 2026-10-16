@@ -63,6 +63,7 @@ beforeEach(() => {
     calls.push({ method: config.method, url: config.url, body });
     if (hook) { const intercepted = await hook(config); if (intercepted) return intercepted; }
     if (config.url === "/categorias") return reply(config, cats);
+    if (config.method === "get" && config.url.endsWith("/ligacoes")) return reply(config, []);
     if (config.url === "/admin/patrimonios" && config.method === "get") {
       return reply(config, { itens: records.map(p => {
         const item = clone(p);
@@ -125,6 +126,36 @@ async function edit() {
   await screen.findByRole("heading", { name: "Editar patrimônio" });
   return user;
 }
+
+test("ligações usam CRUD dedicado sem submeter ou alterar o formulário patrimonial", async () => {
+  records[0].status = "PUBLICADO";
+  const ligacao = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", patrimonioDestinoId: secondId,
+    texto: "Relação editorial existente.", ordem: 0,
+    destino: { id: secondId, nome: "Outro patrimônio", slug: "outro-patrimonio", status: "PUBLICADO" } };
+  hook = config => {
+    if (config.url === `/admin/patrimonios/${id}/ligacoes`) return reply(config, [ligacao]);
+    if (config.url === `/admin/patrimonios/${id}/ligacoes/${ligacao.id}` && config.method === "patch") {
+      Object.assign(ligacao, JSON.parse(config.data)); return reply(config, ligacao);
+    }
+    return null;
+  };
+  const user = await edit();
+  await screen.findByText("Relação editorial existente.");
+  expect(document.querySelector("form form")).toBeNull();
+  await user.type(screen.getByLabelText("Nome"), " em edição");
+  await user.click(screen.getByRole("button", { name: "Editar relação com Outro patrimônio" }));
+  await user.clear(screen.getByLabelText("Texto da relação"));
+  await user.type(screen.getByLabelText("Texto da relação"), "Texto revisado da relação.");
+  await user.click(screen.getByRole("button", { name: "Salvar texto da ligação" }));
+  await screen.findByText("Texto da ligação atualizado.");
+  expect(screen.getByLabelText("Nome").value).toBe("Estação em edição");
+  expect(screen.getByLabelText("Endereço").value).toBe("Rua Teste");
+  expect(screen.getByRole("img", { name: "Fachada existente" })).toBeTruthy();
+  expect(calls.filter(c => c.method !== "get")).toEqual([
+    { method: "patch", url: `/admin/patrimonios/${id}/ligacoes/${ligacao.id}`, body: { texto: "Texto revisado da relação." } },
+  ]);
+  expect(flags.geo).not.toHaveBeenCalled();
+});
 
 test("lápis busca pelo UUID, aguarda detalhe e abre edição completa com foco e imagens", async () => {
   let release;

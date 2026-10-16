@@ -28,6 +28,7 @@ import {
 import { listarCategorias } from "../../../services/fakeApi";
 import * as adminApi from "../../../services/adminApi";
 import * as referenciasApi from "../../../services/referenciasApi";
+import AdminLigacoes from "../components/AdminLigacoes";
 
 // "descricao" no backend é texto livre (sem limite); este é só o limite do
 // formulário. O campo "descricaoResumida" do backend aceita no máximo 500.
@@ -135,6 +136,8 @@ export default function AdminPatrimonios() {
 
   // null = formulário fechado; "novo" = criando; senão, UUID do patrimônio.
   const [editandoId, setEditandoId] = useState(null);
+  const [statusEdicao, setStatusEdicao] = useState(null);
+  const [operandoLigacoes, setOperandoLigacoes] = useState(false);
   const [carregandoEdicao, setCarregandoEdicao] = useState(null);
   const [erroAcao, setErroAcao] = useState(null);
   const formularioRef = useRef(null);
@@ -185,6 +188,7 @@ export default function AdminPatrimonios() {
   const operandoReferencia = enviandoRef || removendoRefId !== null;
 
   const ocupado =
+    operandoLigacoes ||
     salvando ||
     operandoImagem ||
     operandoReferencia ||
@@ -305,6 +309,7 @@ export default function AdminPatrimonios() {
       setFormulario(preenchido);
       setImagens(detalhe.imagens ?? []);
       setReferencias(detalhe.referencias ?? []);
+      setStatusEdicao(detalhe.status);
       setCoordenadas(detalhe.localizacao ?? null);
       setChaveOriginal(chaveEndereco(detalhe));
       setEditandoId(detalhe.uuid);
@@ -1447,6 +1452,13 @@ export default function AdminPatrimonios() {
             </button>
           </div>
         </form>
+      )}
+
+      {editandoId && editandoId !== "novo" && (
+        <AdminLigacoes key={editandoId} patrimonioId={editandoId}
+          status={statusEdicao} perfil={usuario?.perfil}
+          bloqueado={salvando || operandoImagem || operandoReferencia || carregandoEdicao !== null || acaoEmAndamento !== null}
+          onBusyChange={setOperandoLigacoes} />
       )}
 
       {/* Legenda: cada categoria tem a sua cor (veja admin-extras.css) */}
