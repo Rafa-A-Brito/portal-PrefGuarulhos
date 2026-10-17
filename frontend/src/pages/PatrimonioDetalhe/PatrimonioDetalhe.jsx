@@ -10,6 +10,7 @@ import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import { CATEGORIA_META } from "../../features/categoriaMeta";
 import PatrimoniosRelacionados from "./PatrimoniosRelacionados";
 import SecoesAcordeao from "./SecoesAcordeao";
+import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
 import { buscarPatrimonioPorId } from "../../services/fakeApi";
 import { formatarEndereco } from "../../features/mapa/endereco";
 import { criarUrlRota } from "../../features/mapa/rota";
@@ -174,6 +175,7 @@ function DetalhePorSlug({ slug }) {
               <span className="cat-badge situacao-demolido">Demolido</span>
             )}
             <h1>{item.nome}</h1>
+            <MetadataEditorial item={item} />
             {politica.exibirEndereco && item.bairro && (
               <span className="detalhe-bairro">
                 <MapPinIcon width={16} height={16} /> {item.bairro}

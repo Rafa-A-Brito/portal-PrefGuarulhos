@@ -8,6 +8,7 @@ import { createPatrimonioSchema, localizacaoSchema } from "../schemas/patrimonio
 import { slugify } from "../utils/slug.js";
 import { destinoPublicoWhere } from "../utils/identidadeEditorial.js";
 import { fatoSelect, ligacaoSelect, ordemEditorial } from "./patrimonioEditorialService.js";
+import { validarAtribuicaoRegiao, regiaoPublicSelect, regiaoAdminSelect } from "./regiaoService.js";
 
 const MAX_SLUG_ATTEMPTS = 1000;
 
@@ -28,6 +29,9 @@ function achatarCategorias(patrimonio) {
 }
 
 const publicListSelect = {
+    numeroExibicao: true,
+    ordemExibicao: true,
+    regiao: { select: regiaoPublicSelect },
     id: true,
     nome: true,
     slug: true,
@@ -51,6 +55,9 @@ const publicListSelect = {
 };
 
 const publicDetailSelect = {
+    numeroExibicao: true,
+    ordemExibicao: true,
+    regiao: { select: regiaoPublicSelect },
     fatos: { orderBy: ordemEditorial, select: fatoSelect },
     ligacoes: {
         where: { destino: destinoPublicoWhere }, orderBy: ordemEditorial,
@@ -135,17 +142,21 @@ export async function listPatrimonios(query) {
 export async function listAdminPatrimonios(query) {
     return listWithStatus(query, query.status, {
         ...publicListSelect,
+        regiaoId: true,
+        regiao: { select: regiaoAdminSelect },
         status: true,
         arquivadoEm: true,
     });
 }
 
 async function listWithStatus(
-    { busca, categoria, situacao, bairro, pagina, limite },
+    { busca, categoria, situacao, bairro, regiao, numeroExibicao, pagina, limite },
     status,
     select
 ) {
     const where = {
+        ...(regiao && { regiao: { is: { slug: regiao } } }),
+        ...(numeroExibicao !== undefined && { numeroExibicao }),
         ...(status && { status }),
         ...(busca && {
             OR: [
@@ -204,7 +215,7 @@ async function listWithStatus(
             where,
             skip: (pagina - 1) * limite,
             take: limite,
-            orderBy: [{ nome: "asc" }, { id: "asc" }],
+            orderBy: [{ ordemExibicao: { sort: "asc", nulls: "last" } }, { nome: "asc" }, { id: "asc" }],
             select,
         }),
     ]);
@@ -221,6 +232,7 @@ async function listWithStatus(
 }
 
 const adminInclude = {
+    regiao: { select: regiaoAdminSelect },
     fatos: { orderBy: ordemEditorial, select: fatoSelect },
     ligacoes: { orderBy: ordemEditorial, select: ligacaoSelect },
     categoria: true,
@@ -291,6 +303,7 @@ export async function updatePatrimonio(id, data, user) {
         if (user.role !== "ADMIN" && (user.role !== "EDITOR" || current.status !== "RASCUNHO")) {
             throw new ForbiddenError("Editor pode editar somente rascunhos.");
         }
+        if (Object.hasOwn(data, "regiaoId")) await validarAtribuicaoRegiao(transaction, data.regiaoId);
         const categoriaId = data.categoriaId ?? current.categoriaId;
         const adicionaisIds =
             data.categoriasAdicionais ?? current.categoriasAdicionais.map((item) => item.id);
@@ -338,7 +351,14 @@ export async function updatePatrimonio(id, data, user) {
             include: adminInclude,
         });
         return achatarCategorias(updated);
-    });
+    }).catch(rethrowNumeroConflict);
+}
+
+function rethrowNumeroConflict(error) {
+    if (error.code === "P2002" && JSON.stringify(error.meta ?? {}).includes("numero_exibicao")) {
+        throw new ConflictError("Número de exibição já utilizado, inclusive por um patrimônio arquivado.");
+    }
+    throw error;
 }
 
 export async function changePatrimonioStatus(id, status, user, { transaction, dryRun = false } = {}) {
@@ -402,6 +422,7 @@ export async function createPatrimonio(data, createdBy) {
     }
     try {
         return await prisma.$transaction(async (transaction) => {
+            await validarAtribuicaoRegiao(transaction, data.regiaoId);
             const categoria = await transaction.categoria.findUnique({
                 where: { id: data.categoriaId },
                 select: { id: true },
@@ -435,6 +456,9 @@ export async function createPatrimonio(data, createdBy) {
 
             const criado = await transaction.patrimonio.create({
                 data: {
+                    regiaoId: data.regiaoId,
+                    numeroExibicao: data.numeroExibicao,
+                    ordemExibicao: data.ordemExibicao,
                     nome: data.nome,
                     slug,
                     descricao: data.descricao,
@@ -453,6 +477,7 @@ export async function createPatrimonio(data, createdBy) {
                     }),
                 },
                 include: {
+                    regiao: { select: regiaoAdminSelect },
                     categoria: true,
                     categoriasAdicionais: { include: { categoria: true } },
                     localizacao: true,
@@ -474,6 +499,6 @@ export async function createPatrimonio(data, createdBy) {
             }
         }
 
-        throw error;
+        rethrowNumeroConflict(error);
     }
 }

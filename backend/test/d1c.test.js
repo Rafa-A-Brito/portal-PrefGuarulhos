@@ -34,7 +34,17 @@ test('D1C: 83 fatos e 27 ligações têm decisão, apoio e cobertura integral', 
 test('D1C: geração determinística, sem identidade duplicada, artefatos versionados íntegros', () => {
     assert.deepEqual(gerarCuradoria(), gerarCuradoria());
     assert.deepEqual(validarManifesto(EDITORIAL_CURADO), EDITORIAL_CURADO);
-    for (const [path, content] of artefatos()) assert.equal(readFileSync(new URL('../' + path, import.meta.url), 'utf8'), content);
+    // O commit documental 55ec1b9 alinhou tabelas/JSON no Markdown. Comparamos
+    // todo o conteúdo, normalizando só essa apresentação; JS/JSON permanecem byte a byte.
+    const markdown = text => text.replace(/```json\r?\n([\s\S]*?)\r?\n```/g,
+        (_, json) => '```json\n' + JSON.stringify(JSON.parse(json)) + '\n```')
+        .split(/\r?\n/).map(line => line.trimStart().startsWith('|')
+            ? line.trim().split('|').map(cell => /^\s*:?-+:?\s*$/.test(cell) ? '-' : cell.trim()).join('|')
+            : line.trimEnd()).join('\n').trim();
+    for (const [path, content] of artefatos()) {
+        const actual = readFileSync(new URL('../' + path, import.meta.url), 'utf8');
+        assert.equal(path.endsWith('.md') ? markdown(actual) : actual, path.endsWith('.md') ? markdown(content) : content, path);
+    }
 });
 
 test('D1C: manifesto rejeita duplicata, ordem, autorrelação e identidade não canônica', () => {

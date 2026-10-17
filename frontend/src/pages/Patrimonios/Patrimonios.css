@@ -1,0 +1,4 @@
+.filtros-editoriais { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin: 1rem 0; }
+.filtros-editoriais label { display: grid; gap: .4rem; max-width: 100%; min-width: 0; color: var(--navy); }
+.filtros-editoriais :is(input, select) { max-width: 100%; min-width: 0; min-height: 44px; padding: .6rem; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.filtros-editoriais :is(input, select, button):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }

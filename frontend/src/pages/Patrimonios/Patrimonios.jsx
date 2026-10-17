@@ -11,6 +11,8 @@ import PlaquetaCard from "../../features/mapa/PlaquetaCard";
 import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
+import { listarRegioes } from "../../services/regioesApi";
+import "./Patrimonios.css";
 
 const ITENS_POR_PAGINA = 4;
 
@@ -18,6 +20,18 @@ export default function Patrimonios() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filtro = searchParams.get("categoria") || "todos";
+  const regiao = searchParams.get("regiao") || "";
+  const numero = searchParams.get("numeroExibicao") || "";
+  const [regioes, setRegioes] = useState([]);
+  const [erroRegioes, setErroRegioes] = useState(false);
+  const [tentativaRegioes, setTentativaRegioes] = useState(0);
+  useEffect(() => {
+    const abort = new AbortController();
+    listarRegioes(abort.signal).then(rows => {
+      if (!abort.signal.aborted) { setRegioes(rows); setErroRegioes(false); }
+    }).catch(() => { if (!abort.signal.aborted) setErroRegioes(true); });
+    return () => abort.abort();
+  }, [tentativaRegioes]);
 
   const [busca, setBusca] = useState(searchParams.get("busca") || "");
 
@@ -36,8 +50,9 @@ export default function Patrimonios() {
       filtrarPatrimonios(patrimonios, {
         categoria: filtro,
         busca,
-      }),
-    [filtro, busca, patrimonios],
+      }).filter(item => (!regiao || item.regiao?.slug === regiao) &&
+        (!numero || (/^[1-9]\d*$/.test(numero) && item.numeroExibicao === Number(numero)))),
+    [filtro, busca, patrimonios, regiao, numero],
   );
 
   // CÁLCULOS DE PAGINAÇÃO
@@ -86,6 +101,11 @@ export default function Patrimonios() {
     });
   };
 
+  function filtrarEditorial(campo, valor) {
+    setPaginaAtual(1);
+    setSearchParams(params => { if (valor) params.set(campo, valor); else params.delete(campo); return params; });
+  }
+
   return (
     <div>
       <div className="page-hero">
@@ -117,6 +137,22 @@ export default function Patrimonios() {
         </div>
 
         <FiltroBar ativo={filtro} onChange={handleFiltro} />
+        <div className="filtros-editoriais">
+          {regioes.length > 0 && <label>Região
+            <select value={regiao} onChange={e => filtrarEditorial("regiao", e.target.value)}>
+              <option value="">Todas as regiões</option>
+              {regiao && !regioes.some(r => r.slug === regiao) && <option value={regiao}>Região do filtro atual</option>}
+              {regioes.map(r => <option value={r.slug} key={r.id}>{r.nome}</option>)}
+            </select>
+          </label>}
+          <label>Número de exibição
+            <input type="number" min="1" max="2147483647" step="1" value={numero} onChange={e => filtrarEditorial("numeroExibicao", e.target.value)} placeholder="Todos" />
+          </label>
+          {(regiao || numero) && <button type="button" className="btn-outline" onClick={() => {
+            setPaginaAtual(1); setSearchParams(params => { params.delete("regiao"); params.delete("numeroExibicao"); return params; });
+          }}>Limpar filtros editoriais</button>}
+        </div>
+        {erroRegioes && <p role="status">Filtro regional indisponível. <button type="button" onClick={() => setTentativaRegioes(v => v + 1)}>Tentar carregar regiões</button></p>}
 
         {carregando ? (
           <div className="skeleton-grid">

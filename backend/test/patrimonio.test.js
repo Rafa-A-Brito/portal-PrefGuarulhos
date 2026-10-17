@@ -326,6 +326,7 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
             create: { endereco: "Rua A", bairro: "Centro", cidade: "Guarulhos", uf: "SP" },
         });
         assert.deepEqual(createArguments.include, {
+            regiao: { select: { id: true, nome: true, slug: true, ativo: true } },
             categoria: true,
             categoriasAdicionais: { include: { categoria: true } },
             localizacao: true,

@@ -63,6 +63,7 @@ beforeEach(() => {
     calls.push({ method: config.method, url: config.url, body });
     if (hook) { const intercepted = await hook(config); if (intercepted) return intercepted; }
     if (config.url === "/categorias") return reply(config, cats);
+    if (config.url === "/admin/regioes") return reply(config, { itens: [], paginacao: { pagina: 1, totalPaginas: 0 } });
     if (config.method === "get" && config.url.endsWith("/ligacoes")) return reply(config, []);
     if (config.url === "/admin/patrimonios" && config.method === "get") {
       return reply(config, { itens: records.map(p => {
@@ -126,6 +127,47 @@ async function edit() {
   await screen.findByRole("heading", { name: "Editar patrimônio" });
   return user;
 }
+
+test("D2: prioridade zero, número e região sem alterar endereço ou geocodificar", async () => {
+  const region = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", nome: "Região teste", slug: "regiao-teste", ativo: true };
+  hook = config => config.url === "/admin/regioes" ? reply(config, { itens: [region], paginacao: { totalPaginas: 1 } }) : null;
+  const user = await edit();
+  await screen.findByRole("option", { name: /Região teste/ });
+  await user.selectOptions(screen.getByLabelText("Região"), region.id);
+  await user.type(screen.getByLabelText("Número de exibição"), "12");
+  await user.type(screen.getByLabelText("Ordem de exibição"), "0");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body).toMatchObject({ regiaoId: region.id, numeroExibicao: 12, ordemExibicao: 0, localizacao: { numero: "393", endereco: "Rua Teste" } });
+  expect(flags.geo).not.toHaveBeenCalled();
+});
+
+test("D2: vínculo inativo é omitido; limpar número/ordem envia NULL", async () => {
+  records[0].regiaoId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  records[0].regiao = { id: records[0].regiaoId, nome: "Referência antiga", slug: "referencia-antiga", ativo: false };
+  records[0].numeroExibicao = 12; records[0].ordemExibicao = 0;
+  const user = await edit();
+  expect(await screen.findByRole("option", { name: /inativa — vínculo atual/ })).toHaveProperty("selected", true);
+  await user.clear(screen.getByLabelText("Número de exibição"));
+  await user.clear(screen.getByLabelText("Ordem de exibição"));
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  const body = calls.find(c => c.method === "patch").body;
+  expect(body).not.toHaveProperty("regiaoId");
+  expect(body).toMatchObject({ numeroExibicao: null, ordemExibicao: null });
+});
+
+test("D2: limpar vínculo regional envia NULL", async () => {
+  records[0].regiaoId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  records[0].regiao = { id: records[0].regiaoId, nome: "Antiga", slug: "antiga", ativo: false };
+  const user = await edit();
+  await waitFor(() => expect(screen.getByLabelText("Região").disabled).toBe(false));
+  await user.selectOptions(screen.getByLabelText("Região"), "");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body.regiaoId).toBeNull();
+  expect(flags.geo).not.toHaveBeenCalled();
+});
 
 test("ligações usam CRUD dedicado sem submeter ou alterar o formulário patrimonial", async () => {
   records[0].status = "PUBLICADO";
@@ -191,6 +233,7 @@ test("edição usa PATCH, preserva resumo editorial e imagens, normaliza Decimal
   const patch = calls.find(c => c.method === "patch");
   expect(patch.url).toBe("/admin/patrimonios/" + id);
   expect(patch.body).toEqual({
+    numeroExibicao: null, ordemExibicao: null,
     nome: "Estação revisada", descricao: records[0].descricao, descricaoResumida: "Resumo editorial próprio.",
     categoriaId: cats[0].id, categoriasAdicionais: [cats[1].id], situacao: "PRESERVADO",
     historia: "História completa atual.", importanciaCultural: "Importância atual.",

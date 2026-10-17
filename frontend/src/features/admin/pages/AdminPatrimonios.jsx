@@ -29,6 +29,7 @@ import { listarCategorias } from "../../../services/fakeApi";
 import * as adminApi from "../../../services/adminApi";
 import * as referenciasApi from "../../../services/referenciasApi";
 import AdminLigacoes from "../components/AdminLigacoes";
+import OrganizacaoEditorial from "../components/OrganizacaoEditorial";
 
 // "descricao" no backend é texto livre (sem limite); este é só o limite do
 // formulário. O campo "descricaoResumida" do backend aceita no máximo 500.
@@ -52,6 +53,11 @@ const ROTULO_STATUS = {
 };
 
 const FORMULARIO_VAZIO = {
+  regiaoId: "",
+  regiaoOriginalId: "",
+  regiaoAtual: null,
+  numeroExibicao: "",
+  ordemExibicao: "",
   nome: "",
   categoriaId: "",
   categoriasAdicionais: [],
@@ -99,6 +105,11 @@ function mesclarImagem(lista, nova) {
 function paraFormulario(patrimonio) {
   return {
     ...FORMULARIO_VAZIO,
+    regiaoId: patrimonio.regiaoId ?? "",
+    regiaoOriginalId: patrimonio.regiaoId ?? "",
+    regiaoAtual: patrimonio.regiao ?? null,
+    numeroExibicao: patrimonio.numeroExibicao ?? "",
+    ordemExibicao: patrimonio.ordemExibicao ?? "",
     nome: patrimonio.nome,
     categoriaId: patrimonio.categoriaId ?? "",
     categoriasAdicionais: patrimonio.categoriasAdicionaisIds ?? [],
@@ -454,6 +465,12 @@ export default function AdminPatrimonios() {
       };
 
       const dados = {
+        // Omitir vínculo inalterado permite editar fichas cuja região foi inativada.
+        ...((editandoId === "novo" || formulario.regiaoId !== formulario.regiaoOriginalId) && {
+          regiaoId: formulario.regiaoId || null,
+        }),
+        numeroExibicao: formulario.numeroExibicao === "" ? null : Number(formulario.numeroExibicao),
+        ordemExibicao: formulario.ordemExibicao === "" ? null : Number(formulario.ordemExibicao),
         nome: formulario.nome.trim(),
         descricao: formulario.descricao.trim(),
         descricaoResumida: formulario.descricaoResumida.trim(),
@@ -849,6 +866,7 @@ export default function AdminPatrimonios() {
               </select>
             </label>
 
+            <OrganizacaoEditorial key={editandoId} formulario={formulario} atualizar={atualizar} />
             <fieldset className="admin-form-col-2 admin-chips">
               <legend className="admin-chips-legenda">
                 <span>Categorias adicionais</span>

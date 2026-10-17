@@ -8,6 +8,7 @@ import dashboardRoutes from "./dashboardRoute.js";
 import patrimonioRoutes from "./patrimonioRoute.js";
 import categoriaRoutes from "./configRoutes.js";
 import patrimonioEditorialRoutes from "./patrimonioEditorialRoute.js";
+import { publicRegiaoRoutes, adminRegiaoRoutes } from "./regiaoRoute.js";
 
 import exposicaoRoutes from "./exposicaoRoute.js";
 import novidadeRoutes from "./novidadeRoute.js";
@@ -39,6 +40,8 @@ router.use("/auth", authRoutes);
 router.use("/admins", adminRoutes);
 router.use("/patrimonios", patrimonioRoutes);
 router.use("/categorias", categoriaRoutes);
+router.use("/regioes", publicRegiaoRoutes);
+router.use("/admin/regioes", adminRegiaoRoutes);
 router.use("/admin/dashboard", dashboardRoutes);
 router.use("/admin/patrimonios", adminPatrimonioRoutes);
 router.use("/admin/patrimonios", patrimonioEditorialRoutes);

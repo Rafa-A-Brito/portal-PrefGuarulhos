@@ -95,6 +95,23 @@ test("hash aprovado protege estado/fonte e mantém o dry-run sem escritas", asyn
     assert.equal(applied.aplicados, 2);
 });
 
+test("D2: sync preserva região, número e prioridade editoriais e inclui escalares no hash", async t => {
+    const state = fixtures();
+    for (const [i, p] of state.entries()) Object.assign(p, { regiaoId: randomUUID(), numeroExibicao: i + 10, ordemExibicao: 0 });
+    const prisma = fake(state), paths = await dirs(t);
+    const params = { prisma, databaseUrl, source, ...paths };
+    const before = await importPatrimonios({ ...params, options: dry() });
+    const changed = structuredClone(state); changed[0].ordemExibicao = 1;
+    const other = await importPatrimonios({ ...params, prisma: fake(changed), options: dry() });
+    assert.notEqual(before.estado_hash, other.estado_hash);
+    const report = await importPatrimonios({ ...params, options: { ...apply(), expectedStateHash: before.estado_hash } });
+    assert.equal(report.aplicados, 2);
+    for (const expected of state) {
+        const actual = prisma.state.find(p => p.id === expected.id);
+        for (const key of ["regiaoId", "numeroExibicao", "ordemExibicao"]) assert.equal(actual[key], expected[key]);
+    }
+});
+
 test("CLI aceita hash apenas no sync e valida SHA-256", () => {
     const hash = "a".repeat(64);
     assert.equal(parseArgs(["--sync-patrimonios", "--expected-state-hash=" + hash]).expectedStateHash, hash);

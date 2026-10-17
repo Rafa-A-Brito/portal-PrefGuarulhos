@@ -164,7 +164,7 @@ test("listagem administrativa reutiliza filtros, paginação e ordenação está
         assert.equal(args.where.situacao, "PRESERVADO");
         assert.equal(args.skip, 5);
         assert.equal(args.take, 5);
-        assert.deepEqual(args.orderBy, [{ nome: "asc" }, { id: "asc" }]);
+        assert.deepEqual(args.orderBy, [{ ordemExibicao: { sort: "asc", nulls: "last" } }, { nome: "asc" }, { id: "asc" }]);
         assert.deepEqual(result.body.data, {
             itens: [],
             paginacao: { pagina: 2, limite: 5, total: 0, totalPaginas: 0 },

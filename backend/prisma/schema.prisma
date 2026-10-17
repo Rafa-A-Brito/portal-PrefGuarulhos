@@ -44,32 +44,49 @@ model User {
 
   patrimoniosCriados     Patrimonio[] @relation("PatrimonioCriadoPor")
   patrimoniosAtualizados Patrimonio[] @relation("PatrimonioAtualizadoPor")
-  exposicoesCriadas Exposicao[] @relation("ExposicaoCriadoPor")
-  exposicoesAtualizadas Exposicao[] @relation("ExposicaoAtualizadoPor")
-  novidadesCriadas Novidade[] @relation("NovidadeCriadoPor")
-  novidadesAtualizadas Novidade[] @relation("NovidadeAtualizadoPor")
+  exposicoesCriadas      Exposicao[]  @relation("ExposicaoCriadoPor")
+  exposicoesAtualizadas  Exposicao[]  @relation("ExposicaoAtualizadoPor")
+  novidadesCriadas       Novidade[]   @relation("NovidadeCriadoPor")
+  novidadesAtualizadas   Novidade[]   @relation("NovidadeAtualizadoPor")
   auditLogs              AuditLog[]
 
   @@map("users")
 }
 
 model Categoria {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nome        String       @unique(map: "categoria_nome_key") @db.VarChar(100)
-  slug        String       @unique(map: "categoria_slug_key") @db.VarChar(120)
-  descricao   String?      @db.Text
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  patrimonios Patrimonio[]
+  id           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome         String                @unique(map: "categoria_nome_key") @db.VarChar(100)
+  slug         String                @unique(map: "categoria_slug_key") @db.VarChar(120)
+  descricao    String?               @db.Text
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  patrimonios  Patrimonio[]
   adicionaisEm PatrimonioCategoria[]
 
   @@map("categoria")
+}
+
+model RegiaoPatrimonio {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome        String       @db.VarChar(100)
+  slug        String       @unique(map: "regioes_patrimonio_slug_key") @db.VarChar(120)
+  descricao   String?      @db.VarChar(2000)
+  ativo       Boolean      @default(true)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  patrimonios Patrimonio[]
+
+  @@map("regioes_patrimonio")
 }
 
 model Patrimonio {
   id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome                String             @map("name") @db.VarChar(200)
   slug                String             @unique(map: "patrimonio_slug_key") @db.VarChar(220)
+  regiaoId            String?            @map("regiao_id") @db.Uuid
+  numeroExibicao      Int?               @unique(map: "patrimonio_numero_exibicao_key") @map("numero_exibicao")
+  ordemExibicao       Int?               @map("ordem_exibicao")
+  regiao              RegiaoPatrimonio?  @relation(fields: [regiaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   descricao           String             @db.Text
   descricaoResumida   String             @map("descricao_resumida") @db.VarChar(500)
   historia            String?            @db.Text
@@ -84,20 +101,22 @@ model Patrimonio {
   publicadoEm         DateTime?          @map("published_at") @db.Timestamptz(3)
   arquivadoEm         DateTime?          @map("arquivado_em") @db.Timestamptz(3)
 
-  categoria     Categoria             @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
-  criadoPor     User                  @relation("PatrimonioCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
-  atualizadoPor User?                 @relation("PatrimonioAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
-  localizacao   Localizacao?
-  imagens       PatrimonioImagem[]
-  documentos    PatrimonioDocumento[]
-  rotas         RotaPatrimonio[]
-  fatos         PatrimonioFato[]
-  ligacoes      PatrimonioLigacao[] @relation("LigacaoOrigem")
-  ligacoesRecebidas PatrimonioLigacao[] @relation("LigacaoDestino")
+  categoria            Categoria             @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  criadoPor            User                  @relation("PatrimonioCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
+  atualizadoPor        User?                 @relation("PatrimonioAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
+  localizacao          Localizacao?
+  imagens              PatrimonioImagem[]
+  documentos           PatrimonioDocumento[]
+  rotas                RotaPatrimonio[]
+  fatos                PatrimonioFato[]
+  ligacoes             PatrimonioLigacao[]   @relation("LigacaoOrigem")
+  ligacoesRecebidas    PatrimonioLigacao[]   @relation("LigacaoDestino")
   categoriasAdicionais PatrimonioCategoria[]
-    detalhes      PatrimonioDetalhe[]
+  detalhes             PatrimonioDetalhe[]
 
   @@index([categoriaId, status])
+  @@index([regiaoId], map: "patrimonio_regiao_id_idx")
+  @@index([ordemExibicao, nome, id], map: "patrimonio_ordem_exibicao_nome_id_idx")
   @@index([createdBy])
   @@index([updatedBy])
   @@index([status])
@@ -105,12 +124,12 @@ model Patrimonio {
 }
 
 model PatrimonioDetalhe {
-  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  patrimonioId String     @map("patrimonio_id") @db.Uuid
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patrimonioId String  @map("patrimonio_id") @db.Uuid
   icone        String?
   titulo       String
   texto        String
-  ordem        Int        @default(0)
+  ordem        Int     @default(0)
 
   patrimonio Patrimonio @relation(fields: [patrimonioId], references: [id], onDelete: Cascade)
 
@@ -119,10 +138,10 @@ model PatrimonioDetalhe {
 }
 
 model PatrimonioFato {
-  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  patrimonioId String @map("patrimonio_id") @db.Uuid
-  rotulo       String @db.VarChar(200)
-  valor        String @db.Text
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patrimonioId String     @map("patrimonio_id") @db.Uuid
+  rotulo       String     @db.VarChar(200)
+  valor        String     @db.Text
   ordem        Int
   patrimonio   Patrimonio @relation(fields: [patrimonioId], references: [id], onDelete: Cascade)
 
@@ -131,10 +150,10 @@ model PatrimonioFato {
 }
 
 model PatrimonioLigacao {
-  id                  String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  patrimonioOrigemId  String @map("patrimonio_origem_id") @db.Uuid
-  patrimonioDestinoId String @map("patrimonio_destino_id") @db.Uuid
-  texto               String @db.VarChar(2000)
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patrimonioOrigemId  String     @map("patrimonio_origem_id") @db.Uuid
+  patrimonioDestinoId String     @map("patrimonio_destino_id") @db.Uuid
+  texto               String     @db.VarChar(2000)
   ordem               Int
   origem              Patrimonio @relation("LigacaoOrigem", fields: [patrimonioOrigemId], references: [id], onDelete: Cascade, map: "patrimonio_ligacoes_origem_fkey")
   destino             Patrimonio @relation("LigacaoDestino", fields: [patrimonioDestinoId], references: [id], onDelete: Cascade, map: "patrimonio_ligacoes_destino_fkey")
@@ -146,16 +165,16 @@ model PatrimonioLigacao {
 }
 
 model SiteHero {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pagina     String   @unique
-  eyebrow    String?
-  titulo     String
-  subtitulo  String?
-  imagemUrl  String?
-  ctaLabel   String?
-  ctaUrl     String?
-  ativo      Boolean  @default(true)
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pagina    String   @unique
+  eyebrow   String?
+  titulo    String
+  subtitulo String?
+  imagemUrl String?
+  ctaLabel  String?
+  ctaUrl    String?
+  ativo     Boolean  @default(true)
+  updatedAt DateTime @updatedAt
 
   @@map("site_hero")
 }
@@ -278,24 +297,24 @@ enum TipoNovidade {
 }
 
 model Exposicao {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug String @unique(map: "exposicao_slug_key") @db.VarChar(220)
-  titulo String @db.VarChar(200)
-  artista String @db.VarChar(200)
-  local String @db.VarChar(250)
-  periodo String @db.VarChar(200)
-  bio String @db.Text
-  imagemUrl String @map("imagem_url") @db.Text
-  ctaSaibaMais String? @map("cta_saiba_mais") @db.Text
-  status StatusPublicacao @default(RASCUNHO)
-  createdBy String @map("created_by") @db.Uuid
-  updatedBy String? @map("updated_by") @db.Uuid
-  publicadoEm DateTime? @map("published_at") @db.Timestamptz(3)
-  arquivadoEm DateTime? @map("arquivado_em") @db.Timestamptz(3)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  criadoPor User @relation("ExposicaoCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
-  atualizadoPor User? @relation("ExposicaoAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug          String           @unique(map: "exposicao_slug_key") @db.VarChar(220)
+  titulo        String           @db.VarChar(200)
+  artista       String           @db.VarChar(200)
+  local         String           @db.VarChar(250)
+  periodo       String           @db.VarChar(200)
+  bio           String           @db.Text
+  imagemUrl     String           @map("imagem_url") @db.Text
+  ctaSaibaMais  String?          @map("cta_saiba_mais") @db.Text
+  status        StatusPublicacao @default(RASCUNHO)
+  createdBy     String           @map("created_by") @db.Uuid
+  updatedBy     String?          @map("updated_by") @db.Uuid
+  publicadoEm   DateTime?        @map("published_at") @db.Timestamptz(3)
+  arquivadoEm   DateTime?        @map("arquivado_em") @db.Timestamptz(3)
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  criadoPor     User             @relation("ExposicaoCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
+  atualizadoPor User?            @relation("ExposicaoAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
 
   @@index([status, publicadoEm])
   @@index([createdBy])
@@ -304,32 +323,32 @@ model Exposicao {
 }
 
 model Novidade {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug String @unique(map: "novidade_slug_key") @db.VarChar(220)
-  tipo TipoNovidade
-  tag String @db.VarChar(100)
-  data DateTime @db.Date
-  titulo String @db.VarChar(200)
-  resumo String? @db.VarChar(2000)
-  texto String @db.Text
-  quando String? @db.VarChar(250)
-  local String? @db.VarChar(250)
-  imagemUrl String? @map("imagem_url") @db.Text
-  blocoDia String? @map("bloco_dia") @db.VarChar(30)
-  blocoMes String? @map("bloco_mes") @db.VarChar(30)
-  blocoLegenda String? @map("bloco_legenda") @db.VarChar(150)
-  ctaRotulo String? @map("cta_rotulo") @db.VarChar(150)
-  ctaUrl String? @map("cta_url") @db.Text
-  fontes Json @default("[]") @db.JsonB
-  status StatusPublicacao @default(RASCUNHO)
-  createdBy String @map("created_by") @db.Uuid
-  updatedBy String? @map("updated_by") @db.Uuid
-  publicadoEm DateTime? @map("published_at") @db.Timestamptz(3)
-  arquivadoEm DateTime? @map("arquivado_em") @db.Timestamptz(3)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  criadoPor User @relation("NovidadeCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
-  atualizadoPor User? @relation("NovidadeAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug          String           @unique(map: "novidade_slug_key") @db.VarChar(220)
+  tipo          TipoNovidade
+  tag           String           @db.VarChar(100)
+  data          DateTime         @db.Date
+  titulo        String           @db.VarChar(200)
+  resumo        String?          @db.VarChar(2000)
+  texto         String           @db.Text
+  quando        String?          @db.VarChar(250)
+  local         String?          @db.VarChar(250)
+  imagemUrl     String?          @map("imagem_url") @db.Text
+  blocoDia      String?          @map("bloco_dia") @db.VarChar(30)
+  blocoMes      String?          @map("bloco_mes") @db.VarChar(30)
+  blocoLegenda  String?          @map("bloco_legenda") @db.VarChar(150)
+  ctaRotulo     String?          @map("cta_rotulo") @db.VarChar(150)
+  ctaUrl        String?          @map("cta_url") @db.Text
+  fontes        Json             @default("[]") @db.JsonB
+  status        StatusPublicacao @default(RASCUNHO)
+  createdBy     String           @map("created_by") @db.Uuid
+  updatedBy     String?          @map("updated_by") @db.Uuid
+  publicadoEm   DateTime?        @map("published_at") @db.Timestamptz(3)
+  arquivadoEm   DateTime?        @map("arquivado_em") @db.Timestamptz(3)
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  criadoPor     User             @relation("NovidadeCriadoPor", fields: [createdBy], references: [id], onDelete: Restrict)
+  atualizadoPor User?            @relation("NovidadeAtualizadoPor", fields: [updatedBy], references: [id], onDelete: Restrict)
 
   @@index([status, publicadoEm])
   @@index([status, tipo, data])

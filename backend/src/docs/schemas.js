@@ -1,3 +1,4 @@
+import { schemasD2 } from "./d2.js";
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const string = (description, extra = {}) => ({ type: "string", description, ...extra });
 const nullable = (schema) => ({ ...schema, nullable: true });
@@ -913,3 +914,5 @@ schemas.DocumentoPatch = (() => {
         properties: metadados,
     };
 })();
+
+schemasD2(schemas);

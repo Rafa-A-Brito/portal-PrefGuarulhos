@@ -1,0 +1,2 @@
+.metadata-editorial { display: flex; flex-wrap: wrap; gap: .4rem .8rem; font-size: .85rem; margin: .6rem 0; overflow-wrap: anywhere; }
+.metadata-editorial span { color: var(--navy); background: var(--paper); padding: .3rem .6rem; border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPinIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../categoriaMeta";
 import { classificarLocalizacao } from "./politicaLocalizacao";
+import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
 
 import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
 
@@ -30,6 +31,7 @@ export default function PlaquetaCard({ item }) {
       </figure>
       <div className="plaqueta-body">
         <h3>{item.nome}</h3>
+        <MetadataEditorial item={item} />
         <div className="bairro">
           <MapPinIcon className="inline-icon" aria-hidden="true" />
           {politica.aviso || item.bairro}

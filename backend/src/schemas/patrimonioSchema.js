@@ -1,5 +1,6 @@
 import { SituacaoPatrimonio, StatusPublicacao } from "@prisma/client";
 import { z } from "zod";
+import { regiaoSlugSchema } from "./regiaoSchema.js";
 
 const optionalText = (max, message) => z.string().trim().min(1, message).max(max).optional();
 
@@ -47,6 +48,9 @@ export const localizacaoSchema = localizacaoFieldsSchema.superRefine((localizaca
 });
 
 const createPatrimonioFieldsSchema = z.strictObject({
+    regiaoId: z.uuid().nullable().optional(),
+    numeroExibicao: z.number().int().min(1).max(2147483647).nullable().optional(),
+    ordemExibicao: z.number().int().min(0).max(2147483647).nullable().optional(),
     nome: z.string().trim().min(1, "Informe o nome.").max(200),
     descricao: z.string().trim().min(1, "Informe a descrição."),
     descricaoResumida: z.string().trim().min(1, "Informe a descrição resumida.").max(500),
@@ -88,6 +92,9 @@ export const createPatrimonioSchema = createPatrimonioFieldsSchema.superRefine((
 const queryText = (max, message) => z.string().trim().min(1, message).max(max).optional();
 
 export const listPatrimoniosQuerySchema = z.strictObject({
+    regiao: regiaoSlugSchema.optional(),
+    numeroExibicao: z.string().regex(/^[1-9]\d*$/).transform(Number)
+        .pipe(z.number().int().min(1).max(2147483647)).optional(),
     busca: queryText(200, "Informe um termo de busca válido."),
     categoria: queryText(100, "Informe uma categoria válida."),
     situacao: z.enum(Object.values(SituacaoPatrimonio)).optional(),

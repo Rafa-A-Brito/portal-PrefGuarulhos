@@ -66,6 +66,9 @@ export default function AdminLayout() {
           <NavLink to="/admin/exposicoes" className={({ isActive }) => isActive ? "active" : ""}>
             <BuildingLibraryIcon width={18} height={18} /> Exposições
           </NavLink>
+          {usuario?.perfil === "ADMIN" && <NavLink to="/admin/regioes" className={({ isActive }) => isActive ? "active" : ""}>
+            <BuildingLibraryIcon width={18} height={18} /> Regiões
+          </NavLink>}
           <NavLink to="/admin/novidades" className={({ isActive }) => isActive ? "active" : ""}>
             <Squares2X2Icon width={18} height={18} /> Novidades
           </NavLink>

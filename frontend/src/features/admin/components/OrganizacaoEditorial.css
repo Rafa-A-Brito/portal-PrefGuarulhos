@@ -1,0 +1,5 @@
+.organizacao-editorial { min-width: 0; display: grid; gap: .8rem; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; }
+.organizacao-editorial legend { font-weight: 700; padding: 0 .4rem; }
+.organizacao-editorial label { display: grid; gap: .4rem; min-width: 0; }
+.organizacao-editorial select, .organizacao-editorial input { width: 100%; min-width: 0; }
+.organizacao-editorial :is(input, select, button):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }

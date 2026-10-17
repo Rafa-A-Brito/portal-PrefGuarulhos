@@ -24,6 +24,7 @@ import LoginAdmin from "./features/admin/pages/LoginAdmin";
 import AdminDashboard from "./features/admin/pages/AdminDashboard";
 import AdminUsuarios from "./features/admin/pages/AdminUsuarios";
 import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
+import AdminRegioes from "./features/admin/pages/AdminRegioes";
 import AdminExposicoes from "./features/admin/pages/AdminExposicoes";
 import AdminNovidades from "./features/admin/pages/AdminNovidades";
 import ConhecaMaisDetalhes from "./pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
@@ -192,6 +193,7 @@ function AppRoutes() {
           <Route path="/admin/novidades" element={<AdminNovidades />} />
 
           <Route element={<RotaProtegida permissoes={["ADMIN"]} />}>
+            <Route path="/admin/regioes" element={<AdminRegioes />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           </Route>
         </Route>
