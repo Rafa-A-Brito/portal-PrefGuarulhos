@@ -105,7 +105,7 @@ test("D2 filtros locais preservam ordem da API e número exato não é busca tex
   expect(nomes()).toEqual(items.map(p => p.nome));
   await user.selectOptions(await screen.findByLabelText("Região"), region.slug);
   expect(nomes()).toEqual(["Z priorizado", "M regional"]);
-  await user.type(screen.getByLabelText("Número de exibição"), "7");
+  await user.type(screen.getByLabelText("Número do patrimônio"), "7");
   expect(nomes()).toEqual(["M regional"]);
   await user.click(screen.getByRole("button", { name: "Limpar filtros editoriais" }));
   expect(nomes()).toEqual(items.map(p => p.nome));

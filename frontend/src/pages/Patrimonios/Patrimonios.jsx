@@ -145,7 +145,7 @@ export default function Patrimonios() {
               {regioes.map(r => <option value={r.slug} key={r.id}>{r.nome}</option>)}
             </select>
           </label>}
-          <label>Número de exibição
+          <label>Número do patrimônio
             <input type="number" min="1" max="2147483647" step="1" value={numero} onChange={e => filtrarEditorial("numeroExibicao", e.target.value)} placeholder="Todos" />
           </label>
           {(regiao || numero) && <button type="button" className="btn-outline" onClick={() => {

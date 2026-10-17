@@ -167,11 +167,14 @@
 .acordeao {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
 }
-/* Fundo em gradiente azul da paleta (navy-soft -> indigo); texto branco. */
+/* Azul sólido; o item ocupa somente o espaço necessário, sem ultrapassar o container. */
 .acordeao-item {
-  background: linear-gradient(100deg, var(--navy-soft) 0%, var(--indigo) 100%);
+  width: max-content;
+  max-width: 100%;
+  background: var(--navy);
   color: #fff;
 }
 .acordeao-titulo {

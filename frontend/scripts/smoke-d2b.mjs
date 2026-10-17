@@ -204,7 +204,7 @@ try {
     await tabTo(`e.matches('.filtros-editoriais select')`);
     await key('ArrowDown', 'ArrowDown', 40); await key('Tab', 'Tab', 9);
     await waitFor(`location.search.includes('regiao=regiao-demonstracao')`);
-    await fill('Número de exibição', '12');
+    await fill('Número do patrimônio', '12');
     await waitFor(`document.querySelectorAll('.plaqueta').length===1`);
     assert.equal(await evaluate(`document.querySelector('.plaqueta h3').textContent`), nomes[0]);
     assert.ok(await evaluate(`document.querySelector('.plaqueta').textContent.includes('Nº 12')`));

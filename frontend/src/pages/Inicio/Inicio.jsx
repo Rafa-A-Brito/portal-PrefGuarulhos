@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   MapPinIcon,
   MagnifyingGlassIcon,
@@ -45,20 +45,21 @@ export default function Inicio() {
   const rolarDestaques = (direcao = "next") => {
     const track = trackRef.current;
     if (!track) return;
+    const limite = Math.max(0, track.scrollWidth - track.clientWidth);
 
     if (direcao === "prev") {
       const noInicio = track.scrollLeft <= 0;
       track.scrollTo({
         left: noInicio
-          ? track.scrollWidth
-          : track.scrollLeft - CARD_SCROLL_STEP,
+          ? limite
+          : Math.max(0, track.scrollLeft - CARD_SCROLL_STEP),
         behavior: "smooth",
       });
     } else {
       const noFinal =
         track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
       track.scrollTo({
-        left: noFinal ? 0 : track.scrollLeft + CARD_SCROLL_STEP,
+        left: noFinal ? 0 : Math.min(limite, track.scrollLeft + CARD_SCROLL_STEP),
         behavior: "smooth",
       });
     }
@@ -212,8 +213,8 @@ export default function Inicio() {
           <div className="destaques-carousel">
             <button
               className="destaques-arrow"
-              aria-label="Ver mais destaques"
-              onClick={rolarDestaques}
+              aria-label="Destaques anteriores"
+              onClick={() => rolarDestaques("prev")}
             >
               <ChevronLeftIcon width={18} height={18} />
             </button>
@@ -229,45 +230,48 @@ export default function Inicio() {
               {destaques.map((item) => {
                 const meta = CATEGORIA_META[item.categoria];
                 return (
-                  <article
-                    key={item.id}
-                    className="destaque-card"
-                    onClick={() =>
-                      navigate(`/patrimonios?categoria=${item.categoria}`)
-                    }
-                  >
-                    <figure>
-                      <img
-                        src={item.imagemPrincipal}
-                        alt={item.nome}
-                        loading="lazy"
-                      />
-                      <button
-                        className="destaque-fav"
-                        aria-label="Favoritar"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <HeartIcon width={16} height={16} />
-                      </button>
-                      <span className={`destaque-badge cat-${item.categoria}`}>
-                        {meta?.label.toUpperCase()}
-                      </span>
-                    </figure>
-                    <div className="destaque-body">
-                      <h3>{item.nome}</h3>
-                      <span className="destaque-bairro">
-                        <MapPinIcon width={13} height={13} />
-                        {item.bairro}
-                      </span>
-                    </div>
+                  <article key={item.id} className="destaque-card">
+                    <Link
+                      className="destaque-link"
+                      to={`/patrimonios?categoria=${item.categoria}`}
+                      aria-label={`Explorar ${item.nome}`}
+                    >
+                      <figure>
+                        {item.imagemPrincipal?.trim() && (
+                          <img
+                            src={item.imagemPrincipal}
+                            alt={item.nome}
+                            loading="lazy"
+                          />
+                        )}
+                        <span className={`destaque-badge cat-${item.categoria}`}>
+                          {meta?.label.toUpperCase()}
+                        </span>
+                      </figure>
+                      <div className="destaque-body">
+                        <h3>{item.nome}</h3>
+                        <span className="destaque-bairro">
+                          <MapPinIcon width={13} height={13} />
+                          {item.bairro}
+                        </span>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      className="destaque-fav"
+                      aria-label="Favoritar"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <HeartIcon width={16} height={16} />
+                    </button>
                   </article>
                 );
               })}
             </div>
             <button
               className="destaques-arrow"
-              aria-label="Ver mais destaques"
-              onClick={rolarDestaques}
+              aria-label="Próximos destaques"
+              onClick={() => rolarDestaques("next")}
             >
               <ChevronRightIcon width={18} height={18} />
             </button>

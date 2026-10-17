@@ -356,6 +356,30 @@
   margin-top: 20px;
 }
 
+/* O fieldset e os controles nativos não devem impor sua largura intrínseca. */
+.admin-conteudo-form,
+.admin-conteudo-form fieldset,
+.admin-conteudo-form .admin-form-grid > *,
+.admin-conteudo-form input,
+.admin-conteudo-form select,
+.admin-conteudo-form textarea {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-conteudo-form fieldset {
+  margin: 0;
+}
+
+.admin-conteudo-form .admin-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-conteudo-form .admin-form-erro {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 720px) {
   .admin-shell {
     flex-direction: column;
@@ -373,6 +397,10 @@
 
   .admin-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-conteudo-form .admin-form-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -254,7 +254,7 @@ export default function AdminConteudo({ tipo, api }) {
       </div>
       {sucesso && <p role="status">{sucesso}</p>}
       {editando && (
-        <form className="admin-form" onSubmit={salvar}>
+        <form className="admin-form admin-conteudo-form" onSubmit={salvar}>
           <h2>{editando === "novo" ? "Novo conteúdo" : "Editar conteúdo"}</h2>
           <fieldset disabled={ocupado} style={{ border: 0, padding: 0 }}>
             <div className="admin-form-grid">
