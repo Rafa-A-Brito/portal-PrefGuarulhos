@@ -466,11 +466,18 @@ export default function AdminPatrimonios() {
 
       const dados = {
         // Omitir vínculo inalterado permite editar fichas cuja região foi inativada.
-        ...((editandoId === "novo" || formulario.regiaoId !== formulario.regiaoOriginalId) && {
+        ...((editandoId === "novo" ||
+          formulario.regiaoId !== formulario.regiaoOriginalId) && {
           regiaoId: formulario.regiaoId || null,
         }),
-        numeroExibicao: formulario.numeroExibicao === "" ? null : Number(formulario.numeroExibicao),
-        ordemExibicao: formulario.ordemExibicao === "" ? null : Number(formulario.ordemExibicao),
+        numeroExibicao:
+          formulario.numeroExibicao === ""
+            ? null
+            : Number(formulario.numeroExibicao),
+        ordemExibicao:
+          formulario.ordemExibicao === ""
+            ? null
+            : Number(formulario.ordemExibicao),
         nome: formulario.nome.trim(),
         descricao: formulario.descricao.trim(),
         descricaoResumida: formulario.descricaoResumida.trim(),
@@ -866,7 +873,12 @@ export default function AdminPatrimonios() {
               </select>
             </label>
 
-            <OrganizacaoEditorial key={editandoId} formulario={formulario} atualizar={atualizar} />
+            <OrganizacaoEditorial
+              key={editandoId}
+              formulario={formulario}
+              atualizar={atualizar}
+              podeCriarRegiao={eAdmin}
+            />
             <fieldset className="admin-form-col-2 admin-chips">
               <legend className="admin-chips-legenda">
                 <span>Categorias adicionais</span>
@@ -1181,7 +1193,10 @@ export default function AdminPatrimonios() {
             )}
 
             <div className="admin-form-col-2 admin-upload">
-              <label htmlFor="patrimonio-descricao" className="admin-upload-rotulo">
+              <label
+                htmlFor="patrimonio-descricao"
+                className="admin-upload-rotulo"
+              >
                 Descrição
               </label>
               <textarea
@@ -1473,10 +1488,20 @@ export default function AdminPatrimonios() {
       )}
 
       {editandoId && editandoId !== "novo" && (
-        <AdminLigacoes key={editandoId} patrimonioId={editandoId}
-          status={statusEdicao} perfil={usuario?.perfil}
-          bloqueado={salvando || operandoImagem || operandoReferencia || carregandoEdicao !== null || acaoEmAndamento !== null}
-          onBusyChange={setOperandoLigacoes} />
+        <AdminLigacoes
+          key={editandoId}
+          patrimonioId={editandoId}
+          status={statusEdicao}
+          perfil={usuario?.perfil}
+          bloqueado={
+            salvando ||
+            operandoImagem ||
+            operandoReferencia ||
+            carregandoEdicao !== null ||
+            acaoEmAndamento !== null
+          }
+          onBusyChange={setOperandoLigacoes}
+        />
       )}
 
       {/* Legenda: cada categoria tem a sua cor (veja admin-extras.css) */}
@@ -1523,56 +1548,58 @@ export default function AdminPatrimonios() {
                     {ROTULO_STATUS[p.status] ?? p.status}
                   </span>
                 </td>
-                <td className="admin-table-acoes" data-label="Ações">
-                  <button
-                    type="button"
-                    aria-label={
-                      podeEditar(p)
-                        ? `Editar ${p.nome}`
-                        : `Editar ${p.nome}: editores só podem editar rascunhos`
-                    }
-                    title={
-                      podeEditar(p)
-                        ? "Editar"
-                        : "Editores só podem editar rascunhos"
-                    }
-                    disabled={!podeEditar(p) || ocupado}
-                    onClick={() => abrirEdicao(p)}
-                  >
-                    {carregandoEdicao === p.uuid ? (
-                      <ArrowPathIcon
-                        width={16}
-                        height={16}
-                        className="icon-spin"
-                      />
-                    ) : (
-                      <PencilIcon width={16} height={16} />
+                <td data-label="Ações">
+                  <div className="admin-table-acoes">
+                    <button
+                      type="button"
+                      aria-label={
+                        podeEditar(p)
+                          ? `Editar ${p.nome}`
+                          : `Editar ${p.nome}: editores só podem editar rascunhos`
+                      }
+                      title={
+                        podeEditar(p)
+                          ? "Editar"
+                          : "Editores só podem editar rascunhos"
+                      }
+                      disabled={!podeEditar(p) || ocupado}
+                      onClick={() => abrirEdicao(p)}
+                    >
+                      {carregandoEdicao === p.uuid ? (
+                        <ArrowPathIcon
+                          width={16}
+                          height={16}
+                          className="icon-spin"
+                        />
+                      ) : (
+                        <PencilIcon width={16} height={16} />
+                      )}
+                    </button>
+
+                    {eAdmin && p.status !== "PUBLICADO" && (
+                      <button
+                        type="button"
+                        aria-label={`Publicar ${p.nome}`}
+                        title="Publicar"
+                        disabled={ocupado}
+                        onClick={() => mudarStatus(p, "publicar")}
+                      >
+                        <CheckBadgeIcon width={16} height={16} />
+                      </button>
                     )}
-                  </button>
 
-                  {eAdmin && p.status !== "PUBLICADO" && (
-                    <button
-                      type="button"
-                      aria-label={`Publicar ${p.nome}`}
-                      title="Publicar"
-                      disabled={ocupado}
-                      onClick={() => mudarStatus(p, "publicar")}
-                    >
-                      <CheckBadgeIcon width={16} height={16} />
-                    </button>
-                  )}
-
-                  {eAdmin && p.status !== "ARQUIVADO" && (
-                    <button
-                      type="button"
-                      aria-label={`Arquivar ${p.nome}`}
-                      title="Arquivar"
-                      disabled={ocupado}
-                      onClick={() => mudarStatus(p, "arquivar")}
-                    >
-                      <ArchiveBoxArrowDownIcon width={16} height={16} />
-                    </button>
-                  )}
+                    {eAdmin && p.status !== "ARQUIVADO" && (
+                      <button
+                        type="button"
+                        aria-label={`Arquivar ${p.nome}`}
+                        title="Arquivar"
+                        disabled={ocupado}
+                        onClick={() => mudarStatus(p, "arquivar")}
+                      >
+                        <ArchiveBoxArrowDownIcon width={16} height={16} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

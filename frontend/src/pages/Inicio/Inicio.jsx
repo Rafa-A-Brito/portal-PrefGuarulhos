@@ -5,7 +5,6 @@ import {
   MagnifyingGlassIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  HeartIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -16,6 +15,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { heroDestaqueMock } from "../../features/mocks/destaquesMock";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
+import FavoritoButton from "../../components/FavoritoButton/FavoritoButton";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import BACKGROUND_IMAGE from "../../assets/patrimonios/viaduto_cid_guarulhos.png";
 
@@ -59,7 +59,9 @@ export default function Inicio() {
       const noFinal =
         track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
       track.scrollTo({
-        left: noFinal ? 0 : Math.min(limite, track.scrollLeft + CARD_SCROLL_STEP),
+        left: noFinal
+          ? 0
+          : Math.min(limite, track.scrollLeft + CARD_SCROLL_STEP),
         behavior: "smooth",
       });
     }
@@ -124,9 +126,14 @@ export default function Inicio() {
                 <h3>{heroDestaqueMock.nome}</h3>
                 <span className="hfc-bairro">{heroDestaqueMock.bairro}</span>
               </div>
-              <button className="hfc-next" aria-label="Próximo destaque">
+              <Link
+                to="/patrimonios"
+                className="hfc-next"
+                aria-label="Próximo destaque"
+                title="Explorar patrimônios"
+              >
                 <ChevronRightIcon width={16} height={16} />
-              </button>
+              </Link>
             </div>
             <p className="hfc-resumo">{heroDestaqueMock.resumo}</p>
             <div className="hfc-thumbs">
@@ -244,7 +251,9 @@ export default function Inicio() {
                             loading="lazy"
                           />
                         )}
-                        <span className={`destaque-badge cat-${item.categoria}`}>
+                        <span
+                          className={`destaque-badge cat-${item.categoria}`}
+                        >
                           {meta?.label.toUpperCase()}
                         </span>
                       </figure>
@@ -256,14 +265,7 @@ export default function Inicio() {
                         </span>
                       </div>
                     </Link>
-                    <button
-                      type="button"
-                      className="destaque-fav"
-                      aria-label="Favoritar"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <HeartIcon width={16} height={16} />
-                    </button>
+                    <FavoritoButton item={item} className="destaque-fav" />
                   </article>
                 );
               })}

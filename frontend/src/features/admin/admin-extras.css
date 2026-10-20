@@ -112,6 +112,10 @@
   box-shadow: inset 4px 0 0 var(--cat-dot);
 }
 
+.admin-table tbody tr[data-cat]:hover td {
+  background-color: color-mix(in srgb, var(--cat-dot) 11%, #fff);
+}
+
 /* ---------- 5) Formulário de patrimônio: upload, abas e ajudas ---------- */
 /* O textarea do resumo não está dentro de um <label> (que no admin.css é
    flex em coluna e estica os campos), então sem isto ele ficava ao lado das
@@ -165,7 +169,7 @@
   display: inline-flex;
   padding: 4px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: none;
   color: var(--ink-soft);
   cursor: pointer;
@@ -176,6 +180,11 @@
   background: rgba(179, 38, 30, 0.08);
 }
 
+.admin-upload-remover:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
+}
+
 .admin-upload-previa {
   display: block;
   max-width: 100%;
@@ -183,7 +192,7 @@
   margin-top: 10px;
   object-fit: cover;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .admin-segmentado {
@@ -193,7 +202,7 @@
   padding: 3px;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .admin-segmentado button {
@@ -202,7 +211,7 @@
   gap: 6px;
   padding: 7px 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   font: inherit;
   font-size: 12.5px;
@@ -212,6 +221,15 @@
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
+}
+
+.admin-segmentado button:hover:not([aria-selected="true"]) {
+  color: var(--navy);
+}
+
+.admin-segmentado button:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
 }
 
 .admin-segmentado button[aria-selected="true"] {
@@ -340,7 +358,7 @@
   overflow: hidden;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .admin-imagem-item img {
@@ -560,7 +578,10 @@
   .admin-table--cards tbody {
     display: block;
     border: 0;
+    border-radius: 0;
     background: transparent;
+    box-shadow: none;
+    overflow: visible;
   }
 
   /* cabeçalho some da vista, mas continua para leitores de tela */
@@ -580,7 +601,7 @@
     padding: 14px 16px;
     background: #fff;
     border: 1px solid var(--line);
-    border-radius: var(--radius-card);
+    border-radius: var(--admin-radius-md);
     box-shadow: var(--shadow-plaque);
   }
 
@@ -674,7 +695,7 @@
   padding: 8px 10px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 13px;
   color: var(--ink);
 }

@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState } from "react";
 
 import { useSearchParams } from "react-router-dom";
 
-import { MapIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MapIcon, MagnifyingGlassIcon, HeartIcon } from "@heroicons/react/24/outline";
 
 import FiltroBar from "../../features/mapa/FiltroBar";
 
@@ -10,6 +10,7 @@ import PlaquetaCard from "../../features/mapa/PlaquetaCard";
 
 import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 
+import { useFavoritos } from "../../features/favoritos/useFavoritos";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import { listarRegioes } from "../../services/regioesApi";
 import "./Patrimonios.css";
@@ -21,7 +22,16 @@ export default function Patrimonios() {
 
   const filtro = searchParams.get("categoria") || "todos";
   const regiao = searchParams.get("regiao") || "";
-  const numero = searchParams.get("numeroExibicao") || "";
+  const somenteFavoritos = searchParams.get("favoritos") === "1";
+  const temParametroObsoleto = searchParams.has("numeroExibicao");
+  // O Nº de exibição não é mais filtro público (apenas texto vindo da API).
+  // Links antigos com ?numeroExibicao= continuam abrindo: o parâmetro é ignorado e removido.
+  useEffect(() => {
+    if (!temParametroObsoleto) return;
+    setSearchParams(params => { params.delete("numeroExibicao"); return params; }, { replace: true });
+  }, [temParametroObsoleto, setSearchParams]);
+
+  const { ids: favoritos } = useFavoritos();
   const [regioes, setRegioes] = useState([]);
   const [erroRegioes, setErroRegioes] = useState(false);
   const [tentativaRegioes, setTentativaRegioes] = useState(0);
@@ -51,21 +61,28 @@ export default function Patrimonios() {
         categoria: filtro,
         busca,
       }).filter(item => (!regiao || item.regiao?.slug === regiao) &&
-        (!numero || (/^[1-9]\d*$/.test(numero) && item.numeroExibicao === Number(numero)))),
-    [filtro, busca, patrimonios, regiao, numero],
+        (!somenteFavoritos || favoritos.has(item.id))),
+    [filtro, busca, patrimonios, regiao, somenteFavoritos, favoritos],
+  );
+  const totalFavoritosNoCatalogo = useMemo(
+    () => patrimonios.filter(item => favoritos.has(item.id)).length,
+    [patrimonios, favoritos],
   );
 
   // CÁLCULOS DE PAGINAÇÃO
   const totalPaginas = Math.ceil(filtrados.length / ITENS_POR_PAGINA);
 
-  const indiceInicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  // Ao desfavoritar o último item de uma página (modo "somente favoritos") a página some.
+  const paginaCorrigida = Math.min(paginaAtual, Math.max(totalPaginas, 1));
+
+  const indiceInicio = (paginaCorrigida - 1) * ITENS_POR_PAGINA;
 
   const indiceFim = indiceInicio + ITENS_POR_PAGINA;
 
   const exibidos = filtrados.slice(indiceInicio, indiceFim);
 
-  const irParaPagina = (numero) => {
-    setPaginaAtual(numero);
+  const irParaPagina = (pagina) => {
+    setPaginaAtual(pagina);
 
     window.scrollTo({
       top: 300,
@@ -104,6 +121,11 @@ export default function Patrimonios() {
   function filtrarEditorial(campo, valor) {
     setPaginaAtual(1);
     setSearchParams(params => { if (valor) params.set(campo, valor); else params.delete(campo); return params; });
+  }
+
+  function alternarSomenteFavoritos() {
+    setPaginaAtual(1);
+    setSearchParams(params => { if (somenteFavoritos) params.delete("favoritos"); else params.set("favoritos", "1"); return params; });
   }
 
   return (
@@ -145,11 +167,13 @@ export default function Patrimonios() {
               {regioes.map(r => <option value={r.slug} key={r.id}>{r.nome}</option>)}
             </select>
           </label>}
-          <label>Número do patrimônio
-            <input type="number" min="1" max="2147483647" step="1" value={numero} onChange={e => filtrarEditorial("numeroExibicao", e.target.value)} placeholder="Todos" />
-          </label>
-          {(regiao || numero) && <button type="button" className="btn-outline" onClick={() => {
-            setPaginaAtual(1); setSearchParams(params => { params.delete("regiao"); params.delete("numeroExibicao"); return params; });
+          <button type="button" className="btn-outline btn-favoritos" aria-pressed={somenteFavoritos} onClick={alternarSomenteFavoritos}>
+            <HeartIcon width={16} height={16} aria-hidden="true" />
+            Somente favoritos
+            <span className="favoritos-contador">{totalFavoritosNoCatalogo}</span>
+          </button>
+          {regiao && <button type="button" className="btn-outline" onClick={() => {
+            setPaginaAtual(1); setSearchParams(params => { params.delete("regiao"); return params; });
           }}>Limpar filtros editoriais</button>}
         </div>
         {erroRegioes && <p role="status">Filtro regional indisponível. <button type="button" onClick={() => setTentativaRegioes(v => v + 1)}>Tentar carregar regiões</button></p>}
@@ -168,14 +192,22 @@ export default function Patrimonios() {
             </button>
           </div>
         ) : filtrados.length === 0 ? (
-          <div className="empty-state">
-            Nenhum patrimônio encontrado para esse filtro
-            {busca ? ` e o termo "${busca}"` : ""}.
+          <div className="empty-state" role="status">
+            {somenteFavoritos && totalFavoritosNoCatalogo === 0
+              ? "Você ainda não favoritou nenhum patrimônio. Use o coração nos cards para guardar seus favoritos neste navegador."
+              : <>
+                Nenhum patrimônio encontrado para esse filtro
+                {somenteFavoritos ? " entre os seus favoritos" : ""}
+                {busca ? ` e o termo "${busca}"` : ""}.
+              </>}
+            {somenteFavoritos && (
+              <div><button type="button" className="btn-outline" onClick={alternarSomenteFavoritos}>Ver todos os patrimônios</button></div>
+            )}
           </div>
         ) : (
           <>
             <div className="section-head">
-              <div>
+              <div aria-live="polite">
                 <h2>
                   {filtrados.length}{" "}
                   {filtrados.length === 1
@@ -209,33 +241,33 @@ export default function Patrimonios() {
               <div className="pagination">
                 <button
                   type="button"
-                  onClick={() => irParaPagina(paginaAtual - 1)}
-                  disabled={paginaAtual === 1}
+                  onClick={() => irParaPagina(paginaCorrigida - 1)}
+                  disabled={paginaCorrigida === 1}
                   aria-label="Página anterior"
                 >
                   Anterior
                 </button>
 
                 {Array.from({ length: totalPaginas }, (_, index) => {
-                  const numero = index + 1;
+                  const pagina = index + 1;
 
                   return (
                     <button
-                      key={numero}
+                      key={pagina}
                       type="button"
-                      onClick={() => irParaPagina(numero)}
-                      className={paginaAtual === numero ? "active" : ""}
-                      aria-current={paginaAtual === numero ? "page" : undefined}
+                      onClick={() => irParaPagina(pagina)}
+                      className={paginaCorrigida === pagina ? "active" : ""}
+                      aria-current={paginaCorrigida === pagina ? "page" : undefined}
                     >
-                      {numero}
+                      {pagina}
                     </button>
                   );
                 })}
 
                 <button
                   type="button"
-                  onClick={() => irParaPagina(paginaAtual + 1)}
-                  disabled={paginaAtual === totalPaginas}
+                  onClick={() => irParaPagina(paginaCorrigida + 1)}
+                  disabled={paginaCorrigida === totalPaginas}
                   aria-label="Próxima página"
                 >
                   Próxima

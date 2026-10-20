@@ -2,3 +2,10 @@
 .filtros-editoriais label { display: grid; gap: .4rem; max-width: 100%; min-width: 0; color: var(--navy); }
 .filtros-editoriais :is(input, select) { max-width: 100%; min-width: 0; min-height: 44px; padding: .6rem; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .filtros-editoriais :is(input, select, button):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+
+/* ---------- Favoritos na listagem (o coração fica dentro do PlaquetaCard) ---------- */
+.filtros-editoriais .btn-favoritos { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
+.filtros-editoriais .btn-favoritos[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.favoritos-contador { min-width: 1.4em; padding: 0 .4em; border-radius: 999px; background: rgba(43, 37, 92, .12); font-size: .8rem; font-weight: 700; text-align: center; }
+.filtros-editoriais .btn-favoritos[aria-pressed="true"] .favoritos-contador { background: rgba(255, 255, 255, .22); }
+.empty-state .btn-outline { margin-top: 1rem; }

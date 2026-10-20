@@ -3769,7 +3769,7 @@ input:focus-visible {
 
 .contato-pop-list span,
 .contato-pop-list a {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-soft);
   overflow-wrap: anywhere;
 }
