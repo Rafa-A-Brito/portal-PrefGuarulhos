@@ -866,3 +866,35 @@ test("erro ao anexar referência preserva texto manual e libera formulário", as
   expect(screen.getByRole("button", { name: "Salvar" }).disabled).toBe(false);
   expect(records[0].documentos).toHaveLength(0);
 });
+
+test.each([["ADMIN", true], ["EDITOR", false]])("D3D+: %s — botão “+ Nova região” visível = %s; Região continua selecionável", async (perfil, visivel) => {
+  flags.perfil = perfil;
+  await edit();
+  await waitFor(() => expect(screen.getByLabelText("Região").disabled).toBe(false));
+  expect(!!screen.queryByRole("button", { name: "+ Nova região" })).toBe(visivel);
+  expect(screen.getByRole("option", { name: "Não informada" })).toBeTruthy();
+});
+
+test("D3D+: ADMIN cadastra região dentro do formulário de patrimônio, seleciona-a e preserva os campos em edição", async () => {
+  const criada = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", nome: "Centro Histórico", slug: "centro-historico", descricao: null, ativo: true };
+  hook = config => {
+    if (config.url === "/admin/regioes" && config.method === "post") return reply(config, criada);
+    return null;
+  };
+  const user = await edit();
+  await waitFor(() => expect(screen.getByLabelText("Região").disabled).toBe(false));
+  fireEvent.change(screen.getByLabelText("Resumo"), { target: { value: "Texto em edição" } });
+  await user.type(screen.getByLabelText("Número de exibição"), "5");
+  const antes = calls.filter(c => c.method === "patch").length;
+  await user.click(screen.getByRole("button", { name: "+ Nova região" }));
+  await user.type(screen.getByLabelText("Nome da região"), "Centro Histórico");
+  expect(screen.getByLabelText("Slug da região").value).toBe("centro-historico");
+  await user.click(screen.getByRole("button", { name: "Salvar região" }));
+  await waitFor(() => expect(screen.getByLabelText("Região").value).toBe(criada.id));
+  expect(screen.getByRole("option", { name: /Centro Histórico/ })).toBeTruthy();
+  expect(screen.queryByRole("group", { name: "Nova região" })).toBeNull();
+  expect(screen.getByLabelText("Resumo").value).toBe("Texto em edição");
+  expect(screen.getByLabelText("Número de exibição").value).toBe("5");
+  expect(calls.find(c => c.method === "post" && c.url === "/admin/regioes").body).toEqual({ nome: "Centro Histórico", slug: "centro-historico", descricao: null, ativo: true });
+  expect(calls.filter(c => c.method === "patch").length).toBe(antes); // não salvou o patrimônio
+});

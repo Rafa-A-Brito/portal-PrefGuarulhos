@@ -3,7 +3,7 @@ import { MapPinIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { CATEGORIA_META } from "../categoriaMeta";
 import { classificarLocalizacao } from "./politicaLocalizacao";
 import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
-
+import FavoritoButton from "../../components/FavoritoButton/FavoritoButton";
 import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
 
 export default function PlaquetaCard({ item }) {
@@ -28,6 +28,7 @@ export default function PlaquetaCard({ item }) {
           {Icon && <Icon className="badge-icon" aria-hidden="true" />}
           {meta?.label ?? item.categoria}
         </span>
+        <FavoritoButton item={item} className="destaque-fav" />
       </figure>
       <div className="plaqueta-body">
         <h3>{item.nome}</h3>
@@ -36,7 +37,9 @@ export default function PlaquetaCard({ item }) {
           <MapPinIcon className="inline-icon" aria-hidden="true" />
           {politica.aviso || item.bairro}
         </div>
-        {politica.exibirEndereco && item.cep && <span className="cep">CEP {item.cep}</span>}
+        {politica.exibirEndereco && item.cep && (
+          <span className="cep">CEP {item.cep}</span>
+        )}
         <p className="resumo">{item.resumo}</p>
         <Link
           className="verlink"
