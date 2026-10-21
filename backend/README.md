@@ -155,11 +155,11 @@ Para criar/aplicar as migrations durante o desenvolvimento:
 npx prisma migrate dev
 ```
 
-Para importar os 34 registros da pesquisa como RASCUNHO, configure PATRIMONIOS_PUBLIC_BASE_URL, aplique as migrations e revise o dry-run. Consulte [a política de importação, reconciliação e imagens](docs/populacao-patrimonios.md). A seed antiga está desativada.
+As cargas opcionais estão ativas e são conservadoras: seed:inicial usa os 34 canônicos; seed:pesquisa usa 33 identidades comprovadas da pesquisa (13 é alias de 9). Ambas simulam por padrão, criam somente ausentes como RASCUNHO e preservam integralmente os existentes. Consulte [o procedimento atual de autenticação, carga e atualização](docs/AUTENTICACAO_E_CARGAS.md). O documento anterior de população é histórico da equipe.
 
 ```bash
-npm run seed:pesquisa -- --dry-run
-npm run seed:pesquisa
+npm run seed:inicial -- --dry-run --created-by-email=RESPONSAVEL
+npm run seed:pesquisa -- --dry-run --created-by-email=RESPONSAVEL
 ```
 
 ### Executando em desenvolvimento

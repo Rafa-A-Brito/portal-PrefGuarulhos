@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { hashEstado, ordenarRelacoes } from "../src/utils/estadoHash.js";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
@@ -23,8 +25,8 @@ export function parseArgs(args) {
         if (seen.has(key)) throw new Error("Argumento repetido: " + key);
         seen.add(key);
         if (["--apply", "--dry-run"].includes(key) && !rest.length) result.apply = key === "--apply";
-        else if (["--created-by-email", "--confirm-db", "--status"].includes(key) && rest.join("=")) {
-            result[{ "--created-by-email": "createdByEmail", "--confirm-db": "confirmDb", "--status": "status" }[key]] = rest.join("=");
+        else if (["--created-by-email", "--confirm-db", "--status", "--expected-state-hash"].includes(key) && rest.join("=")) {
+            result[{ "--created-by-email": "createdByEmail", "--confirm-db": "confirmDb", "--status": "status", "--expected-state-hash": "expectedStateHash" }[key]] = rest.join("=");
         } else throw new Error("Argumento inválido: " + key + ". Use --created-by-email=email, --status=RASCUNHO|PUBLICADO, --dry-run ou --apply --confirm-db=patrimonio_guarulhos.");
     }
     if (seen.has("--apply") && seen.has("--dry-run")) throw new Error("Escolha apenas um modo.");
@@ -85,11 +87,16 @@ async function checkAssets(items, uploadsDir) {
         } catch (error) { if (error.code !== "ENOENT") throw error; }
     }
 }
-async function storeAssets(items, uploadsDir) {
+async function storeAssets(items, uploadsDir, owned) {
     if (!items.some(item => item.asset)) return;
     await mkdir(path.join(uploadsDir, "novidades"), { recursive: true });
     for (const { asset } of items) if (asset) {
-        try { await writeFile(path.join(uploadsDir, "novidades", asset.filename), asset.bytes, { flag: "wx" }); }
+        try {
+            const target = path.join(uploadsDir, "novidades", asset.filename);
+            if (await fs.realpath(path.dirname(target)) !== path.join(await fs.realpath(uploadsDir), "novidades")) throw new Error("Destino de novidades redirecionado.");
+            await writeFile(target, asset.bytes, { flag: "wx" });
+            const stat = await fs.lstat(target); owned.push({ target, stat, digest: hash(asset.bytes), url: "/uploads/novidades/" + asset.filename });
+        }
         catch (error) {
             if (error.code !== "EEXIST") throw error;
             const bytes = await readFile(path.join(uploadsDir, "novidades", asset.filename));
@@ -103,7 +110,16 @@ export async function importNovidades({ prisma, options, database, items, upload
     items ??= await loadSource();
     if (items.length !== 16 || new Set(items.map(x => x.slug)).size !== 16) throw new Error("Lote deve ter 16 identificadores únicos.");
     await checkAssets(items, uploadsDir);
-    return prisma.$transaction(async tx => {
+    const owned = [];
+    try { return await prisma.$transaction(async tx => {
+        if (!options.apply) await tx.$executeRawUnsafe("SET TRANSACTION READ ONLY");
+        const [{ banco }] = await tx.$queryRawUnsafe("SELECT current_database() AS banco");
+        if (banco !== database) throw new Error("Banco conectado diverge do destino.");
+        if (options.apply) {
+            await tx.$queryRawUnsafe("SELECT pg_advisory_xact_lock(6062026)::text");
+            await tx.$queryRawUnsafe("SELECT id FROM novidade ORDER BY id FOR UPDATE");
+            await tx.$queryRawUnsafe("SELECT id FROM users ORDER BY id FOR UPDATE");
+        }
         const author = await tx.user.findUnique({ where: { email: options.createdByEmail }, select: { id: true, role: true, isActive: true } });
         if (!author?.isActive || !["ADMIN", "EDITOR"].includes(author.role)) throw new Error("Autor deve ser ADMIN/EDITOR ativo.");
         if (options.status === "PUBLICADO" && author.role !== "ADMIN") throw new Error("Somente ADMIN pode publicar, conforme a API administrativa.");
@@ -112,12 +128,13 @@ export async function importNovidades({ prisma, options, database, items, upload
         const report = { banco: database, modo: options.apply ? "apply" : "dry-run", status: options.status, total: items.length,
             criar: operations.filter(x => x.acao === "CRIAR").length, atualizar: 0, ignorar: operations.filter(x => x.acao === "IGNORAR").length,
             conflitos: operations.filter(x => x.acao === "CONFLITO").length, aplicados: 0, itens: operations };
+        report.estado_hash = hashEstado({ database, items, existing: ordenarRelacoes(existing), author, status: options.status });
+        if (options.apply && !/^[a-f0-9]{64}$/.test(options.expectedStateHash || "")) throw new Error("Apply exige --expected-state-hash revisado.");
+        if (options.expectedStateHash && options.expectedStateHash !== report.estado_hash) { report.conflitos++; report.itens.push({ acao: "CONFLITO", motivo: "ESTADO_DESATUALIZADO" }); }
         if (report.conflitos || !options.apply) return report;
         // Todo o lote e os arquivos foram validados antes da primeira escrita.
         // Arquivos imutáveis por hash nunca sobrescrevem upload administrativo.
-        // Se a transação falhar, podem sobrar arquivos órfãos; não removê-los evita
-        // apagar um arquivo que outro processo já esteja utilizando.
-        await storeAssets(items, uploadsDir);
+        await storeAssets(items.filter(item => operations.some(op => op.slug === item.slug && op.acao === "CRIAR")), uploadsDir, owned);
         for (const op of operations) if (op.acao === "CRIAR") {
             const item = items.find(x => x.slug === op.slug);
             await tx.novidade.create({ data: { ...item.record, slug: item.slug, status: options.status,
@@ -125,13 +142,25 @@ export async function importNovidades({ prisma, options, database, items, upload
             report.aplicados++;
         }
         return report;
-    }, { isolationLevel: "Serializable", timeout: 120000, maxWait: 10000 });
+    }, { isolationLevel: options.apply ? "Serializable" : "RepeatableRead", timeout: 120000, maxWait: 10000 });
+    } catch (error) {
+        if (owned.length) await prisma.$transaction(async tx => {
+            await tx.$queryRawUnsafe("SELECT pg_advisory_xact_lock(6062026)::text");
+            for (const file of owned) {
+                try {
+                    if (await tx.novidade.count({ where: { imagemUrl: file.url } })) continue;
+                    const stat = await fs.lstat(file.target);
+                    if (stat.dev === file.stat.dev && stat.ino === file.stat.ino && hash(await readFile(file.target)) === file.digest) await fs.unlink(file.target);
+                } catch (cleanup) { console.error("Pendência de imagem de novidade.", { code: cleanup.code, caminho: file.target }); }
+            }
+        }).catch(cleanup => console.error("Falha na compensação de novidades.", { code: cleanup.code }));
+        throw error;
+    }
 }
 
 async function main() {
     const options = parseArgs(process.argv.slice(2));
     const { database } = databaseIdentity(process.env.DATABASE_URL);
-    if (database !== "patrimonio_guarulhos") throw new Error("CLI operacional restrita a patrimonio_guarulhos; testes usam cliente injetado e banco descartável.");
     validateOptions(options, database);
     const { PrismaClient } = await import("@prisma/client");
     const { PrismaPg } = await import("@prisma/adapter-pg");

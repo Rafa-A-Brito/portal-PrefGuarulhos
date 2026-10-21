@@ -1,182 +1,45 @@
-import { randomUUID } from "node:crypto";
+import "dotenv/config";
 import fs from "node:fs/promises";
 import path from "node:path";
-import "dotenv/config";
+import { pathToFileURL } from "node:url";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { hashPassword } from "../src/utils/password.js";
-import { slugify } from "../src/utils/slug.js";
-import { PATRIMONIOS_SEED } from "./patrimonioSeedData.js";
+import { executarCargaInicial } from "./carga-inicial.js";
 
-if (!process.env.DATABASE_URL) {
-    throw new Error("A variável DATABASE_URL é obrigatória para executar o seed.");
+export function parseSeedArgs(args) {
+    const options = { apply: false };
+    const seen = new Set();
+    for (const arg of args) {
+        const [key, ...parts] = arg.split("="), value = parts.join("=");
+        if (seen.has(key)) throw new Error("Opção repetida: " + key);
+        seen.add(key);
+        if (key === "--apply" && !parts.length) options.apply = true;
+        else if (key === "--dry-run" && !parts.length) { /* padrão */ }
+        else if (["--confirm-db", "--created-by-email", "--expected-state-hash", "--reconcile"].includes(key) && value.trim()) {
+            options[{ "--confirm-db": "confirmDb", "--created-by-email": "createdByEmail", "--expected-state-hash": "expectedStateHash", "--reconcile": "reconcilePath" }[key]] = value.trim();
+        } else throw new Error("Opção inválida: " + key);
+    }
+    if (seen.has("--apply") && seen.has("--dry-run")) throw new Error("--apply e --dry-run são incompatíveis.");
+    if (options.apply && (!options.confirmDb || !options.createdByEmail || !/^[a-f0-9]{64}$/.test(options.expectedStateHash || ""))) throw new Error("Apply exige --confirm-db, --created-by-email e --expected-state-hash.");
+    return options;
 }
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
-import { UPLOAD_DIR as uploadDir } from "../src/config/uploadDir.js";
-const sourceUploads = path.resolve(process.cwd(), "src", "uploads");
-
-const CATEGORIAS = [
-    ["Arquitetônico", "Edificações de valor histórico e arquitetônico"],
-    ["Imaterial", "Festas, tradições, saberes e expressões culturais vivas"],
-    ["Ferroviário", "Bens ligados ao Tramway da Cantareira e à ferrovia"],
-    ["Industrial", "Fábricas e edificações de uso industrial"],
-    ["Educacional", "Escolas e edificações de ensino público"],
-    ["Ambiental", "Parques, represas e bens de valor ambiental/paisagístico"],
-    ["Histórico", "Sítios e edificações de relevância histórica e cultural"],
-].map(([nome, descricao]) => ({ nome, descricao }));
-
-function repararUtf8(texto) {
-    if (typeof texto !== "string" || !/[ÃÂ]/.test(texto)) return texto;
+export async function executarCliSeed(tipo, args = process.argv.slice(2)) {
+    const options = parseSeedArgs(args);
+    if (options.reconcilePath) options.reconciliation = JSON.parse(await fs.readFile(path.resolve(options.reconcilePath), "utf8"));
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) throw new Error("DATABASE_URL obrigatória.");
+    const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
     try {
-        const reparado = Buffer.from(texto, "latin1").toString("utf8");
-        return reparado.includes("�") ? texto : reparado;
-    } catch {
-        return texto;
-    }
+        const report = await executarCargaInicial({ prisma, databaseUrl, options, tipo });
+        console.log(JSON.stringify(report, null, 2));
+        if (report.conflitos.length) process.exitCode = 1;
+    } finally { await prisma.$disconnect(); }
 }
 
-function localizacaoData(item) {
-    // Omitir regiao também no update do upsert preserva a classificação administrativa.
-    if (!item.endereco || !item.bairro) return null;
-    return {
-        endereco: item.endereco,
-        numero: item.numero ?? null,
-        complemento: null,
-        bairro: item.bairro,
-        cidade: "Guarulhos",
-        uf: "SP",
-        cep: item.cep ?? null,
-        latitude: item.latitude ?? null,
-        longitude: item.longitude ?? null,
-    };
-}
-
-// No UPDATE do re-seed, item sem coordenadas no seed NÃO pode zerar as que já
-// existem no banco (por exemplo, calculadas depois pelo geocoding do admin).
-// Só sobrescreve latitude/longitude quando o seed traz as duas.
-function localizacaoUpdateData(localizacao) {
-    if (localizacao.latitude !== null && localizacao.longitude !== null) return localizacao;
-
-    const { latitude, longitude, ...semCoordenadas } = localizacao;
-    return semCoordenadas;
-}
-
-async function copiarUploadsIniciais() {
-    await fs.mkdir(uploadDir, { recursive: true });
-    await fs.cp(sourceUploads, uploadDir, { recursive: true, force: false }).catch((error) => {
-        if (error.code !== "ENOENT") throw error;
-    });
-}
-
-async function main() {
-    await copiarUploadsIniciais();
-
-    const seedUser = await prisma.user.upsert({
-        where: { email: "seed.patrimonios@localhost.invalid" },
-        update: {},
-        create: {
-            name: "Importação inicial de patrimônios",
-            email: "seed.patrimonios@localhost.invalid",
-            passwordHash: await hashPassword(randomUUID()),
-            role: "EDITOR",
-            isActive: false,
-        },
-    });
-
-    const categoriasPorNome = {};
-    for (const categoriaData of CATEGORIAS) {
-        const dados = { ...categoriaData, slug: slugify(categoriaData.nome).slice(0, 120) };
-        const categoria = await prisma.categoria.upsert({
-            where: { nome: dados.nome },
-            update: { slug: dados.slug, descricao: dados.descricao },
-            create: dados,
-        });
-        categoriasPorNome[categoria.nome] = categoria;
-    }
-
-    for (const item of PATRIMONIOS_SEED) {
-        const slug = slugify(item.nome);
-        const categoria = categoriasPorNome[item.categoria];
-        if (!categoria) throw new Error(`Categoria não cadastrada no seed: ${item.categoria}`);
-
-        const localizacao = localizacaoData(item);
-        const dadosPublicos = {
-            nome: item.nome,
-            descricao: repararUtf8(item.descricao),
-            descricaoResumida: repararUtf8(item.descricaoResumida || item.descricao?.slice(0, 500)),
-            historia: repararUtf8(item.historia),
-            importanciaCultural: repararUtf8(item.importanciaCultural),
-            situacao: item.situacao,
-            status: "PUBLICADO",
-            categoriaId: categoria.id,
-            publicadoEm: new Date(),
-        };
-
-        const patrimonio = await prisma.patrimonio.upsert({
-            where: { slug },
-            update: {
-                ...dadosPublicos,
-                ...(localizacao && {
-                    localizacao: {
-                        upsert: { create: localizacao, update: localizacaoUpdateData(localizacao) },
-                    },
-                }),
-            },
-            create: {
-                ...dadosPublicos,
-                slug,
-                createdBy: seedUser.id,
-                ...(localizacao && { localizacao: { create: localizacao } }),
-            },
-            select: { id: true },
-        });
-
-        await prisma.patrimonioDetalhe.deleteMany({ where: { patrimonioId: patrimonio.id } });
-        if (item.detalhes?.length) {
-            await prisma.patrimonioDetalhe.createMany({
-                data: item.detalhes.map((detalhe, ordem) => ({
-                    patrimonioId: patrimonio.id,
-                    icone: detalhe.icone ?? null,
-                    titulo: repararUtf8(detalhe.titulo),
-                    texto: repararUtf8(detalhe.texto),
-                    ordem,
-                })),
-            });
-        }
-
-        if (item.imagem) {
-            const url = `/uploads/patrimonios/${item.imagem}`;
-            const atual = await prisma.patrimonioImagem.findFirst({
-                where: { patrimonioId: patrimonio.id, principal: true },
-                select: { id: true },
-            });
-            if (atual) {
-                await prisma.patrimonioImagem.update({
-                    where: { id: atual.id },
-                    data: { url, textoAlternativo: item.nome, ordem: 0, principal: true },
-                });
-            } else {
-                await prisma.patrimonioImagem.create({
-                    data: {
-                        patrimonioId: patrimonio.id,
-                        url,
-                        textoAlternativo: item.nome,
-                        ordem: 0,
-                        principal: true,
-                    },
-                });
-            }
-        }
-    }
-
-    console.log(`Seed concluído: ${PATRIMONIOS_SEED.length} patrimônios processados.`);
-}
-
-main()
-    .catch((error) => {
-        console.error("Erro ao rodar o seed:", error);
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+    executarCliSeed("canonical").catch(error => {
+        console.error(error.report ? JSON.stringify(error.report) : "Carga abortada. " + error.message);
         process.exitCode = 1;
-    })
-    .finally(async () => prisma.$disconnect());
+    });
+}

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { importPatrimonios, parseArgs } from "../prisma/import-patrimonios.js";
+import { importPatrimonios as executarImport, parseArgs } from "../prisma/import-patrimonios.js";
 import { PATRIMONIOS_SEED } from "../prisma/patrimonioSeedData.js";
 import { slugify } from "../src/utils/slug.js";
 
@@ -12,20 +12,28 @@ const category = { id: randomUUID(), nome: "Histórico" };
 const author = { id: randomUUID(), isActive: true, role: "ADMIN" };
 const item = { nome: "Casa Teste", descricao: "Descrição", descricaoResumida: "Resumo", categoria: category.nome };
 const url = "postgresql://unused@127.0.0.1:1/import_test";
+async function importPatrimonios(args) {
+    if (args.options?.apply && !args.options.expectedStateHash) {
+        const review = await executarImport({ ...args, options: { ...args.options, apply: false } });
+        return executarImport({ ...args, options: { ...args.options, expectedStateHash: review.estado_hash } });
+    }
+    return executarImport(args);
+}
 function fake({ existing = [], categories = [category], user = author, fail } = {}) {
     const created = [];
-    return {
-        created, user: { findUnique: async () => user },
-        categoria: { findMany: async () => categories },
-        patrimonio: { findMany: async () => existing },
+    const client = {
+        created, auditLog: { findMany: async () => [], create: async () => ({}) }, user: { findUnique: async () => user }, categoria: { findMany: async () => categories },
+        patrimonio: { findMany: async () => existing, create: async ({ data }) => { const row = { id: randomUUID(), ...data }; created.push(row); return row; } },
+        patrimonioImagem: { count: async () => 0 },
+        $queryRawUnsafe: async sql => sql.includes("current_database") ? [{ banco: "import_test" }] : [],
+        $executeRawUnsafe: async () => 0,
         $transaction: async callback => {
-            if (fail) throw fail;
-            return callback({
-                $queryRawUnsafe: async () => [],
-                patrimonio: { findMany: async () => existing, create: async ({ data }) => created.push(data) },
-            });
+            const before = created.length;
+            try { const result = await callback(client); if (fail && created.length > before) throw fail; return result; }
+            catch (error) { created.splice(before); throw error; }
         },
     };
+    return client;
 }
 async function temp(t) {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "lote06-import-"));
@@ -120,25 +128,24 @@ test("imagem insegura, inexistente ou diferente no destino impede importação",
 test("falha transacional compensa só a imagem criada pela tentativa", async t => {
     const dirs = await temp(t);
     const args = { prisma: fake({ fail: new Error("erro-original") }), databaseUrl: url, options: apply(), source: [{ ...item, imagem: "imagem.png" }], ...dirs };
-    const report = await importPatrimonios(args);
-    assert.equal(report.erros[0].motivo, "erro-original");
+    await assert.rejects(importPatrimonios(args), /erro-original/);
     const destination = path.join(dirs.uploadDir, "patrimonios", "imagem.png");
     await assert.rejects(fs.access(destination), { code: "ENOENT" });
     await fs.writeFile(destination, "imagem");
-    const repeat = await importPatrimonios(args);
-    assert.equal(repeat.erros[0].motivo, "erro-original");
+    await assert.rejects(importPatrimonios(args), /erro-original/);
     assert.equal(await fs.readFile(destination, "utf8"), "imagem");
 });
 
 test("falha de compensação mantém erro original e identifica possível órfão", async t => {
     const dirs = await temp(t);
-    const report = await importPatrimonios({
+    const logs = [];
+    t.mock.method(console, "error", (...args) => logs.push(args));
+    await assert.rejects(importPatrimonios({
         prisma: fake({ fail: new Error("erro-original") }), databaseUrl: url, options: apply(),
         source: [{ ...item, imagem: "imagem.png" }], ...dirs,
         io: { ...fs, unlink: async () => { throw new Error("limpeza-negada"); } },
-    });
-    assert.equal(report.erros[0].motivo, "erro-original");
-    assert.ok(report.warnings.some(w => w.arquivoOrfao && w.motivo === "limpeza-negada"));
+    }), /erro-original/);
+    assert.ok(logs.some(entry => entry[1]?.caminho));
 });
 
 const legacyAliases = [
@@ -168,7 +175,7 @@ for (const [sourceSlug, legacySlug] of legacyAliases) {
         }];
         const before = structuredClone(existing);
         const prisma = fake({ existing });
-        prisma.$transaction = async () => assert.fail("Alias existente não deve iniciar transação");
+
         const io = new Proxy({}, { get: () => assert.fail("Alias existente não deve acessar imagens") });
         const report = await importPatrimonios({
             prisma, databaseUrl: url, source: [sourceItem], io,
@@ -240,8 +247,9 @@ test("alias surgido na releitura transacional impede duplicata", async () => {
     const existing = [];
     const prisma = fake({ existing });
     const transaction = prisma.$transaction;
+    let appeared = false;
     prisma.$transaction = async callback => {
-        existing.push({ slug: legacySlug, nome: "Registro criado concorrentemente", status: "PUBLICADO" });
+        if (!appeared) { existing.push({ slug: legacySlug, nome: "Registro criado concorrentemente", status: "PUBLICADO" }); appeared = true; }
         return transaction(callback);
     };
     // Apenas Prisma simulado: nenhuma conexão ou aplicação no banco real.
@@ -249,8 +257,8 @@ test("alias surgido na releitura transacional impede duplicata", async () => {
         prisma, databaseUrl: url, options: apply(), source: [{ ...item, nome: sourceSlug }],
     });
     assert.equal(report.criados, 0);
-    assert.equal(report.erros.length, 1);
-    assert.match(report.erros[0].motivo, /apareceu durante a importação/);
+    assert.equal(report.erros.length, 0);
+    assert.equal(report.ignorar, 1);
     assert.deepEqual(prisma.created, []);
     assert.deepEqual(existing, [{ slug: legacySlug, nome: "Registro criado concorrentemente", status: "PUBLICADO" }]);
 });

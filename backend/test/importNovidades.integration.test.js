@@ -23,7 +23,14 @@ test("PostgreSQL: importação editorial atômica, idempotente, permissões e GE
     const editorEmail = randomUUID() + "@example.test";
     let admin, editor, server;
     const options = { apply: false, status: "PUBLICADO", createdByEmail: email };
-    const run = (extra={}, client=prisma) => importNovidades({ prisma: client, options: { ...options, ...extra }, database, items, uploadsDir: uploads });
+    const run = async (extra={}, client=prisma) => {
+        const settings = { ...options, ...extra };
+        if (settings.apply && !settings.expectedStateHash) {
+            const review = await importNovidades({ prisma, options: { ...settings, apply: false }, database, items, uploadsDir: uploads });
+            settings.expectedStateHash = review.estado_hash;
+        }
+        return importNovidades({ prisma: client, options: settings, database, items, uploadsDir: uploads });
+    };
     const apply = { apply: true, confirmDb: database };
     try {
         admin = await prisma.user.create({ data: { name: "Importador", email, role: "ADMIN", passwordHash: "not-login", isActive: true } });

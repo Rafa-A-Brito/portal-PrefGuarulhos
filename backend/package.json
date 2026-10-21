@@ -35,7 +35,8 @@
         "import:patrimonios": "node prisma/import-patrimonios.js",
         "test:uploads:e2e": "node scripts/upload-e2e.js",
         "seed:pesquisa": "node prisma/seed.patrimonios.js",
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "seed:inicial": "node prisma/seed.js"
     },
     "dependencies": {
         "@prisma/adapter-pg": "7.10.0",

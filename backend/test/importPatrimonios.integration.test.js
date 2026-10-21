@@ -37,6 +37,10 @@ test("PostgreSQL: importador dry-run, apply, idempotência, preservação e roll
         const options = parseArgs(["--apply", "--confirm-db=" + new URL(databaseUrl).pathname.slice(1), "--created-by-email=" + author.email]);
         const args = { prisma, databaseUrl, uploadDir };
         function cli(flags) {
+            if (flags.includes("--apply") && !flags.some(flag => flag.startsWith("--expected-state-hash="))) {
+                const review = cli([...flags.filter(flag => flag !== "--apply" && !flag.startsWith("--confirm-db=")), "--dry-run"]);
+                flags = [...flags, "--expected-state-hash=" + review.estado_hash];
+            }
             const result = spawnSync(process.execPath, ["prisma/import-patrimonios.js", ...flags, "--json"], {
                 cwd: fileURLToPath(new URL("../", import.meta.url)), encoding: "utf8",
                 env: { ...process.env, DATABASE_URL: databaseUrl, UPLOAD_DIR: uploadDir, JWT_SECRET: "" },
@@ -65,23 +69,23 @@ test("PostgreSQL: importador dry-run, apply, idempotência, preservação e roll
         const sourceDir = path.join(root, "source");
         await fs.mkdir(sourceDir);
         await fs.writeFile(path.join(sourceDir, "rollback.png"), "rollback-image");
+        let failOnce = true;
         const failingPrisma = {
             user: prisma.user, categoria: prisma.categoria, patrimonio: prisma.patrimonio,
             $transaction: callback => prisma.$transaction(async tx => {
                 await callback(tx);
-                throw new Error("rollback-real");
+                if (failOnce) { failOnce = false; throw new Error("rollback-real"); }
             }),
         };
-        const rollback = await importPatrimonios({
-            ...args, prisma: failingPrisma, options, sourceDir,
-            source: [{ ...PATRIMONIOS_SEED[0], nome: "Teste rollback " + randomUUID(), imagem: "rollback.png" }],
-        });
-        assert.equal(rollback.erros[0].motivo, "rollback-real");
+        const rollbackSource = [{ ...PATRIMONIOS_SEED[0], nome: "Teste rollback " + randomUUID(), imagem: "rollback.png" }];
+        const reviewRollback = await importPatrimonios({ ...args, options: { ...options, apply: false }, sourceDir, source: rollbackSource });
+        await assert.rejects(importPatrimonios({ ...args, prisma: failingPrisma, options: { ...options, expectedStateHash: reviewRollback.estado_hash }, sourceDir, source: rollbackSource }), /rollback-real/);
         assert.equal(await prisma.patrimonio.count(), before + 33);
         await assert.rejects(fs.access(path.join(uploadDir, "patrimonios", "rollback.png")), { code: "ENOENT" });
         console.log("Importador: dry-run 33 criar/1 ignorar; apply 33 criados; repetição 34 ignorados; rollback real aprovado.");
     } finally {
         if (author) {
+            await prisma.auditLog.deleteMany({ where: { userId: author.id } });
             for (const p of await prisma.patrimonio.findMany({ where: { createdBy: author.id }, select: { id: true } })) {
                 await prisma.patrimonio.delete({ where: { id: p.id } });
             }

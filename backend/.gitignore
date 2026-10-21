@@ -13,3 +13,5 @@ uploads/
 # Manter o procedimento operacional de segurança sob revisão no Git.
 !docs/
 !docs/SEGURANCA.md
+
+!docs/AUTENTICACAO_E_CARGAS.md

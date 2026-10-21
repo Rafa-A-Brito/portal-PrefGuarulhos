@@ -4,8 +4,9 @@ import { createHash } from "node:crypto";
 import { databaseIdentity } from "../scripts/assert-test-db.js";
 import { slugify } from "../src/utils/slug.js";
 import { localizacaoSchema, updatePatrimonioSchema } from "../src/schemas/patrimonioSchema.js";
+import { candidatosDaFonte, vincularFonte } from "./identidade-carga.js";
 import { hashEstado, ordenarRelacoes } from "../src/utils/estadoHash.js";
-import { LEGACY_SLUG_ALIASES, normalizarNome, repararTexto, detailSchema, validarImagem } from "./import-patrimonios.js";
+import { normalizarNome, repararTexto, detailSchema, validarImagem } from "./import-patrimonios.js";
 
 export const SYNC_INCLUDE = {
     localizacao: true, imagens: { orderBy: [{ ordem: "asc" }, { id: "asc" }] },
@@ -29,7 +30,7 @@ const documentKey = d => JSON.stringify([d.url, d.titulo, d.tipo]);
 const digest = buffer => createHash("sha256").update(buffer).digest("hex");
 
 // Função pura: todo conflito é resolvido antes da primeira escrita.
-export function planSync({ source, existing, categories, images = new Map() }) {
+export function planSync({ source, existing, categories, images = new Map(), consolidateLegacy = false }) {
     const report = { fonte_canonica: source.length, merges_planejados: 0, updates_planejados: 0,
         erros: [], conflitos: [], warnings: [], itens: [] };
     const operations = [];
@@ -44,7 +45,7 @@ export function planSync({ source, existing, categories, images = new Map() }) {
             const name = normalizarNome(item.nome);
             if (!slug || sourceSlugs.has(slug) || sourceNames.has(name)) throw new Error("Nome/slug repetido na fonte.");
             sourceSlugs.add(slug); sourceNames.add(name);
-            const candidates = existing.filter(p => p.slug === slug || p.slug === LEGACY_SLUG_ALIASES.get(slug) || normalizarNome(p.nome) === name);
+            const candidates = candidatosDaFonte(item, existing);
             if (candidates.length !== 1) throw new Error("Identidade canônica ausente ou ambígua; sync exige exatamente um registro existente.");
             const current = candidates[0];
             row.id = current.id;
@@ -55,6 +56,7 @@ export function planSync({ source, existing, categories, images = new Map() }) {
             const duplicates = duplicateName ? existing.filter(p => p.slug === slugify(duplicateName) || normalizarNome(p.nome) === normalizarNome(duplicateName)) : [];
             if (duplicates.length > 1 || duplicates.some(d => d.id === current.id)) throw new Error("Duplicado de merge ambíguo.");
             const duplicate = duplicates[0];
+            if (duplicate && !consolidateLegacy) throw new Error("Consolidação de legado exige --consolidate-legacy explícito e revisão do estado.");
             if (duplicate && [duplicate.fatos, duplicate.ligacoes, duplicate.ligacoesRecebidas].some(items => items?.length)) {
                 throw new Error("Legado possui fatos/ligações editoriais; exige revisão manual antes de consolidar.");
             }
@@ -179,6 +181,7 @@ async function applyOperation(tx, op, author) {
 
 export async function syncPatrimonios({ prisma, databaseUrl, options, source, sourceDir, uploadDir, io }) {
     const target = databaseIdentity(databaseUrl);
+    if (options.apply && !/^[a-f0-9]{64}$/.test(options.expectedStateHash || "")) throw new Error("Apply exige --expected-state-hash revisado.");
     if ([options.backfillImages, options.backfillLocation, options.backfillDetails].some(Boolean)) throw new Error("Sync não aceita backfill simultâneo.");
     if (options.status && options.status !== "RASCUNHO") throw new Error("Sync preserva status.");
     if (options.apply && (options.confirmDb !== target.database || !options.createdByEmail)) throw new Error("Confirmação do banco/autor ausente ou divergente.");
@@ -201,18 +204,21 @@ export async function syncPatrimonios({ prisma, databaseUrl, options, source, so
             }
             const existing = await tx.patrimonio.findMany({ include: SYNC_INCLUDE, orderBy: { id: "asc" } });
             const categories = await tx.categoria.findMany();
+            const bindings = await tx.auditLog.findMany({ where: { action: "INITIAL_LOAD_BINDING" }, orderBy: { id: "asc" } });
+            const boundSource = vincularFonte(source, bindings);
             const images = new Map();
             const errors = [];
             for (const item of source) {
                 try { images.set(slugify(item.nome), await validarImagem(item.imagem, sourceDir, destinationDir, io)); }
                 catch (error) { errors.push({ slug: slugify(item.nome), motivo: error.code ?? error.message }); }
             }
-            const { report, operations } = planSync({ source, existing, categories, images });
+            const { report, operations } = planSync({ source: boundSource, existing, categories, images, consolidateLegacy: options.consolidateLegacy });
+            if (boundSource.some(item => item.bindingIds.some(id => !existing.some(row => row.id === id)))) report.conflitos.push({ codigo: "VINCULO_ORIGEM_REMOVIDO", motivo: "Revisar vínculo de origem removido; não adotar outro registro automaticamente." });
             Object.assign(report, { modo: options.apply ? "apply" : "dry-run", banco: identity.banco, host: new URL(databaseUrl).hostname, porta: target.port, aplicados: 0 });
             // Fingerprint do estado lido nesta transação, não de um catálogo antigo.
             // Arrays da fonte mantêm ordem editorial; relações do banco são conjuntos.
             report.estado_hash = hashEstado({ versao: 1, banco: target,
-                fonte: source, estado: ordenarRelacoes(plain({ existing, categories })),
+                fonte: source, bindings: ordenarRelacoes(plain(bindings)), consolidateLegacy: Boolean(options.consolidateLegacy), estado: ordenarRelacoes(plain({ existing, categories })),
                 imagens: [...images].map(([slug, img]) => [slug, img && { sourceHash: img.sourceHash, reuse: img.reuse }]).sort(([a], [b]) => a.localeCompare(b)),
             });
             if (options.expectedStateHash && options.expectedStateHash !== report.estado_hash) {

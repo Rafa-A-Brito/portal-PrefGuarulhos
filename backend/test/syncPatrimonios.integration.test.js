@@ -7,12 +7,20 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { integrationDatabaseAvailable } from "../scripts/assert-test-db.js";
-import { importPatrimonios, parseArgs, LEGACY_SLUG_ALIASES } from "../prisma/import-patrimonios.js";
-import { planSync, SYNC_INCLUDE } from "../prisma/sync-patrimonios.js";
+import { importPatrimonios as executarImport, parseArgs, LEGACY_SLUG_ALIASES } from "../prisma/import-patrimonios.js";
+import { planSync as planoSync, SYNC_INCLUDE } from "../prisma/sync-patrimonios.js";
 import { PATRIMONIOS_SEED as seed } from "../prisma/patrimonioSeedData.js";
 import { localizacaoSchema } from "../src/schemas/patrimonioSchema.js";
 import { slugify } from "../src/utils/slug.js";
 
+const planSync = args => planoSync({ ...args, consolidateLegacy: true });
+async function importPatrimonios(args) {
+    if (args.options?.apply && !args.options.expectedStateHash) {
+        const review = await executarImport({ ...args, prisma: args.reviewClient || args.prisma, options: { ...args.options, apply: false } });
+        return executarImport({ ...args, options: { ...args.options, expectedStateHash: review.estado_hash } });
+    }
+    return executarImport(args);
+}
 test("PostgreSQL sync: 36 registros, dry-run sem writes, rollback, relações, merges e idempotência", {
     skip: !integrationDatabaseAvailable() && "Configure banco exclusivo de teste.",
 }, async () => {
@@ -54,11 +62,11 @@ test("PostgreSQL sync: 36 registros, dry-run sem writes, rollback, relações, m
             }
         }
         const args = { prisma, databaseUrl, uploadDir };
-        const dry = await importPatrimonios({ ...args, options: parseArgs(["--sync-patrimonios"]) });
+        const dry = await importPatrimonios({ ...args, options: parseArgs(["--sync-patrimonios", "--consolidate-legacy"]) });
         assert.deepEqual(dry.erros, []); assert.deepEqual(dry.conflitos, []);
         assert.equal(dry.fonte_canonica, 34); assert.equal(dry.merges_planejados, 2); assert.equal(dry.updates_planejados, 34);
         assert.deepEqual(await snapshot(), before); assert.deepEqual(await fs.readdir(uploadDir), []);
-        const options = parseArgs(["--sync-patrimonios", "--apply", "--confirm-db=" + new URL(databaseUrl).pathname.slice(1), "--created-by-email=" + author.email]);
+        const options = parseArgs(["--sync-patrimonios", "--consolidate-legacy", "--apply", "--confirm-db=" + new URL(databaseUrl).pathname.slice(1), "--created-by-email=" + author.email]);
         // O último canônico incompleto bloqueia inclusive as 33 operações válidas anteriores.
         const incomplete = seed.map(item => ({ ...item }));
         delete incomplete.at(-1).cep;
@@ -71,7 +79,7 @@ test("PostgreSQL sync: 36 registros, dry-run sem writes, rollback, relações, m
         assert.equal(await prisma.auditLog.count({ where: { userId: author.id } }), 0);
         let failOnce = true;
         const failing = { $transaction: (callback, opts) => prisma.$transaction(async tx => { const result = await callback(tx); if (failOnce) { failOnce = false; throw new Error("rollback-real-sync"); } return result; }, opts) };
-        await assert.rejects(importPatrimonios({ ...args, prisma: failing, options }), /rollback-real-sync/);
+        await assert.rejects(importPatrimonios({ ...args, prisma: failing, reviewClient: prisma, options }), /rollback-real-sync/);
         assert.deepEqual(await snapshot(), before);
         assert.deepEqual(await fs.readdir(path.join(uploadDir, "patrimonios")), ["casa_jose_mauricio.jpg"]);
         assert.equal(await prisma.auditLog.count({ where: { userId: author.id } }), 0);
@@ -79,7 +87,7 @@ test("PostgreSQL sync: 36 registros, dry-run sem writes, rollback, relações, m
         const concurrent = await Promise.allSettled([importPatrimonios({ ...args, options }), importPatrimonios({ ...args, options })]);
         assert.ok(concurrent.some(r => r.status === "fulfilled" && r.value.aplicados === 34));
         for (const result of concurrent) {
-            if (result.status === "fulfilled") { assert.deepEqual(result.value.erros, []); assert.deepEqual(result.value.conflitos, []); }
+            if (result.status === "fulfilled") { assert.deepEqual(result.value.erros, []); if (result.value.aplicados) assert.deepEqual(result.value.conflitos, []); else assert.ok(result.value.conflitos.some(item => item.codigo === "ESTADO_DESATUALIZADO")); }
             else assert.match(result.reason.message, /serializ|conflict|deadlock|P2034/i);
         }
         const after = await snapshot();
@@ -121,12 +129,12 @@ test("PostgreSQL sync: upsert com patch de quatro campos e create completo prese
         category = await prisma.categoria.create({ data: { nome: "Location " + randomUUID(), slug: randomUUID() } });
         const item = seed.find(p => p.nome === "Estação Ferroviária de Guarulhos");
         const current = await prisma.patrimonio.create({ data: {
-            nome: item.nome, slug: randomUUID(), descricao: "Fixture", descricaoResumida: "Fixture", categoriaId: category.id, createdBy: author.id,
+            nome: item.nome, slug: LEGACY_SLUG_ALIASES.get(slugify(item.nome)) || slugify(item.nome), descricao: "Fixture", descricaoResumida: "Fixture", categoriaId: category.id, createdBy: author.id,
             localizacao: { create: { endereco: item.endereco, bairro: item.bairro, cidade: "São Paulo", uf: "SP", complemento: "Preservar nota editorial" } },
         }, include: SYNC_INCLUDE });
         const source = [{ nome: item.nome, numero: item.numero, cep: item.cep, latitude: item.latitude, longitude: item.longitude }];
         const args = { prisma, databaseUrl, source };
-        const dryOptions = parseArgs(["--sync-patrimonios"]);
+        const dryOptions = parseArgs(["--sync-patrimonios", "--consolidate-legacy"]);
         const snapshot = () => prisma.patrimonio.findUnique({ where: { id: current.id }, include: SYNC_INCLUDE });
         const dry = await importPatrimonios({ ...args, options: dryOptions });
         assert.deepEqual(dry.erros, []); assert.deepEqual(dry.conflitos, []);
@@ -137,7 +145,7 @@ test("PostgreSQL sync: upsert com patch de quatro campos e create completo prese
         assert.deepEqual(Object.keys(plan.operations[0].location), ["numero", "cep", "latitude", "longitude"]);
         assert.equal(plan.operations[0].locationCreate.endereco, current.localizacao.endereco);
         assert.equal(plan.operations[0].locationCreate.cidade, "São Paulo");
-        const applied = await importPatrimonios({ ...args, options: parseArgs(["--sync-patrimonios", "--apply", "--confirm-db=" + new URL(databaseUrl).pathname.slice(1), "--created-by-email=" + author.email]) });
+        const applied = await importPatrimonios({ ...args, options: parseArgs(["--sync-patrimonios", "--consolidate-legacy", "--apply", "--confirm-db=" + new URL(databaseUrl).pathname.slice(1), "--created-by-email=" + author.email]) });
         assert.deepEqual(applied.erros, []); assert.deepEqual(applied.conflitos, []);
         assert.equal(applied.aplicados, 1);
         const after = await snapshot();

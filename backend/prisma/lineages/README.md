@@ -48,3 +48,13 @@ O script usa credenciais locais apenas para conectar a `postgres`, cria bancos
 exclusivos `portal_r1_*_test`, valida replay/upgrade e executa os testes. Nao conecta
 ao banco da aplicacao, nao executa seed e remove somente os bancos que ele criou.
 Logs e resultados ficam em `.cache/r1`, ignorada pelo Git.
+
+## Compatibilidade atual da trilha da equipe
+
+A migration adicional `20261021120000_add_current_region_relation` cria somente
+a relação atual de regiões e seus índices, preservando `local.regiao`, seções,
+numeração e todos os dados existentes. Não converte classificações legadas.
+O replay descartável agora confere todas as colunas dos modelos do Prisma nas
+duas trilhas. Para banco local exclusivo autorizado cujo nome coincide com o
+bloqueio do config normal, usar o config separado `prisma.local-equipe.config.js`,
+com conexão loopback e confirmação exata do nome; ver o procedimento acima.

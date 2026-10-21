@@ -193,7 +193,7 @@ O E2E cria seus próprios registros no banco de teste e verifica POST/GET/DELETE
 
 ## Importação conservadora de patrimônios
 
-Fonte: backend/prisma/patrimonioSeedData.js (PATRIMONIOS_SEED). O seed antigo é apenas bootstrap/demonstração: atualiza registros, força publicação e recria detalhes. Não o execute como importador de dados administrativos.
+Fonte canônica: backend/prisma/patrimonioSeedData.js (PATRIMONIOS_SEED). O seed inicial foi corrigido: simula por padrão e cria somente ausentes como RASCUNHO, sem sobrescrever categorias, registros ou relações existentes. seed:pesquisa compartilha essa política e respeita a identidade/curadoria D1B/D1C. Consulte backend/docs/AUTENTICACAO_E_CARGAS.md.
 
 O importador novo usa leitura por padrão:
 
@@ -208,14 +208,14 @@ O dry-run não cria usuário, categoria, diretório ou imagem e não grava no ba
 A escrita exige todas as confirmações:
 
 ~~~sh
-node prisma/import-patrimonios.js --apply --confirm-db=portal_test --created-by-email=autor@example.test
+node prisma/import-patrimonios.js --apply --confirm-db=portal_test --created-by-email=autor@example.test --expected-state-hash=HASH_REVISADO
 ~~~
 
 O autor precisa existir, estar ativo e ser ADMIN ou EDITOR. Categorias precisam existir. Ausências são reportadas; não há criação implícita dessas dependências. Para testar com um arquivo de ambiente contendo TEST_DATABASE_URL, selecione explicitamente esse destino como DATABASE_URL somente no processo do importador; os testes de integração já fazem isso de forma isolada.
 
-Novos registros ficam em RASCUNHO; --status=PUBLICADO é uma escolha explícita. Patrimônios existentes por slug são ignorados sem alteração. Nome normalizado coincidente com slug diferente gera conflito. Dados inválidos impedem a criação daquele item. Não existem --fill-missing, --overwrite ou --create-categorias neste lote; são apenas possibilidades futuras.
+Novos registros ficam em RASCUNHO; --status=PUBLICADO é uma escolha explícita. Patrimônios existentes por slug são ignorados sem alteração. Nome normalizado coincidente com slug diferente gera conflito. Dados inválidos ou conflitos bloqueiam o lote completo antes de escrever. Não existem --fill-missing, --overwrite ou --create-categorias neste lote; são apenas possibilidades futuras.
 
-Cada patrimônio usa uma transação com suas relações. Coordenadas devem estar em par e dentro das faixas; localização só é criada com os campos mínimos. Nomes/extensões e existência das imagens são verificados previamente. A cópia é exclusiva; um destino com conteúdo diferente é erro. Imagem já existente idêntica pode ser reutilizada com aviso. Se a transação falhar, somente a imagem criada pela tentativa é compensada; falha na compensação mantém o erro original e reporta possível órfão.
+O lote completo usa uma transação com suas relações, incluindo backfills. O dry-run usa READ ONLY; apply exige o hash do estado revisado. Coordenadas devem estar em par e dentro das faixas; localização só é criada com os campos mínimos. Nomes/extensões e existência das imagens são verificados previamente. A cópia é exclusiva; um destino com conteúdo diferente é erro. Imagem já existente idêntica pode ser reutilizada com aviso. Se a transação falhar, somente a imagem criada pela tentativa é compensada; falha na compensação mantém o erro original e reporta possível órfão.
 
 O apply não é atomicamente global: um item com erro não desfaz os anteriores. Saída com conflitos/erros retorna código 1; inspecione o relatório e rode novo dry-run. No Lote 06, apply é validado somente em portal_test descartável. Carga real é uma operação manual posterior, precedida de backup e revisão do dry-run.
 
