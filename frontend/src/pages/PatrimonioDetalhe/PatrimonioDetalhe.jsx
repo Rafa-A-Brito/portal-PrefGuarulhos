@@ -1,21 +1,26 @@
-import { useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   ArrowLeftIcon,
   MapPinIcon,
   MapIcon,
   ArrowTopRightOnSquareIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import { CATEGORIA_META } from "../../features/categoriaMeta";
 import PatrimoniosRelacionados from "./PatrimoniosRelacionados";
 import SecoesAcordeao from "./SecoesAcordeao";
 import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
-import { buscarPatrimonioPorId } from "../../services/fakeApi";
+import { AuthContext } from "../../context/AuthContextInstance.js";
+import { buscarPatrimonioPorId } from "../../services/patrimoniosApi";
+import { buscarPatrimonioAdmin } from "../../services/adminApi";
+import EditarPatrimonioModal from "../../features/admin/components/EditarPatrimonioModal";
 import { formatarEndereco } from "../../features/mapa/endereco";
 import { criarUrlRota } from "../../features/mapa/rota";
 import { classificarLocalizacao } from "../../features/mapa/politicaLocalizacao";
 import "./PatrimonioDetalhe.css";
+import "./PatrimonioDetalheEdicao.css";
 
 export default function PatrimonioDetalhe() {
   const { id } = useParams();
@@ -24,13 +29,17 @@ export default function PatrimonioDetalhe() {
 
 function DetalhePorSlug({ slug }) {
   const navigate = useNavigate();
-  const { patrimonios = [], setSelecionado } = usePatrimoniosContext();
+  const { patrimonios = [], setSelecionado, recarregar: recarregarCatalogo } = usePatrimoniosContext();
   const [estado, setEstado] = useState({
     carregando: true,
     detalhe: null,
     erro: false,
   });
   const [tentativa, setTentativa] = useState(0);
+  const { usuario, carregando: verificandoSessao } =
+    useContext(AuthContext) ?? {};
+  const [editando, setEditando] = useState(false);
+  const [erroSincronizacao, setErroSincronizacao] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -46,6 +55,40 @@ function DetalhePorSlug({ slug }) {
       ativo = false;
     };
   }, [slug, tentativa]);
+
+  // Depois de editar no modal: busca a ficha pública de novo SEM trocar a tela
+  // por "carregando". Se o nome mudou e o backend gerou outro slug, a ficha
+  // antiga dá 404; então descobre o slug novo pelo detalhe admin (UUID) e
+  // troca a URL. Falha ao atualizar mantém a ficha atual na tela.
+  const atualizarAposEdicao = useCallback(
+    async (uuid) => {
+      try {
+        // Atualiza também as listas e o mapa que compartilham o catálogo.
+        await recarregarCatalogo?.();
+        const detalhe = await buscarPatrimonioPorId(slug);
+        if (detalhe) {
+          setEstado({ carregando: false, detalhe, erro: false });
+          setSelecionado((atual) => atual?.uuid === uuid ? detalhe : atual);
+          setErroSincronizacao(false);
+          return true;
+        }
+        const admin = await buscarPatrimonioAdmin(uuid);
+        if (admin?.slug && admin.slug !== slug) {
+          setErroSincronizacao(false);
+          navigate(`/patrimonios/${encodeURIComponent(admin.slug)}`, {
+            replace: true,
+          });
+          return true;
+        }
+      } catch {
+        // Gravação e atualização da página são ações diferentes.
+      }
+      // Se o GET público falhou, não dizer que a página foi atualizada.
+      setErroSincronizacao(true);
+      return false;
+    },
+    [slug, navigate, recarregarCatalogo, setSelecionado],
+  );
 
   const recarregar = () => {
     setEstado({ carregando: true, detalhe: null, erro: false });
@@ -102,6 +145,14 @@ function DetalhePorSlug({ slug }) {
       </div>
     );
   }
+
+  // A API admin usa o UUID (item.uuid), nunca o slug. O backend continua
+  // sendo quem valida a permissão de verdade (401/403 aparecem no modal).
+  const podeEditar =
+    !verificandoSessao &&
+    !estado.carregando &&
+    usuario?.perfil === "ADMIN" &&
+    Boolean(item.uuid);
 
   const meta = CATEGORIA_META[item.categoria];
   const Icon = meta?.Icon;
@@ -186,6 +237,35 @@ function DetalhePorSlug({ slug }) {
       </div>
 
       <div className="detalhe-body detalhe-body--ficha">
+        {podeEditar && (
+          <>
+            <div className="detalhe-admin-bar">
+              <button
+                type="button"
+                className="btn-outline"
+                aria-haspopup="dialog"
+                onClick={() => setEditando(true)}
+              >
+                <PencilSquareIcon width={16} height={16} aria-hidden="true" />
+                Editar patrimônio
+              </button>
+            </div>
+            {erroSincronizacao && (
+              <div className="detalhe-admin-atualizacao-erro" role="alert">
+                <span>
+                  A alteração pode ter sido salva, mas a ficha pública não pôde ser atualizada.
+                </span>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => void atualizarAposEdicao(item.uuid)}
+                >
+                  Tentar atualizar a ficha
+                </button>
+              </div>
+            )}
+          </>
+        )}
         <div
           className={`detalhe-ficha${temLocalizacao ? " detalhe-ficha--com-local" : ""}`}
         >
@@ -335,8 +415,20 @@ function DetalhePorSlug({ slug }) {
             </ul>
           </section>
         )}
-        <PatrimoniosRelacionados ligacoes={item.ligacoes} />
+        <PatrimoniosRelacionados ligacoes={item.ligacoes} patrimonios={patrimonios} />
       </div>
+
+      {podeEditar && editando && (
+        <EditarPatrimonioModal
+          uuid={item.uuid}
+          nome={item.nome}
+          onSalvo={({ uuid }) => atualizarAposEdicao(uuid)}
+          onClose={({ atualizar } = {}) => {
+            setEditando(false);
+            if (atualizar) void atualizarAposEdicao(item.uuid);
+          }}
+        />
+      )}
     </div>
   );
 }

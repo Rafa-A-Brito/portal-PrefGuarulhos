@@ -1,7 +1,6 @@
 /**
  * Camada que as páginas públicas usam para ler patrimônios e categorias.
- * O nome "fakeApi" é herança do tempo do mock; hoje tudo vem da API real
- * (GET /patrimonios, GET /patrimonios/:slug, GET /categorias).
+ * Consulta a API real: GET /patrimonios, GET /patrimonios/:slug e GET /categorias.
  *
  * Fallback local da listagem: SÓ em desenvolvimento (import.meta.env.DEV)
  * e SÓ quando a rede falha (backend desligado). O detalhe sempre usa a API,
@@ -49,7 +48,7 @@ export function resolverUrlPublica(url) {
 
 function avisarFallback(origem, err) {
   console.warn(
-    `[fakeApi] Backend indisponível em "${origem}" (${err.message}). ` +
+    `[patrimoniosApi] Backend indisponível em "${origem}" (${err.message}). ` +
       "Usando o catálogo local (somente em desenvolvimento).",
   );
 }

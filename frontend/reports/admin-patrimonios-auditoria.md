@@ -57,7 +57,7 @@ Não há restrição de status no upload backend: POST de imagens admite ADMIN e
 
 - src/features/admin/pages/AdminPatrimonios.jsx — edição, permissões, feedback e coordenação das ações.
 - src/services/adminApi.js — extração de error.message e mensagens por status HTTP.
-- src/services/fakeApi.js — preservação de cidade/UF na normalização.
+- src/services/patrimoniosApi.js — preservação de cidade/UF na normalização.
 - src/services/maps.js — consulta, restrições e chave de cache respeitam cidade/UF carregadas.
 - package.json e package-lock.json — comando test e dependências de testes.
 - vitest.config.js, test/setup.js, test/AdminPatrimonios.test.jsx e test/maps.test.js — infraestrutura e cobertura.

@@ -1,5 +1,5 @@
 // D2B: aplicação real, API exclusivamente em memória; nunca conecta ao banco.
-// Execute na pasta frontend: node scripts/smoke-d2b.mjs
+// Execute na pasta frontend: node scripts/verificar_organizacao_editorial.mjs
 import { createServer } from "vite";
 import { spawn } from "node:child_process";
 import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";

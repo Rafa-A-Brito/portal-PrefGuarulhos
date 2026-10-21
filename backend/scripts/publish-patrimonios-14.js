@@ -1,6 +1,6 @@
 /**
  * Operação temporária: allowlist fixa, dry-run padrão, publicação pelo service administrativo.
- * Execute no diretório backend; instruções em PUBLISH_PATRIMONIOS_14.md.
+ * Execute no diretório backend; instruções em ../docs/publicacao_patrimonios.md.
  */
 import "dotenv/config";
 import { pathToFileURL } from "node:url";

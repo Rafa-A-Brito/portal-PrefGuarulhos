@@ -25,7 +25,7 @@ Staging por `git add --` com os 41 caminhos explícitos, sem seleção de diret�
 - `backend/prisma/schema.prisma`
 - `backend/scripts/validate-d2b.js`
 - `backend/src/controllers/regiaoController.js`
-- `backend/src/docs/d2.js`
+- `backend/src/docs/organizacaoEditorial.js`
 - `backend/src/docs/openapi.js`
 - `backend/src/docs/paths.js`
 - `backend/src/docs/schemas.js`
@@ -43,7 +43,7 @@ Staging por `git add --` com os 41 caminhos explícitos, sem seleção de diret�
 - `backend/test/patrimonio.test.js`
 - `backend/test/r1.test.js`
 - `backend/test/syncPatrimonios.test.js`
-- `frontend/scripts/smoke-d2b.mjs`
+- `frontend/scripts/verificar_organizacao_editorial.mjs`
 - `frontend/src/App.jsx`
 - `frontend/src/components/MetadataEditorial/MetadataEditorial.css`
 - `frontend/src/components/MetadataEditorial/MetadataEditorial.jsx`
@@ -57,10 +57,10 @@ Staging por `git add --` com os 41 caminhos explícitos, sem seleção de diret�
 - `frontend/src/pages/PatrimonioDetalhe/PatrimonioDetalhe.jsx`
 - `frontend/src/pages/Patrimonios/Patrimonios.css`
 - `frontend/src/pages/Patrimonios/Patrimonios.jsx`
-- `frontend/src/services/fakeApi.js`
+- `frontend/src/services/patrimoniosApi.js`
 - `frontend/src/services/regioesApi.js`
 - `frontend/test/AdminPatrimonios.test.jsx`
-- `frontend/test/D2Editorial.test.jsx`
+- `frontend/test/OrganizacaoEditorial.test.jsx`
 - `reports/D2B-implementacao-regiao-numero-ordem.md`
 
 ## Exclusões deliberadas e preservação

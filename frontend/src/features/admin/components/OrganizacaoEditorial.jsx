@@ -18,7 +18,7 @@ const porNome = (a, b) => a.nome.localeCompare(b.nome, "pt-BR");
  * do patrimônio. `podeCriarRegiao` (somente ADMIN) vem da página; o backend
  * continua sendo a autoridade de permissão.
  */
-export default function OrganizacaoEditorial({ formulario, atualizar, podeCriarRegiao = false }) {
+export default function OrganizacaoEditorial({ formulario, atualizar, podeCriarRegiao = false, onBusyChange, onDirtyChange }) {
   const [regioes, setRegioes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -42,6 +42,8 @@ export default function OrganizacaoEditorial({ formulario, atualizar, podeCriarR
     return () => controller.abort();
   }, [tentativa]);
   useEffect(() => { if (painelAberto) nomeRef.current?.focus(); }, [painelAberto]);
+  const sujo = painelAberto && (nova.nome !== "" || nova.slug !== "" || nova.descricao !== "" || !nova.ativo);
+  useEffect(() => { onDirtyChange?.(sujo); }, [sujo, onDirtyChange]);
 
   const atual = formulario.regiaoAtual;
   const foraDoCatalogo = atual && !regioes.some(r => r.id === atual.id);
@@ -62,6 +64,7 @@ export default function OrganizacaoEditorial({ formulario, atualizar, podeCriarR
       setErroCadastro("Informe um slug com letras minúsculas, números e hífens (ex.: centro-historico)."); return;
     }
     setSalvando(true); setErroCadastro("");
+    onBusyChange?.(true);
     try {
       const criada = await criarRegiao({ nome, slug, descricao: nova.descricao.trim() || null, ativo: nova.ativo });
       if (criada.ativo !== false) {
@@ -77,7 +80,7 @@ export default function OrganizacaoEditorial({ formulario, atualizar, podeCriarR
       }
     } catch (error) {
       setErroCadastro(erroRegiao(error)); // mantém o painel aberto com o que foi digitado
-    } finally { setSalvando(false); }
+    } finally { setSalvando(false); onBusyChange?.(false); }
   }
   // Enter num campo do cadastro rápido salva a região, não o patrimônio.
   function teclaNoCadastro(e) {
@@ -128,13 +131,13 @@ export default function OrganizacaoEditorial({ formulario, atualizar, podeCriarR
         <label>Número de exibição
           <input type="number" min="1" max="2147483647" step="1" value={formulario.numeroExibicao} onChange={e => atualizar("numeroExibicao", e.target.value)} aria-describedby="numero-editorial-ajuda" />
         </label>
-        <p id="numero-editorial-ajuda" className="admin-ajuda">Número apresentado ao visitante. Não é o número do endereço. Deixe vazio para não exibir.</p>
+        <p id="numero-editorial-ajuda" className="admin-ajuda">Número apresentado ao visitante. Não é o número do endereço. Se estiver vazio ao publicar, recebe o próximo número disponível.</p>
       </div>
       <div className="organizacao-editorial-campo">
         <label>Ordem de exibição
           <input type="number" min="0" max="2147483647" step="1" value={formulario.ordemExibicao} onChange={e => atualizar("ordemExibicao", e.target.value)} aria-describedby="ordem-editorial-ajuda" />
         </label>
-        <p id="ordem-editorial-ajuda" className="admin-ajuda">Menores valores aparecem primeiro; zero é válido. Empates usam nome. Vazio mantém a ordenação por nome após os itens priorizados.</p>
+        <p id="ordem-editorial-ajuda" className="admin-ajuda">Menores valores aparecem primeiro; zero é válido. Empates usam nome. Se estiver vazia ao publicar, recebe a próxima ordem disponível.</p>
       </div>
     </div>
   </fieldset>;

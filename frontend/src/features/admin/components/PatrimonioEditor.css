@@ -1,0 +1,58 @@
+/* Estados de carga/erro do PatrimonioEditor (dashboard e modal D3E). */
+
+.patrimonio-editor-skeleton {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.patrimonio-editor-skeleton span {
+  display: block;
+  height: 44px;
+  background: var(--line);
+  border-radius: 10px;
+  animation: patrimonio-editor-pulse 1.2s ease-in-out infinite;
+}
+
+.patrimonio-editor-skeleton span:nth-child(1) {
+  width: 55%;
+  height: 22px;
+}
+
+.patrimonio-editor-skeleton span:nth-child(4) {
+  height: 120px;
+}
+
+@keyframes patrimonio-editor-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .patrimonio-editor-skeleton span {
+    animation: none;
+  }
+}
+
+.patrimonio-editor-erro {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px 12px;
+  text-align: center;
+}
+
+.patrimonio-editor-erro svg {
+  color: var(--danger);
+}
+
+.patrimonio-editor-erro p {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--ink);
+}
+
+.patrimonio-editor-erro .admin-form-acoes {
+  justify-content: center;
+}

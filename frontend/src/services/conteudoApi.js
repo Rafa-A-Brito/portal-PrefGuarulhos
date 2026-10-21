@@ -1,5 +1,5 @@
 import api from "./api";
-import { buscarTodasAsPaginas, resolverUrlPublica } from "./fakeApi";
+import { buscarTodasAsPaginas, resolverUrlPublica } from "./patrimoniosApi";
 
 function normalizar(item) {
   const imagemUrl = resolverUrlPublica(item.imagemUrl ?? item.imagem);

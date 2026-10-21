@@ -9,3 +9,22 @@
 .favoritos-contador { min-width: 1.4em; padding: 0 .4em; border-radius: 999px; background: rgba(43, 37, 92, .12); font-size: .8rem; font-weight: 700; text-align: center; }
 .filtros-editoriais .btn-favoritos[aria-pressed="true"] .favoritos-contador { background: rgba(255, 255, 255, .22); }
 .empty-state .btn-outline { margin-top: 1rem; }
+
+/* ---------- Filtro de regiões (chips) ---------- */
+.regioes-filtro { flex: 1 1 100%; display: grid; gap: .6rem; min-width: 0; padding: 1rem; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--navy); border-radius: var(--radius-card, 12px); box-shadow: var(--shadow-plaque); }
+.regioes-filtro-titulo { color: var(--navy); font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.regioes-filtro-lista { display: flex; flex-wrap: wrap; gap: .5rem; }
+.regiao-chip { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; max-width: 100%; padding: .4rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--navy); font: inherit; font-size: .875rem; font-weight: 600; line-height: 1.25; text-align: left; overflow-wrap: anywhere; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+.regiao-chip:hover { border-color: var(--navy); background: #fff; }
+.regiao-chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.regiao-chip[aria-pressed="true"] .favoritos-contador { background: rgba(255, 255, 255, .22); }
+.regiao-chip .favoritos-contador { flex: none; }
+
+@media (max-width: 600px) {
+  .regioes-filtro { padding: .8rem; }
+  .regiao-chip { font-size: .8125rem; padding: .4rem .75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regiao-chip { transition: none; }
+}

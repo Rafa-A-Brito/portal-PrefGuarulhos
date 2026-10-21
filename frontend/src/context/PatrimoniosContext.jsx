@@ -3,7 +3,7 @@ import {
   listarPatrimonios,
   calcularEstatisticas,
   contarPorCategoria,
-} from "../services/fakeApi";
+} from "../services/patrimoniosApi";
 import { PatrimoniosContext } from "./patrimoniosContextInstance";
 
 export function PatrimoniosProvider({ children }) {

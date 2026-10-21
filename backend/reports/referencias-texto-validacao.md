@@ -45,7 +45,7 @@ Falhas após criação do arquivo fazem limpeza segura. DELETE confirma a transa
 - `backend/src/utils/arquivoUpload.js`: limpeza segura de documentos.
 - `backend/src/middlewares/uploadImage.js`: conserva diretórios próprios de imagens.
 - `backend/src/docs/paths.js`, `backend/test/docs.test.js`: contrato OpenAPI e validação.
-- `frontend/src/services/fakeApi.js`: normalização de documentos e URLs públicas.
+- `frontend/src/services/patrimoniosApi.js`: normalização de documentos e URLs públicas.
 - `frontend/test/AdminPatrimonios.test.jsx`: inclusão, remoção, reabertura, permissões e preservação do resumo.
 - `frontend/test/ConhecaMais.test.jsx`: expectativa atualizada para a agenda de quatro eventos; data fixa para resultado determinístico. Nenhum comportamento da página foi alterado nesta etapa.
 

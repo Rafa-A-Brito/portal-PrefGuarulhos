@@ -1,5 +1,5 @@
 import { pathsMidia } from "./pathsMidia.js";
-import { pathsD2 } from "./d2.js";
+import { pathsOrganizacaoEditorial } from "./organizacaoEditorial.js";
 const schema = (name) => ({ $ref: `#/components/schemas/${name}` });
 const response = (description, name, example) => ({
     description,
@@ -464,4 +464,4 @@ const multipart = uploadIntegrado.requestBody.content["multipart/form-data"];
 multipart.schema = { oneOf: [multipart.schema, { $ref: "#/components/schemas/ImagemUpload" }] };
 uploadIntegrado.description += " Alternativa arquivo: JPEG/PNG/WebP no limite configurado, textoAlternativo obrigatório; ADMIN/EDITOR em qualquer status. O campo imagem mantém GIF/10 MB e ADMIN/EDITOR em qualquer status.";
 
-pathsD2(paths);
+pathsOrganizacaoEditorial(paths);

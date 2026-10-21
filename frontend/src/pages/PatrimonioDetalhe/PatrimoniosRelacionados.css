@@ -8,7 +8,8 @@
 }
 .patrimonios-relacionados-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(auto-fit, min(100%, 250px));
+  justify-content: start;
   gap: 16px;
   padding: 0;
   margin: 0;
@@ -16,11 +17,7 @@
 }
 .patrimonio-relacionado {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
   min-width: 0;
-  padding: clamp(18px, 3vw, 24px);
   border: 1px solid var(--line);
   border-top: 3px solid var(--navy);
   border-radius: var(--radius-card);
@@ -30,26 +27,21 @@
   transition: border-color 0.15s ease;
 }
 .patrimonio-relacionado:hover { border-top-color: var(--blue); }
-.patrimonio-relacionado h3 { margin: 0; color: var(--navy); font-size: 1.125rem; line-height: 1.35; }
-.patrimonio-relacionado p { margin: 0 0 0.25rem; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; }
+.patrimonio-relacionado h3 { margin: 0; padding: 14px 16px; color: var(--navy); font-size: 1.125rem; line-height: 1.35; }
 .patrimonio-relacionado-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
   min-height: 44px;
-  margin-top: auto;
   color: var(--navy);
   font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  border-radius: 4px;
+  text-decoration: none;
+  border-radius: inherit;
 }
-.patrimonio-relacionado-link svg { flex: none; transition: transform 0.15s ease; }
-.patrimonio-relacionado-link:hover { text-decoration-thickness: 2px; }
-.patrimonio-relacionado-link:hover svg { transform: translateX(3px); }
+.patrimonio-relacionado-link img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.patrimonio-relacionado-link:hover h3 { text-decoration: underline; text-underline-offset: 0.2em; }
 .patrimonio-relacionado-link:focus-visible { outline: 3px solid var(--navy); outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
-  .patrimonio-relacionado,
-  .patrimonio-relacionado-link svg { transition: none; }
-  .patrimonio-relacionado-link:hover svg { transform: none; }
+  .patrimonio-relacionado { transition: none; }
 }

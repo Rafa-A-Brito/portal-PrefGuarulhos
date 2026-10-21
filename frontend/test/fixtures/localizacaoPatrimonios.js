@@ -1,5 +1,5 @@
 // Slugs públicos reais; os demais dados são apenas fixtures de navegação.
-export const SEM_DESTINO_C3 = [
+export const PATRIMONIOS_SEM_DESTINO = [
   { slug: "antigo-poco-municipal", tipo: "SEM_ROTA", aviso: "Localização em pesquisa" },
   { slug: "sitios-arqueologicos-das-lavras-velhas-do-geraldo", tipo: "SEM_ROTA", aviso: "Referência territorial" },
   { slug: "cultura-e-presenca-indigena-wassu-cocal-e-krenak-pankararu", tipo: "SEM_ROTA", aviso: "Referência territorial" },

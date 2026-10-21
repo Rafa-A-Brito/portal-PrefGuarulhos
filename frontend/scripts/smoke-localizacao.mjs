@@ -6,7 +6,7 @@ import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
-import { SEM_DESTINO_C3 } from "../test/fixtures/localizacaoC3.js";
+import { PATRIMONIOS_SEM_DESTINO } from "../test/fixtures/localizacaoPatrimonios.js";
 
 const pause = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const origin = "http://127.0.0.1:5177";
@@ -15,7 +15,7 @@ const image = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www
 const casos = [
   { slug: "parque-ecologico-do-tiete", nome: "Parque Ecológico do Tietê", tipo: "EXATA", aviso: "" },
   { slug: "casarao-saraceni", nome: "Casarão Saraceni", tipo: "APROXIMADA", aviso: "Localização aproximada / referência histórica" },
-  ...SEM_DESTINO_C3.map(c => ({ ...c, nome: c.slug })),
+  ...PATRIMONIOS_SEM_DESTINO.map(c => ({ ...c, nome: c.slug })),
 ];
 const itens = casos.map((c, i) => ({
   id: "fixture-" + i, slug: c.slug, nome: c.nome,

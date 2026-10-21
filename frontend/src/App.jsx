@@ -27,7 +27,7 @@ import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
 import AdminRegioes from "./features/admin/pages/AdminRegioes";
 import AdminExposicoes from "./features/admin/pages/AdminExposicoes";
 import AdminNovidades from "./features/admin/pages/AdminNovidades";
-import ConhecaMaisDetalhes from "./pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
+import ConhecaMaisDetalhes from "./pages/ConhecaMaisDetalhes/ConhecaMaisDetalhes";
 
 // Tempo mínimo de cada etapa da transição, só para a tela não "piscar" quando
 // a verificação termina rápido demais. O spinner NÃO depende de tempo fixo:

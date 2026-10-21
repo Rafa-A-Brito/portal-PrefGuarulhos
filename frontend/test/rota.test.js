@@ -2,8 +2,8 @@ import { expect, test } from "vitest";
 import { criarUrlRota, ehLocalAproximado } from "../src/features/mapa/rota";
 import { formatarEndereco } from "../src/features/mapa/endereco";
 import { classificarLocalizacao } from "../src/features/mapa/politicaLocalizacao";
-import { SEM_DESTINO_C3 } from "./fixtures/localizacaoC3";
-import { normalizarPatrimonio } from "../src/services/fakeApi";
+import { PATRIMONIOS_SEM_DESTINO } from "./fixtures/localizacaoPatrimonios";
+import { normalizarPatrimonio } from "../src/services/patrimoniosApi";
 
 const bem = {
   nome: "Parque Bosque Maia", endereco: "Av. Paulo Faccini", numero: "99",
@@ -69,7 +69,7 @@ test.each([null, { lat: 91, lng: 0 }, { lat: "", lng: null }])("demolido sem coo
   expect(criarUrlRota({ ...item, endereco: "" })).toBeNull();
 });
 
-test.each(SEM_DESTINO_C3)("$slug: ignora endereço/ponto legado e texto documental na navegação", ({ slug, tipo, aviso }) => {
+test.each(PATRIMONIOS_SEM_DESTINO)("$slug: ignora endereço/ponto legado e texto documental na navegação", ({ slug, tipo, aviso }) => {
   const item = Object.freeze({ ...bem, slug, situacao: "PRESERVADO", detalhes: [
     { titulo: "Destino validado", texto: "Rua Corina, 94, CEP 07110-180. https://maps.google.com/" },
   ] });
@@ -80,7 +80,7 @@ test.each(SEM_DESTINO_C3)("$slug: ignora endereço/ponto legado e texto document
   expect(classificarLocalizacao({ ...item, detalhes: [] })).toEqual(classificarLocalizacao(item));
 });
 
-test.each(SEM_DESTINO_C3)("contrato público de $slug mantém a exceção após normalização", ({ slug, tipo }) => {
+test.each(PATRIMONIOS_SEM_DESTINO)("contrato público de $slug mantém a exceção após normalização", ({ slug, tipo }) => {
   // API: id UUID distinto do slug. Frontend: id/slug públicos iguais e UUID separado.
   const payload = {
     id: "00000000-0000-4000-8000-000000000001", slug, nome: "Nome editorial alterado",

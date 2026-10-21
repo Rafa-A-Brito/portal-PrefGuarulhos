@@ -1,5 +1,5 @@
 import api from "./api";
-import { normalizarReferencia } from "./fakeApi";
+import { normalizarReferencia } from "./patrimoniosApi";
 
 export const EXTENSOES_REFERENCIA = [".pdf", ".doc", ".docx", ".odt", ".txt", ".md"];
 export const TAMANHO_MAX_REFERENCIA_MB = 10;

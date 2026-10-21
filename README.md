@@ -234,7 +234,7 @@ Nunca use docker compose down -v no projeto persistente como procedimento de atu
 
 Validação local: npm test no backend, npm run lint e npm run build no frontend, Prisma validate/generate e git diff --check. Validação completa inclui PostgreSQL exclusivo e E2E Docker descritos acima.
 
-O fluxo opcional npm run mock-server e frontend/db.json foram mantidos porque ainda constituem uma ferramenta de desenvolvimento explícita. Não participam da API real. Os fallbacks DEV de fakeApi/conteudoApi foram preservados. O hook legado sem consumidores que consultava configuração de mapa no backend foi removido.
+O fluxo opcional npm run mock-server e frontend/db.json foram mantidos porque ainda constituem uma ferramenta de desenvolvimento explícita. Não participam da API real. Os fallbacks DEV de patrimoniosApi/conteudoApi foram preservados. O hook legado sem consumidores que consultava configuração de mapa no backend foi removido.
 
 SiteHero continua adiado. A otimização de bundle por lazy loading permanece de baixa prioridade; o limite de aviso do Vite não foi elevado.
 

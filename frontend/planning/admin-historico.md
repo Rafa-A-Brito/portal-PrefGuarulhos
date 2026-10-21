@@ -1,6 +1,6 @@
 # Painel Administrativo (ADMIN)
 
-> Documento histórico de demonstração, sem importação pelo código de produção. Desde 12/10/2026, descrição e resumo do patrimônio são preenchidos manualmente em campos separados; a geração por arquivo e seu serviço foram removidos. O planejamento futuro está em `frontend/planning/IA.md`.
+> Documento histórico de demonstração, sem importação pelo código de produção. Desde 12/10/2026, descrição e resumo do patrimônio são preenchidos manualmente em campos separados; a geração por arquivo e seu serviço foram removidos. O planejamento futuro está em `frontend/planning/tendencias_culturais.md`.
 
 Guia para **entender, rodar e completar** o painel `/admin`. Complementa o
 `IA.md` (Gemini) e o `BRANDING.md` (identidade visual).
@@ -388,7 +388,7 @@ Estrutura do banco (JSON de exemplo da equipe) e de onde cada campo vem:
 
 | #   | O que falta                                                    | Quem informa      | Onde entra                                |
 | --- | -------------------------------------------------------------- | ----------------- | ----------------------------------------- |
-| 1   | Contrato dos endpoints de patrimônios, categorias e CRUD admin | Equipe do backend | `services/adminApi.js`, `fakeApi.js`      |
+| 1   | Contrato dos endpoints de patrimônios, categorias e CRUD admin | Equipe do backend | `services/adminApi.js`, `patrimoniosApi.js`      |
 | 2   | Formato da resposta e dos erros (`success/data`, `details`)    | Equipe do backend | `api.js` (desembrulhar), `normalizarErro` |
 | 3   | Sessão: Bearer ou cookie HttpOnly; refresh; `/auth/me`; logout | Equipe + você     | `AuthContext.jsx`, `api.js`               |
 | 4   | Valores do enum `situacao` e regras de `status`                | Equipe do backend | Formulário de patrimônio                  |

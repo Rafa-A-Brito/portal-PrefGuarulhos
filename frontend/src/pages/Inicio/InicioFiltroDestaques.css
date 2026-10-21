@@ -1,0 +1,12 @@
+/* Seletor "Filtrar destaques por categoria": só remove a aparência nativa do
+   <select> para ele caber no .ordenar-select-box existente (global.css). */
+.destaques .ordenar-select-box select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.destaques .ordenar-select-box svg {
+  pointer-events: none;
+}

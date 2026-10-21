@@ -234,18 +234,18 @@ Os arquivos abaixo já existiam modificados/novos antes da D2C1. O relatório at
 | Modificado ? CSS concorrente | `frontend/src/pages/PatrimonioDetalhe/PatrimonioDetalhe.css` |
 | Modificado ? D2B | `frontend/src/pages/PatrimonioDetalhe/PatrimonioDetalhe.jsx` |
 | Modificado ? D2B | `frontend/src/pages/Patrimonios/Patrimonios.jsx` |
-| Modificado ? D2B | `frontend/src/services/fakeApi.js` |
+| Modificado ? D2B | `frontend/src/services/patrimoniosApi.js` |
 | Modificado ? D2B | `frontend/test/AdminPatrimonios.test.jsx` |
 | Novo ? D2B | `backend/prisma/migrations/20261016120000_add_regioes_numero_ordem/migration.sql` |
 | Novo ? D2B | `backend/scripts/validate-d2b.js` |
 | Novo ? D2B | `backend/src/controllers/regiaoController.js` |
-| Novo ? D2B | `backend/src/docs/d2.js` |
+| Novo ? D2B | `backend/src/docs/organizacaoEditorial.js` |
 | Novo ? D2B | `backend/src/routes/regiaoRoute.js` |
 | Novo ? D2B | `backend/src/schemas/regiaoSchema.js` |
 | Novo ? D2B | `backend/src/services/regiaoService.js` |
 | Novo ? D2B | `backend/test/d2b.integration.test.js` |
 | Novo ? D2B | `backend/test/d2b.test.js` |
-| Novo ? D2B | `frontend/scripts/smoke-d2b.mjs` |
+| Novo ? D2B | `frontend/scripts/verificar_organizacao_editorial.mjs` |
 | Novo ? D2B | `frontend/src/components/MetadataEditorial/MetadataEditorial.css` |
 | Novo ? D2B | `frontend/src/components/MetadataEditorial/MetadataEditorial.jsx` |
 | Novo ? D2B | `frontend/src/features/admin/components/OrganizacaoEditorial.css` |
@@ -254,7 +254,7 @@ Os arquivos abaixo já existiam modificados/novos antes da D2C1. O relatório at
 | Novo ? D2B | `frontend/src/features/admin/pages/AdminRegioes.jsx` |
 | Novo ? D2B | `frontend/src/pages/Patrimonios/Patrimonios.css` |
 | Novo ? D2B | `frontend/src/services/regioesApi.js` |
-| Novo ? D2B | `frontend/test/D2Editorial.test.jsx` |
+| Novo ? D2B | `frontend/test/OrganizacaoEditorial.test.jsx` |
 | Novo ? D2B | `reports/D2B-implementacao-regiao-numero-ordem.md` |
 
 D2C FASE 1 — GO

@@ -20,8 +20,8 @@ Escopo: correções delimitadas de formulário administrativo, destaques da home
 | `frontend/src/styles/global.css` | Posicionamento do botão independente, apresentação do link e foco visível nos controles dos destaques. |
 | `frontend/src/pages/Patrimonios/Patrimonios.jsx` | Rótulo “Número do patrimônio”. |
 | `frontend/test/Inicio.test.jsx` | Novo arquivo com 16 testes de regressão dos destaques. |
-| `frontend/test/D2Editorial.test.jsx` | Atualização do rótulo esperado, preservando as verificações do filtro e da ordem recebida. |
-| `frontend/scripts/smoke-d2b.mjs` | Atualização exclusivamente do seletor por rótulo do filtro público; rótulos administrativos mantidos. |
+| `frontend/test/OrganizacaoEditorial.test.jsx` | Atualização do rótulo esperado, preservando as verificações do filtro e da ordem recebida. |
+| `frontend/scripts/verificar_organizacao_editorial.mjs` | Atualização exclusivamente do seletor por rótulo do filtro público; rótulos administrativos mantidos. |
 | `reports/D3B-correcoes-integracao.md` | Este relatório. |
 
 O diff de `frontend/src/pages/PatrimonioDetalhe/PatrimonioDetalhe.css` já existia e **não é uma alteração desta D3B**. Auxiliares e evidências ficam ignorados em `.cache/d3b`.

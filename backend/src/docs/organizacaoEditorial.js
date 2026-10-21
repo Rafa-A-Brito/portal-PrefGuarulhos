@@ -6,7 +6,7 @@ const slug = { type: "string", minLength: 1, maxLength: 120, pattern: "^[a-z0-9]
 const campos = { nome: { type: "string", minLength: 1, maxLength: 100 }, descricao: { type: "string", minLength: 1, maxLength: 2000, nullable: true }, ativo: { type: "boolean" } };
 const envelope = data => ({ type: "object", required: ["success", "data"], properties: { success: { type: "boolean", enum: [true] }, data } });
 
-export function schemasD2(schemas) {
+export function schemasOrganizacaoEditorial(schemas) {
     schemas.RegiaoPublica = { type: "object", required: ["id", "nome", "slug"], properties: { id: uuid, nome: campos.nome, slug } };
     schemas.RegiaoAdmin = { type: "object", required: ["id", "nome", "slug", "descricao", "ativo", "createdAt", "updatedAt"], properties: {
         id: uuid, ...campos, slug, createdAt: { type: "string", format: "date-time" }, updatedAt: { type: "string", format: "date-time" },
@@ -30,7 +30,7 @@ export function schemasD2(schemas) {
         });
     }
 }
-export function pathsD2(paths) {
+export function pathsOrganizacaoEditorial(paths) {
     const security = [{ bearerAuth: [] }];
     const response = (description, name) => ({ description, content: { "application/json": { schema: ref(name) } } });
     const errors = Object.fromEntries([400, 401, 403, 404, 409, 500].map(code => [code, response(({400:"Dados inválidos.",401:"Sessão ausente/expirada.",403:"Sem permissão.",404:"Região inexistente.",409:"Slug/número em uso ou região inativa.",500:"Erro interno."})[code], "Error")]));

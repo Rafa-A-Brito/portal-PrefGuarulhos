@@ -1,0 +1,787 @@
+{
+  "modo": "dry-run-offline",
+  "gravacoesNoBanco": 0,
+  "validadoNoBanco": false,
+  "fontes": [
+    {
+      "arquivo": "Patrimonios_Organizacao_Editorial_Proposta_01_a_33.csv",
+      "sha256": "cf4c31a7b1f614459fad63354e127991025b4793cf5ceac7c638c904dd76d4ff"
+    },
+    {
+      "arquivo": "Eixos_Tematicos_Guarulhos_36_Patrimonios.xlsx",
+      "sha256": "c6f2a9f5d553e7e7367fcb3b35efb627bc76824938639b8d9084e42ce8806c6c"
+    }
+  ],
+  "resumo": {
+    "patrimonios": 36,
+    "numerosEOrdens": 33,
+    "vinculosRegionais": 34,
+    "regioesIntencionalmenteVazias": 2,
+    "porRegiao": {
+      "centro": 23,
+      "sao-joao-bonsucesso": 7,
+      "cantareira": 4,
+      "SEM_REGIAO": 2
+    },
+    "relacoesPropostas": 38,
+    "porRevisao": {
+      "JUSTIFICAR_VINCULO_ALEM_DO_EIXO": 23,
+      "VALIDAR_VINCULO_ESPECIFICO": 15
+    }
+  },
+  "pendencias": [
+    "Aprovação explícita antes de qualquer gravação editorial ou de relações.",
+    "Conferir no banco IDs, slugs, status, regiões ativas e colisões de números antes da aplicação; resolver regiaoId pelo slug, sem criar regiões.",
+    "Campos vazios são intencionais (null); não publicar rascunho nem arquivados, nem alterar categorias ou criar eixos.",
+    "Validar historicamente cada texto e aprovar cada direção; afinidade temática isolada não basta.",
+    "Comparar relações existentes por origem/destino, preservar textos e ordens atuais; somente após aprovação atribuir ordens livres às novas relações pelo CRUD existente."
+  ],
+  "editorial": [
+    {
+      "id": "e578c50a-15a9-46b9-8542-f7d21c521a19",
+      "slug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 1,
+      "ordemExibicao": 1
+    },
+    {
+      "id": "e3bf1831-a531-4850-8546-c6677d074c35",
+      "slug": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 2,
+      "ordemExibicao": 2
+    },
+    {
+      "id": "da393d15-dc94-4321-bacd-274d6633be04",
+      "slug": "antigo-paco-municipal",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 3,
+      "ordemExibicao": 3
+    },
+    {
+      "id": "0d5d972f-ce0e-495b-91d4-07cfeafe79d5",
+      "slug": "antigo-poco-municipal",
+      "statusEsperado": "RASCUNHO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": null,
+      "ordemExibicao": null
+    },
+    {
+      "id": "bf3a1eda-cace-420d-8498-632ce8d786a0",
+      "slug": "capela-do-bom-jesus-do-macedo",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 4,
+      "ordemExibicao": 4
+    },
+    {
+      "id": "30b81008-d041-4e73-a3de-feef49e0728d",
+      "slug": "casa-amarela-casa-do-chefe-da-estacao",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 5,
+      "ordemExibicao": 5
+    },
+    {
+      "id": "b5ea73fa-79ad-4ac3-a883-0ebd84b451ca",
+      "slug": "casa-jose-mauricio",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 6,
+      "ordemExibicao": 6
+    },
+    {
+      "id": "8a87d1b0-66c0-43e2-906c-1dbc94e76d92",
+      "slug": "casarao-da-familia-albertis",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": 7,
+      "ordemExibicao": 7
+    },
+    {
+      "id": "7ef1d2a6-cb0e-4827-b8e3-378877a2aec5",
+      "slug": "casarao-da-nossa-historia",
+      "statusEsperado": "ARQUIVADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": null,
+      "ordemExibicao": null
+    },
+    {
+      "id": "c6d445ab-7259-4196-b422-26d2a5069858",
+      "slug": "casarao-do-sitio-ponte-alta",
+      "statusEsperado": "ARQUIVADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": null,
+      "ordemExibicao": null
+    },
+    {
+      "id": "bec0a64f-95f1-46a0-af89-f79f65ab32a6",
+      "slug": "casarao-lima",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 8,
+      "ordemExibicao": 8
+    },
+    {
+      "id": "e6a6ecf1-73fe-4bd0-b3a6-210015577384",
+      "slug": "casarao-saraceni",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 9,
+      "ordemExibicao": 9
+    },
+    {
+      "id": "097bf643-7695-410c-8e82-d19c5625ceb1",
+      "slug": "catedral-nossa-senhora-da-conceicao",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 10,
+      "ordemExibicao": 10
+    },
+    {
+      "id": "abf4351a-b8e3-4d73-8349-bdfc71bf1edc",
+      "slug": "cemiterio-sao-joao-batista",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 11,
+      "ordemExibicao": 11
+    },
+    {
+      "id": "1635fa98-0c15-4622-83bb-450aede5f51a",
+      "slug": "antiga-fabrica-adamastor",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 12,
+      "ordemExibicao": 12
+    },
+    {
+      "id": "4d40a562-4a68-49a7-8b78-b19efe0b4038",
+      "slug": "complexo-do-lago-dos-patos",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "cantareira",
+      "numeroExibicao": 13,
+      "ordemExibicao": 13
+    },
+    {
+      "id": "6a50c931-026b-43bb-bdc7-f1ed16ee445c",
+      "slug": "sanatorio-padre-bento",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 14,
+      "ordemExibicao": 14
+    },
+    {
+      "id": "76088bd7-3dd9-4964-97dc-f903dd2272d6",
+      "slug": "corporacao-musical-banda-lira-de-guarulhos",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 15,
+      "ordemExibicao": 15
+    },
+    {
+      "id": "322b6f30-533b-4dde-b1b0-4ddada7f2228",
+      "slug": "cultura-e-presenca-indigena-wassu-cocal-e-krenak-pankararu",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": null,
+      "numeroExibicao": 16,
+      "ordemExibicao": 16
+    },
+    {
+      "id": "e2c31ddc-113e-48c4-a65d-b52671af4f5b",
+      "slug": "dia-da-carpicao",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": 17,
+      "ordemExibicao": 17
+    },
+    {
+      "id": "70c26f92-2f28-49b9-9590-156fd4e4a5df",
+      "slug": "escola-estadual-capistrano-de-abreu",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 18,
+      "ordemExibicao": 18
+    },
+    {
+      "id": "1cbfd08a-4f53-4043-a8e2-2d305ed8cfc6",
+      "slug": "escola-estadual-conselheiro-crispiniano",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 19,
+      "ordemExibicao": 19
+    },
+    {
+      "id": "6d8a1066-7fdf-4393-8cd2-6c9d891ed005",
+      "slug": "e-e-dulce-breves-neves",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "cantareira",
+      "numeroExibicao": 20,
+      "ordemExibicao": 20
+    },
+    {
+      "id": "9fc99478-48b8-4f0f-9c42-11950d840dfd",
+      "slug": "estacao-ferroviaria-central-de-guarulhos",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 21,
+      "ordemExibicao": 21
+    },
+    {
+      "id": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "slug": "festa-de-nossa-senhora-de-bonsucesso",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": 22,
+      "ordemExibicao": 22
+    },
+    {
+      "id": "f6dc84b2-7876-48b6-beaa-26e68bdb1f3f",
+      "slug": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 23,
+      "ordemExibicao": 23
+    },
+    {
+      "id": "8cb89b3f-4099-4d06-81d8-3f744bf40b9a",
+      "slug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": 24,
+      "ordemExibicao": 24
+    },
+    {
+      "id": "5e955358-0cf7-490e-b96b-120bb6798085",
+      "slug": "igreja-do-bom-jesus-da-cabeca",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "cantareira",
+      "numeroExibicao": 25,
+      "ordemExibicao": 25
+    },
+    {
+      "id": "77a15464-b001-4daf-9f61-7b25be4f90a6",
+      "slug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 26,
+      "ordemExibicao": 26
+    },
+    {
+      "id": "3784cdc5-92e6-4670-8e09-22dbb4e4ce23",
+      "slug": "bosque-maia",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 27,
+      "ordemExibicao": 27
+    },
+    {
+      "id": "7061ac85-5251-4f58-b2b3-ca4e6b533b7e",
+      "slug": "parque-ecologico-do-tiete",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": null,
+      "numeroExibicao": 28,
+      "ordemExibicao": 28
+    },
+    {
+      "id": "0b3ce18c-8eed-4366-927c-88593b775306",
+      "slug": "praca-getulio-vargas",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 29,
+      "ordemExibicao": 29
+    },
+    {
+      "id": "558965e3-a5af-4682-9b45-3526eb49c838",
+      "slug": "primitiva-igreja-de-nossa-senhora-do-rosario-dos-homens-pretos-1717",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "centro",
+      "numeroExibicao": 30,
+      "ordemExibicao": 30
+    },
+    {
+      "id": "aa70b9e0-cc00-4c2b-a12e-b70eaacc2d61",
+      "slug": "represa-do-cabucu",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "cantareira",
+      "numeroExibicao": 31,
+      "ordemExibicao": 31
+    },
+    {
+      "id": "1674b067-4f80-4d9b-a195-6f9aba028bf6",
+      "slug": "sitio-da-candinha-casa-da-candinha",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": 32,
+      "ordemExibicao": 32
+    },
+    {
+      "id": "455ea7a1-af41-46a5-8837-bbc6a2be6e83",
+      "slug": "sitios-arqueologicos-das-lavras-velhas-do-geraldo",
+      "statusEsperado": "PUBLICADO",
+      "regiaoSlug": "sao-joao-bonsucesso",
+      "numeroExibicao": 33,
+      "ordemExibicao": 33
+    }
+  ],
+  "ligacoesPropostas": [
+    {
+      "linhaPlanilha": 2,
+      "origemSlug": "cultura-e-presenca-indigena-wassu-cocal-e-krenak-pankararu",
+      "destinoSlug": "sitios-arqueologicos-das-lavras-velhas-do-geraldo",
+      "patrimonioOrigemId": "322b6f30-533b-4dde-b1b0-4ddada7f2228",
+      "patrimonioDestinoId": "455ea7a1-af41-46a5-8837-bbc6a2be6e83",
+      "texto": "Conheça outro testemunho das diferentes ocupações e memórias históricas do território de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 3,
+      "origemSlug": "sitios-arqueologicos-das-lavras-velhas-do-geraldo",
+      "destinoSlug": "sitio-da-candinha-casa-da-candinha",
+      "patrimonioOrigemId": "455ea7a1-af41-46a5-8837-bbc6a2be6e83",
+      "patrimonioDestinoId": "1674b067-4f80-4d9b-a195-6f9aba028bf6",
+      "texto": "Ambos ajudam a compreender a ocupação colonial e o patrimônio histórico rural do município.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 4,
+      "origemSlug": "sitio-da-candinha-casa-da-candinha",
+      "destinoSlug": "cultura-e-presenca-indigena-wassu-cocal-e-krenak-pankararu",
+      "patrimonioOrigemId": "1674b067-4f80-4d9b-a195-6f9aba028bf6",
+      "patrimonioDestinoId": "322b6f30-533b-4dde-b1b0-4ddada7f2228",
+      "texto": "A história deste sítio dialoga com a memória da presença indígena no território de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 5,
+      "origemSlug": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+      "destinoSlug": "catedral-nossa-senhora-da-conceicao",
+      "patrimonioOrigemId": "e3bf1831-a531-4850-8546-c6677d074c35",
+      "patrimonioDestinoId": "097bf643-7695-410c-8e82-d19c5625ceb1",
+      "texto": "A antiga matriz está relacionada à história da atual Catedral de Nossa Senhora da Conceição.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 6,
+      "origemSlug": "catedral-nossa-senhora-da-conceicao",
+      "destinoSlug": "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
+      "patrimonioOrigemId": "097bf643-7695-410c-8e82-d19c5625ceb1",
+      "patrimonioDestinoId": "e3bf1831-a531-4850-8546-c6677d074c35",
+      "texto": "Explore a memória da antiga igreja matriz que antecedeu a catedral atual.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 7,
+      "origemSlug": "primitiva-igreja-de-nossa-senhora-do-rosario-dos-homens-pretos-1717",
+      "destinoSlug": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+      "patrimonioOrigemId": "558965e3-a5af-4682-9b45-3526eb49c838",
+      "patrimonioDestinoId": "f6dc84b2-7876-48b6-beaa-26e68bdb1f3f",
+      "texto": "As duas igrejas ajudam a contar a história da devoção do Rosário e da comunidade negra em Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 8,
+      "origemSlug": "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
+      "destinoSlug": "primitiva-igreja-de-nossa-senhora-do-rosario-dos-homens-pretos-1717",
+      "patrimonioOrigemId": "f6dc84b2-7876-48b6-beaa-26e68bdb1f3f",
+      "patrimonioDestinoId": "558965e3-a5af-4682-9b45-3526eb49c838",
+      "texto": "Conheça a referência histórica da primitiva igreja do Rosário, ligada à mesma tradição religiosa.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 9,
+      "origemSlug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "destinoSlug": "festa-de-nossa-senhora-de-bonsucesso",
+      "patrimonioOrigemId": "8cb89b3f-4099-4d06-81d8-3f744bf40b9a",
+      "patrimonioDestinoId": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "texto": "A igreja e seu núcleo histórico estão diretamente ligados às celebrações de Nossa Senhora de Bonsucesso.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 10,
+      "origemSlug": "festa-de-nossa-senhora-de-bonsucesso",
+      "destinoSlug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "patrimonioOrigemId": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "patrimonioDestinoId": "8cb89b3f-4099-4d06-81d8-3f744bf40b9a",
+      "texto": "Conheça o espaço religioso e histórico associado à Festa de Nossa Senhora de Bonsucesso.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 11,
+      "origemSlug": "festa-de-nossa-senhora-de-bonsucesso",
+      "destinoSlug": "dia-da-carpicao",
+      "patrimonioOrigemId": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "patrimonioDestinoId": "e2c31ddc-113e-48c4-a65d-b52671af4f5b",
+      "texto": "O Dia da Carpição integra o universo de tradições populares relacionadas à Festa de Bonsucesso.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 12,
+      "origemSlug": "dia-da-carpicao",
+      "destinoSlug": "festa-de-nossa-senhora-de-bonsucesso",
+      "patrimonioOrigemId": "e2c31ddc-113e-48c4-a65d-b52671af4f5b",
+      "patrimonioDestinoId": "f2cd70ec-f28f-4257-9045-60446e01b31e",
+      "texto": "A celebração do Dia da Carpição está relacionada à tradição da Festa de Nossa Senhora de Bonsucesso.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 13,
+      "origemSlug": "dia-da-carpicao",
+      "destinoSlug": "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
+      "patrimonioOrigemId": "e2c31ddc-113e-48c4-a65d-b52671af4f5b",
+      "patrimonioDestinoId": "8cb89b3f-4099-4d06-81d8-3f744bf40b9a",
+      "texto": "Conheça o núcleo religioso de Bonsucesso, associado à memória desta manifestação popular.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 14,
+      "origemSlug": "capela-do-bom-jesus-do-macedo",
+      "destinoSlug": "igreja-do-bom-jesus-da-cabeca",
+      "patrimonioOrigemId": "bf3a1eda-cace-420d-8498-632ce8d786a0",
+      "patrimonioDestinoId": "5e955358-0cf7-490e-b96b-120bb6798085",
+      "texto": "As duas capelas ajudam a preservar a história da religiosidade nos bairros de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 15,
+      "origemSlug": "igreja-do-bom-jesus-da-cabeca",
+      "destinoSlug": "capela-do-bom-jesus-do-macedo",
+      "patrimonioOrigemId": "5e955358-0cf7-490e-b96b-120bb6798085",
+      "patrimonioDestinoId": "bf3a1eda-cace-420d-8498-632ce8d786a0",
+      "texto": "Explore outra referência da devoção popular e da arquitetura religiosa nos bairros da cidade.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 16,
+      "origemSlug": "cemiterio-sao-joao-batista",
+      "destinoSlug": "catedral-nossa-senhora-da-conceicao",
+      "patrimonioOrigemId": "abf4351a-b8e3-4d73-8349-bdfc71bf1edc",
+      "patrimonioDestinoId": "097bf643-7695-410c-8e82-d19c5625ceb1",
+      "texto": "Os dois bens ajudam a compreender a memória religiosa e social do centro de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 17,
+      "origemSlug": "estacao-ferroviaria-central-de-guarulhos",
+      "destinoSlug": "casa-amarela-casa-do-chefe-da-estacao",
+      "patrimonioOrigemId": "9fc99478-48b8-4f0f-9c42-11950d840dfd",
+      "patrimonioDestinoId": "30b81008-d041-4e73-a3de-feef49e0728d",
+      "texto": "A Casa Amarela remete às moradias e ao cotidiano ligados à antiga estação ferroviária.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 18,
+      "origemSlug": "casa-amarela-casa-do-chefe-da-estacao",
+      "destinoSlug": "estacao-ferroviaria-central-de-guarulhos",
+      "patrimonioOrigemId": "30b81008-d041-4e73-a3de-feef49e0728d",
+      "patrimonioDestinoId": "9fc99478-48b8-4f0f-9c42-11950d840dfd",
+      "texto": "Conheça a estação vinculada à memória ferroviária da Casa do Chefe da Estação.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 19,
+      "origemSlug": "estacao-ferroviaria-central-de-guarulhos",
+      "destinoSlug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "patrimonioOrigemId": "9fc99478-48b8-4f0f-9c42-11950d840dfd",
+      "patrimonioDestinoId": "77a15464-b001-4daf-9f61-7b25be4f90a6",
+      "texto": "A locomotiva preserva a memória do transporte ferroviário associado à história da estação.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 20,
+      "origemSlug": "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua",
+      "destinoSlug": "estacao-ferroviaria-central-de-guarulhos",
+      "patrimonioOrigemId": "77a15464-b001-4daf-9f61-7b25be4f90a6",
+      "patrimonioDestinoId": "9fc99478-48b8-4f0f-9c42-11950d840dfd",
+      "texto": "A antiga estação ajuda a contextualizar a história ferroviária da locomotiva nº 33.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 21,
+      "origemSlug": "antiga-fabrica-adamastor",
+      "destinoSlug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "patrimonioOrigemId": "1635fa98-0c15-4622-83bb-450aede5f51a",
+      "patrimonioDestinoId": "e578c50a-15a9-46b9-8542-f7d21c521a19",
+      "texto": "As antigas indústrias têxteis documentam a industrialização e as mudanças urbanas de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 22,
+      "origemSlug": "antiga-carbonell-fiacao-e-tecelagem-e-casaroes-gemeos-demolidos",
+      "destinoSlug": "antiga-fabrica-adamastor",
+      "patrimonioOrigemId": "e578c50a-15a9-46b9-8542-f7d21c521a19",
+      "patrimonioDestinoId": "1635fa98-0c15-4622-83bb-450aede5f51a",
+      "texto": "A antiga Adamastor é outro marco industrial da cidade, posteriormente convertido em equipamento cultural.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "VALIDAR_VINCULO_ESPECIFICO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 23,
+      "origemSlug": "antigo-paco-municipal",
+      "destinoSlug": "sanatorio-padre-bento",
+      "patrimonioOrigemId": "da393d15-dc94-4321-bacd-274d6633be04",
+      "patrimonioDestinoId": "6a50c931-026b-43bb-bdc7-f1ed16ee445c",
+      "texto": "Conheça outro edifício associado à história das instituições e dos serviços públicos no município.",
+      "situacaoFonte": "REVISAR",
+      "observacaoFonte": "Vínculo apenas por eixo temático; confirmar relevância para o visitante.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 24,
+      "origemSlug": "casa-jose-mauricio",
+      "destinoSlug": "casarao-lima",
+      "patrimonioOrigemId": "b5ea73fa-79ad-4ac3-a883-0ebd84b451ca",
+      "patrimonioDestinoId": "bec0a64f-95f1-46a0-af89-f79f65ab32a6",
+      "texto": "Os imóveis preservam memórias da arquitetura residencial e de famílias tradicionais de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 25,
+      "origemSlug": "casarao-lima",
+      "destinoSlug": "casa-jose-mauricio",
+      "patrimonioOrigemId": "bec0a64f-95f1-46a0-af89-f79f65ab32a6",
+      "patrimonioDestinoId": "b5ea73fa-79ad-4ac3-a883-0ebd84b451ca",
+      "texto": "Conheça outro exemplar da memória residencial e arquitetônica histórica da cidade.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 26,
+      "origemSlug": "casarao-da-familia-albertis",
+      "destinoSlug": "casarao-saraceni",
+      "patrimonioOrigemId": "8a87d1b0-66c0-43e2-906c-1dbc94e76d92",
+      "patrimonioDestinoId": "e6a6ecf1-73fe-4bd0-b3a6-210015577384",
+      "texto": "Os casarões integram a memória da arquitetura residencial e das transformações urbanas locais.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 27,
+      "origemSlug": "casarao-saraceni",
+      "destinoSlug": "casarao-da-familia-albertis",
+      "patrimonioOrigemId": "e6a6ecf1-73fe-4bd0-b3a6-210015577384",
+      "patrimonioDestinoId": "8a87d1b0-66c0-43e2-906c-1dbc94e76d92",
+      "texto": "Explore outro casarão ligado à memória de famílias e à transformação do espaço urbano.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 28,
+      "origemSlug": "casa-jose-mauricio",
+      "destinoSlug": "casarao-da-familia-albertis",
+      "patrimonioOrigemId": "b5ea73fa-79ad-4ac3-a883-0ebd84b451ca",
+      "patrimonioDestinoId": "8a87d1b0-66c0-43e2-906c-1dbc94e76d92",
+      "texto": "Ambos são referências do patrimônio residencial histórico de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 29,
+      "origemSlug": "escola-estadual-capistrano-de-abreu",
+      "destinoSlug": "escola-estadual-conselheiro-crispiniano",
+      "patrimonioOrigemId": "70c26f92-2f28-49b9-9590-156fd4e4a5df",
+      "patrimonioDestinoId": "1cbfd08a-4f53-4043-a8e2-2d305ed8cfc6",
+      "texto": "As duas escolas integram a memória do ensino público e da formação educacional em Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 30,
+      "origemSlug": "escola-estadual-conselheiro-crispiniano",
+      "destinoSlug": "escola-estadual-capistrano-de-abreu",
+      "patrimonioOrigemId": "1cbfd08a-4f53-4043-a8e2-2d305ed8cfc6",
+      "patrimonioDestinoId": "70c26f92-2f28-49b9-9590-156fd4e4a5df",
+      "texto": "Conheça outro marco histórico da educação pública do município.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 31,
+      "origemSlug": "e-e-dulce-breves-neves",
+      "destinoSlug": "escola-estadual-capistrano-de-abreu",
+      "patrimonioOrigemId": "6d8a1066-7fdf-4393-8cd2-6c9d891ed005",
+      "patrimonioDestinoId": "70c26f92-2f28-49b9-9590-156fd4e4a5df",
+      "texto": "As escolas ajudam a contar diferentes etapas da história da educação em Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 32,
+      "origemSlug": "corporacao-musical-banda-lira-de-guarulhos",
+      "destinoSlug": "escola-estadual-conselheiro-crispiniano",
+      "patrimonioOrigemId": "76088bd7-3dd9-4964-97dc-f903dd2272d6",
+      "patrimonioDestinoId": "1cbfd08a-4f53-4043-a8e2-2d305ed8cfc6",
+      "texto": "A escola e a corporação musical representam diferentes expressões da formação e da cultura local.",
+      "situacaoFonte": "REVISAR",
+      "observacaoFonte": "Vínculo apenas por eixo temático; confirmar relevância para o visitante.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 33,
+      "origemSlug": "bosque-maia",
+      "destinoSlug": "complexo-do-lago-dos-patos",
+      "patrimonioOrigemId": "3784cdc5-92e6-4670-8e09-22dbb4e4ce23",
+      "patrimonioDestinoId": "4d40a562-4a68-49a7-8b78-b19efe0b4038",
+      "texto": "Os dois espaços fazem parte da história das áreas verdes, do lazer e da convivência em Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 34,
+      "origemSlug": "complexo-do-lago-dos-patos",
+      "destinoSlug": "bosque-maia",
+      "patrimonioOrigemId": "4d40a562-4a68-49a7-8b78-b19efe0b4038",
+      "patrimonioDestinoId": "3784cdc5-92e6-4670-8e09-22dbb4e4ce23",
+      "texto": "Conheça outro espaço de lazer e convivência que integra a paisagem urbana de Guarulhos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 35,
+      "origemSlug": "praca-getulio-vargas",
+      "destinoSlug": "bosque-maia",
+      "patrimonioOrigemId": "0b3ce18c-8eed-4366-927c-88593b775306",
+      "patrimonioDestinoId": "3784cdc5-92e6-4670-8e09-22dbb4e4ce23",
+      "texto": "A praça e o parque representam diferentes espaços públicos de convivência na cidade.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 36,
+      "origemSlug": "bosque-maia",
+      "destinoSlug": "praca-getulio-vargas",
+      "patrimonioOrigemId": "3784cdc5-92e6-4670-8e09-22dbb4e4ce23",
+      "patrimonioDestinoId": "0b3ce18c-8eed-4366-927c-88593b775306",
+      "texto": "A Praça Getúlio Vargas é outra referência dos espaços públicos de memória e convivência urbana.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 37,
+      "origemSlug": "represa-do-cabucu",
+      "destinoSlug": "parque-ecologico-do-tiete",
+      "patrimonioOrigemId": "aa70b9e0-cc00-4c2b-a12e-b70eaacc2d61",
+      "patrimonioDestinoId": "7061ac85-5251-4f58-b2b3-ca4e6b533b7e",
+      "texto": "Os dois bens dialogam com a história ambiental e a proteção de recursos hídricos da região metropolitana.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 38,
+      "origemSlug": "parque-ecologico-do-tiete",
+      "destinoSlug": "represa-do-cabucu",
+      "patrimonioOrigemId": "7061ac85-5251-4f58-b2b3-ca4e6b533b7e",
+      "patrimonioDestinoId": "aa70b9e0-cc00-4c2b-a12e-b70eaacc2d61",
+      "texto": "A Represa do Cabuçu ajuda a ampliar a compreensão sobre água e preservação ambiental regional.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    },
+    {
+      "linhaPlanilha": 39,
+      "origemSlug": "complexo-do-lago-dos-patos",
+      "destinoSlug": "praca-getulio-vargas",
+      "patrimonioOrigemId": "4d40a562-4a68-49a7-8b78-b19efe0b4038",
+      "patrimonioDestinoId": "0b3ce18c-8eed-4366-927c-88593b775306",
+      "texto": "O lago e a praça são referências da convivência social em espaços públicos urbanos.",
+      "situacaoFonte": "PROPOSTA",
+      "observacaoFonte": "Sujeito à curadoria; não importar automaticamente.",
+      "revisao": "JUSTIFICAR_VINCULO_ALEM_DO_EIXO",
+      "aprovada": false
+    }
+  ]
+}

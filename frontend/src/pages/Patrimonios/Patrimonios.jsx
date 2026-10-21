@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState } from "react";
 
 import { useSearchParams } from "react-router-dom";
 
-import { MapIcon, MagnifyingGlassIcon, HeartIcon } from "@heroicons/react/24/outline";
+import { MapIcon, MagnifyingGlassIcon, HeartIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 import FiltroBar from "../../features/mapa/FiltroBar";
 
@@ -64,6 +64,15 @@ export default function Patrimonios() {
         (!somenteFavoritos || favoritos.has(item.id))),
     [filtro, busca, patrimonios, regiao, somenteFavoritos, favoritos],
   );
+  // Bens por região, calculados da lista que o contexto já carregou.
+  const contagemPorRegiao = useMemo(() => {
+    const contagem = {};
+    for (const item of patrimonios) {
+      const slug = item.regiao?.slug;
+      if (slug) contagem[slug] = (contagem[slug] || 0) + 1;
+    }
+    return contagem;
+  }, [patrimonios]);
   const totalFavoritosNoCatalogo = useMemo(
     () => patrimonios.filter(item => favoritos.has(item.id)).length,
     [patrimonios, favoritos],
@@ -160,13 +169,33 @@ export default function Patrimonios() {
 
         <FiltroBar ativo={filtro} onChange={handleFiltro} />
         <div className="filtros-editoriais">
-          {regioes.length > 0 && <label>Região
-            <select value={regiao} onChange={e => filtrarEditorial("regiao", e.target.value)}>
-              <option value="">Todas as regiões</option>
-              {regiao && !regioes.some(r => r.slug === regiao) && <option value={regiao}>Região do filtro atual</option>}
-              {regioes.map(r => <option value={r.slug} key={r.id}>{r.nome}</option>)}
-            </select>
-          </label>}
+          {regioes.length > 0 && (
+            <div className="regioes-filtro" role="group" aria-labelledby="regioes-filtro-titulo">
+              <span id="regioes-filtro-titulo" className="regioes-filtro-titulo">Filtrar por região</span>
+              <div className="regioes-filtro-lista">
+                <button type="button" className="regiao-chip" aria-pressed={!regiao}
+                  onClick={() => filtrarEditorial("regiao", "")}>
+                  {!regiao && <CheckIcon width={14} height={14} strokeWidth={3} aria-hidden="true" />}
+                  Todas as regiões
+                  <span className="favoritos-contador">{patrimonios.length}</span>
+                </button>
+                {regiao && !regioes.some(r => r.slug === regiao) && (
+                  <button type="button" className="regiao-chip" aria-pressed="true" onClick={() => filtrarEditorial("regiao", "")}>
+                    <CheckIcon width={14} height={14} strokeWidth={3} aria-hidden="true" />
+                    Região do filtro atual
+                  </button>
+                )}
+                {regioes.map(r => (
+                  <button type="button" className="regiao-chip" key={r.id} aria-pressed={regiao === r.slug}
+                    onClick={() => filtrarEditorial("regiao", r.slug)}>
+                    {regiao === r.slug && <CheckIcon width={14} height={14} strokeWidth={3} aria-hidden="true" />}
+                    {r.nome}
+                    <span className="favoritos-contador">{contagemPorRegiao[r.slug] ?? 0}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <button type="button" className="btn-outline btn-favoritos" aria-pressed={somenteFavoritos} onClick={alternarSomenteFavoritos}>
             <HeartIcon width={16} height={16} aria-hidden="true" />
             Somente favoritos

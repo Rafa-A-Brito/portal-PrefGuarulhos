@@ -98,7 +98,7 @@ Contrato consultado: [migração Google](https://developers.google.com/maps/docu
 
 Backend: scripts/import-novidades.js; src/utils/novidadeData.js; src/services/novidadeService.js; test/importNovidades.test.js; test/importNovidades.integration.test.js; reports/novidades-import-dry-run.json; este relatório.
 
-Frontend: src/features/mapa/AdvancedMarker.jsx; src/features/mapa/MapaPatrimonios.jsx; src/hooks/useGoogleMaps.js; src/pages/ConheceMaisDetalhes/ConhecaMaisDetalhes.jsx; test/ConhecaMais.test.jsx; test/MapaPatrimonios.test.jsx; test/googleMapsLoader.test.jsx; test/mapa-smoke.html; scripts/smoke-mapa.mjs; .env.example; Dockerfile.
+Frontend: src/features/mapa/AdvancedMarker.jsx; src/features/mapa/MapaPatrimonios.jsx; src/hooks/useGoogleMaps.js; src/pages/ConhecaMaisDetalhes/ConhecaMaisDetalhes.jsx; test/ConhecaMais.test.jsx; test/MapaPatrimonios.test.jsx; test/googleMapsLoader.test.jsx; test/mapa-smoke.html; scripts/smoke-mapa.mjs; .env.example; Dockerfile.
 
 Raiz: .env.example e docker-compose.yml (encaminhamento do Map ID).
 

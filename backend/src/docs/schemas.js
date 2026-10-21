@@ -1,4 +1,4 @@
-import { schemasD2 } from "./d2.js";
+import { schemasOrganizacaoEditorial } from "./organizacaoEditorial.js";
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const string = (description, extra = {}) => ({ type: "string", description, ...extra });
 const nullable = (schema) => ({ ...schema, nullable: true });
@@ -915,4 +915,4 @@ schemas.DocumentoPatch = (() => {
     };
 })();
 
-schemasD2(schemas);
+schemasOrganizacaoEditorial(schemas);

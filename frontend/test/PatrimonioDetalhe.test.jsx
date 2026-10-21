@@ -6,8 +6,8 @@ import PatrimonioDetalhe from "../src/pages/PatrimonioDetalhe/PatrimonioDetalhe"
 import { PatrimoniosContext } from "../src/context/patrimoniosContextInstance";
 import api from "../src/services/api";
 import { criarUrlRota } from "../src/features/mapa/rota";
-import { normalizarPatrimonio } from "../src/services/fakeApi";
-import { SEM_DESTINO_C3 } from "./fixtures/localizacaoC3";
+import { normalizarPatrimonio } from "../src/services/patrimoniosApi";
+import { PATRIMONIOS_SEM_DESTINO } from "./fixtures/localizacaoPatrimonios";
 
 const registro = {
   id: "uuid-privado", slug: "parque-teste", nome: "Parque de teste",
@@ -168,7 +168,7 @@ test("demolido exibe referência histórica e usa coordenada, sem buscar nome hi
   expect(url.searchParams.get("destination")).toBe("-23.45,-46.53");
 });
 
-test.each(SEM_DESTINO_C3)("$slug mostra aviso e documentação, sem destino legado ou ação vazia", async ({ slug, aviso }) => {
+test.each(PATRIMONIOS_SEM_DESTINO)("$slug mostra aviso e documentação, sem destino legado ou ação vazia", async ({ slug, aviso }) => {
   responder({ ...registro, slug }); abrir(); await carregado();
   expect(screen.getByText(aviso)).toBeTruthy();
   expect(screen.queryByRole("link", { name: /Ver rota|Ver local aproximado/ })).toBeNull();
@@ -248,7 +248,7 @@ test("ligações preservam referência, endereço, rota e seleção do patrimôn
   expect(screen.getByText("Mapa de teste")).toBeTruthy();
 });
 
-test.each(SEM_DESTINO_C3)("relacionados não reativam endereço/mapa/rota para $slug", async ({ slug, aviso }) => {
+test.each(PATRIMONIOS_SEM_DESTINO)("relacionados não reativam endereço/mapa/rota para $slug", async ({ slug, aviso }) => {
   responder({ ...registro, slug, ligacoes: [relacaoEditorial] }); abrir(); await carregado();
   expect(screen.getByRole("region", { name: "Patrimônios relacionados" })).toBeTruthy();
   expect(screen.getByText(aviso)).toBeTruthy();

@@ -2,7 +2,7 @@ import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ConhecaMais from "../src/pages/ConhecaMais/ConhecaMais";
-import ConhecaMaisDetalhes from "../src/pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
+import ConhecaMaisDetalhes from "../src/pages/ConhecaMaisDetalhes/ConhecaMaisDetalhes";
 import { listarNovidades } from "../src/services/conteudoApi";
 import api from "../src/services/api";
 import * as editorial from "../src/features/mocks/novidadesMock";

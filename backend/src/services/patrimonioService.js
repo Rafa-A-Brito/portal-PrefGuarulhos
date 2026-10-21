@@ -258,6 +258,30 @@ async function lockPatrimonio(transaction, id) {
     return getAdminPatrimonio(id, transaction);
 }
 
+// Mesmo lock nas escritas manuais e na publicação, sempre antes do lock da
+// linha. O PostgreSQL o libera no commit/rollback, inclusive entre processos.
+async function lockNumeracaoEditorial(transaction) {
+    await transaction.$executeRaw`SELECT pg_advisory_xact_lock(73033, 1)`;
+}
+
+async function completarNumeracaoEditorial(transaction, current) {
+    if (current.numeroExibicao != null && current.ordemExibicao != null) return {};
+    // Inclui rascunhos e arquivados: seus números continuam reservados.
+    const { _max } = await transaction.patrimonio.aggregate({
+        _max: { numeroExibicao: true, ordemExibicao: true },
+    });
+    const fields = {};
+    for (const campo of ["numeroExibicao", "ordemExibicao"]) {
+        if (current[campo] != null) continue; // zero é uma ordem válida
+        const proximo = (_max[campo] ?? 0) + 1;
+        if (proximo > 2147483647) {
+            throw new ConflictError(`Limite de ${campo} atingido. Revise a organização editorial.`);
+        }
+        fields[campo] = proximo;
+    }
+    return fields;
+}
+
 function locationInput(localizacao) {
     if (!localizacao) return undefined;
     const { id, patrimonioId, ...fields } = localizacao;
@@ -299,6 +323,7 @@ export async function updatePatrimonio(id, data, user) {
         throw new BadRequestError("Use o CRUD editorial dedicado para fatos e ligacoes.");
     }
     return prisma.$transaction(async (transaction) => {
+        await lockNumeracaoEditorial(transaction);
         const current = await lockPatrimonio(transaction, id);
         if (user.role !== "ADMIN" && (user.role !== "EDITOR" || current.status !== "RASCUNHO")) {
             throw new ForbiddenError("Editor pode editar somente rascunhos.");
@@ -351,7 +376,7 @@ export async function updatePatrimonio(id, data, user) {
             include: adminInclude,
         });
         return achatarCategorias(updated);
-    }).catch(rethrowNumeroConflict);
+    }, { isolationLevel: "ReadCommitted" }).catch(rethrowNumeroConflict);
 }
 
 function rethrowNumeroConflict(error) {
@@ -364,6 +389,7 @@ function rethrowNumeroConflict(error) {
 export async function changePatrimonioStatus(id, status, user, { transaction, dryRun = false } = {}) {
     if (user.role !== "ADMIN") throw new ForbiddenError();
     const change = async (transaction) => {
+        if (!dryRun) await lockNumeracaoEditorial(transaction);
         const current = dryRun
             ? await getAdminPatrimonio(id, transaction)
             : await lockPatrimonio(transaction, id);
@@ -384,9 +410,13 @@ export async function changePatrimonioStatus(id, status, user, { transaction, dr
             throw new BadRequestError("Transição de status inválida.");
         }
         if (dryRun) return current;
+        const numeracao = status === StatusPublicacao.PUBLICADO
+            ? await completarNumeracaoEditorial(transaction, current)
+            : {};
         const updated = await transaction.patrimonio.update({
             where: { id },
             data: {
+                ...numeracao,
                 status,
                 updatedBy: user.id,
                 ...(status === StatusPublicacao.PUBLICADO
@@ -398,7 +428,9 @@ export async function changePatrimonioStatus(id, status, user, { transaction, dr
         return achatarCategorias(updated);
     };
     // A API mantém sua transação; operações em lote reutilizam a transação recebida.
-    return transaction ? change(transaction) : prisma.$transaction(change);
+    return (transaction ? change(transaction) : prisma.$transaction(change, {
+        isolationLevel: "ReadCommitted",
+    })).catch(rethrowNumeroConflict);
 }
 
 export async function getPatrimonioBySlug(slug) {
@@ -422,6 +454,7 @@ export async function createPatrimonio(data, createdBy) {
     }
     try {
         return await prisma.$transaction(async (transaction) => {
+            await lockNumeracaoEditorial(transaction);
             await validarAtribuicaoRegiao(transaction, data.regiaoId);
             const categoria = await transaction.categoria.findUnique({
                 where: { id: data.categoriaId },
@@ -485,7 +518,7 @@ export async function createPatrimonio(data, createdBy) {
             });
 
             return achatarCategorias(criado);
-        });
+        }, { isolationLevel: "ReadCommitted" });
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             const target = Array.isArray(error.meta?.target)

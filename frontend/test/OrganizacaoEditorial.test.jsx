@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import AdminRegioes from "../src/features/admin/pages/AdminRegioes";
 import Patrimonios from "../src/pages/Patrimonios/Patrimonios";
 import MetadataEditorial from "../src/components/MetadataEditorial/MetadataEditorial";
-import { normalizarPatrimonio } from "../src/services/fakeApi";
+import { normalizarPatrimonio } from "../src/services/patrimoniosApi";
 import { PatrimoniosContext } from "../src/context/patrimoniosContextInstance";
 import api from "../src/services/api";
 

@@ -6,7 +6,7 @@ import Mapa from "../src/pages/Mapa/Mapa";
 import { PatrimoniosContext } from "../src/context/patrimoniosContextInstance";
 import { criarUrlRota } from "../src/features/mapa/rota";
 import MapaPatrimonios from "../src/features/mapa/MapaPatrimonios";
-import { SEM_DESTINO_C3 } from "./fixtures/localizacaoC3";
+import { PATRIMONIOS_SEM_DESTINO } from "./fixtures/localizacaoPatrimonios";
 const state = vi.hoisted(() => ({ map: { fitBounds: vi.fn(), setZoom: vi.fn() }, options: null }));
 vi.mock("../src/hooks/useGoogleMaps", () => ({ GOOGLE_MAPS_MAP_ID: "project-map-id", useGoogleMaps: () => ({ configurado: true, pronto: true }) }));
 vi.mock("@react-google-maps/api", () => ({
@@ -97,7 +97,7 @@ test("endereço sem coordenadas ainda oferece rota; sem ambos oculta ação", ()
   expect(screen.queryByRole("link", { name: "Ver rota" })).toBeNull();
 });
 
-test.each(SEM_DESTINO_C3)("$slug permanece na lista/painel, sem marcador, endereço legado ou botão vazio", async ({ slug, aviso }) => {
+test.each(PATRIMONIOS_SEM_DESTINO)("$slug permanece na lista/painel, sem marcador, endereço legado ou botão vazio", async ({ slug, aviso }) => {
   const semDestino = { ...item(slug), slug, endereco: "Rua legada", numero: "99", cidade: "Cidade legada", cep: "99999-999" };
   const normal = item("normal"), demolido = { ...item("demolido"), situacao: "DEMOLIDO" };
   render(<MapaComContexto patrimonios={[semDestino, normal, demolido]} />);

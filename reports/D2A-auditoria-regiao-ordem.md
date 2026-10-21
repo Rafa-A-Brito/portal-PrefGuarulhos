@@ -53,8 +53,8 @@ Essa é uma constatação do repositório. **Não é uma nova consulta a `_prism
 | DTO público | Select explícito para lista/detalhe; localização separada; detalhes e relações com suas próprias ordens | `publicListSelect`, `publicDetailSelect` |
 | Ligações públicas | Destinos PUBLICADO e não legados consolidados; ordem editorial própria; destino por slug | `patrimonioService.js`, `src/utils/identidadeEditorial.js` |
 | DTO administrativo | Lista acrescenta status/arquivamento; detalhe inclui escalares e relações necessárias à edição | Serviço patrimonial |
-| Normalização frontend | `id` público recebe slug, `uuid` recebe UUID; localização é achatada; `ligacoes` é preservado; campos D2 não são copiados | `frontend/src/services/fakeApi.js` |
-| Carregamento frontend | Busca páginas públicas e guarda a sequência recebida no contexto | `fakeApi.js`, `context/PatrimoniosContext.jsx` |
+| Normalização frontend | `id` público recebe slug, `uuid` recebe UUID; localização é achatada; `ligacoes` é preservado; campos D2 não são copiados | `frontend/src/services/patrimoniosApi.js` |
+| Carregamento frontend | Busca páginas públicas e guarda a sequência recebida no contexto | `patrimoniosApi.js`, `context/PatrimoniosContext.jsx` |
 | Listagem visual | Filtra localmente a coleção carregada e pagina em quatro itens; não reordena patrimônios | `pages/Patrimonios/Patrimonios.jsx` |
 | Busca visual | Nome, bairro, endereço e prefixo numérico de CEP, com normalização textual; categoria principal/adicionais | `features/buscarPatrimonios.js`, compartilhado com Mapa |
 | Página inicial | Destaques são os primeiros itens da coleção: `patrimonios.slice(0, QTD_DESTAQUES)` | `pages/Inicio/Inicio.jsx` |
@@ -400,7 +400,7 @@ Não ampliar silenciosamente o alcance da busca textual nem modificar seu compor
 | `docs/paths.js`, `docs/schemas.js`, `docs/openapi.js` | Contratos aditivos, exemplos NULL, limites/erros/permissões, regra de ordenação e entidades de referência |
 | DTO público | Novos campos explícitos; manter ligações, referências, localização, categorias e envelopes |
 | DTO Admin | Campos editáveis e região atual inclusive inativa; manter dados necessários a D1E |
-| `frontend/src/services/fakeApi.js` | Preservar os novos campos na normalização; manter distinção slug/UUID e shape das ligações |
+| `frontend/src/services/patrimoniosApi.js` | Preservar os novos campos na normalização; manter distinção slug/UUID e shape das ligações |
 | `services/adminApi.js` / serviço regional novo | Leitura do catálogo e mutações regionais, payloads patrimoniais aditivos; sem fallback de escrita |
 | `AdminPatrimonios.jsx` | Select regional e inteiros opcionais com ajuda; inicializar do detalhe real; vazio gera NULL intencional ao limpar; não confundir número postal com número editorial |
 | Gestão regional administrativa | Tela/bloco mínimo ADMIN para catálogo validado e inativação; não depender de seed para povoar |

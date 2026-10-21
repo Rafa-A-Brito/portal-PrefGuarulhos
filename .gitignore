@@ -143,3 +143,21 @@ vite.config.ts.timestamp-*
 .vite/
 tools/
 docs/
+
+# Guias operacionais mantidos com o backend.
+!/backend/docs/
+
+# Temporários de agentes, backups e credenciais locais.
+.ai-scratch/
+backups/
+*_backup/
+*.dump
+*.backup
+*.bak
+.pgpass
+pgpass.conf
+.secrets/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+AGENTS.md

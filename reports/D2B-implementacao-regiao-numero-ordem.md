@@ -50,15 +50,15 @@ DTO público: `numeroExibicao`, `ordemExibicao` e `regiao: { id, nome, slug } | 
 | Schema/migration | `backend/prisma/schema.prisma`; `backend/prisma/migrations/20261016120000_add_regioes_numero_ordem/migration.sql` (novo) |
 | Patrimônio | `backend/src/schemas/patrimonioSchema.js`; `backend/src/services/patrimonioService.js` |
 | Região (novos) | `backend/src/schemas/regiaoSchema.js`; `backend/src/services/regiaoService.js`; `backend/src/controllers/regiaoController.js`; `backend/src/routes/regiaoRoute.js` |
-| Registro/documentação | `backend/src/routes/index.js`; `backend/src/docs/openapi.js`; `backend/src/docs/paths.js`; `backend/src/docs/schemas.js`; `backend/src/docs/d2.js` (novo) |
+| Registro/documentação | `backend/src/routes/index.js`; `backend/src/docs/openapi.js`; `backend/src/docs/paths.js`; `backend/src/docs/schemas.js`; `backend/src/docs/organizacaoEditorial.js` (novo) |
 | Testes backend novos | `backend/test/d2b.test.js`; `backend/test/d2b.integration.test.js`; `backend/scripts/validate-d2b.js` |
 | Testes backend adaptados | `backend/test/adminPatrimonio.test.js`; `backend/test/patrimonio.test.js`; `backend/test/docs.test.js`; `backend/test/r1.test.js`; `backend/test/syncPatrimonios.test.js`; `backend/test/d1c.test.js` |
 | Admin existente | `frontend/src/App.jsx`; `frontend/src/features/admin/components/AdminLayout.jsx`; `frontend/src/features/admin/pages/AdminPatrimonios.jsx` |
 | Admin novo | `frontend/src/features/admin/components/OrganizacaoEditorial.jsx` e `.css`; `frontend/src/features/admin/pages/AdminRegioes.jsx` e `.css` |
-| Serviços frontend | `frontend/src/services/fakeApi.js`; `frontend/src/services/regioesApi.js` (novo) |
+| Serviços frontend | `frontend/src/services/patrimoniosApi.js`; `frontend/src/services/regioesApi.js` (novo) |
 | Público | `frontend/src/features/mapa/PlaquetaCard.jsx`; `frontend/src/pages/Patrimonios/Patrimonios.jsx`; `frontend/src/pages/Patrimonios/Patrimonios.css` (novo); `frontend/src/pages/PatrimonioDetalhe/PatrimonioDetalhe.jsx` |
 | Componente novo | `frontend/src/components/MetadataEditorial/MetadataEditorial.jsx` e `.css` |
-| Testes/smoke frontend | `frontend/test/AdminPatrimonios.test.jsx`; `frontend/test/D2Editorial.test.jsx` (novo); `frontend/scripts/smoke-d2b.mjs` (novo) |
+| Testes/smoke frontend | `frontend/test/AdminPatrimonios.test.jsx`; `frontend/test/OrganizacaoEditorial.test.jsx` (novo); `frontend/scripts/verificar_organizacao_editorial.mjs` (novo) |
 | Relatório | `reports/D2B-implementacao-regiao-numero-ordem.md` |
 
 **Edição concorrente preservada:** `frontend/src/pages/PatrimonioDetalhe/PatrimonioDetalhe.css` também aparece no diff: accordion azul sólido e largura ajustada ao conteúdo. Essa edição não foi produzida pela D2B nem revertida. Os testes/build/smoke finais incluem seu estado atual. A implementação D2B do detalhe acrescenta apenas o componente de metadados; não reescreve o accordion ou sua política de localização.
@@ -98,10 +98,10 @@ Uma falha anterior independente da D2B foi investigada em `d1c.test.js`: o commi
 
 | Comando | Resultado |
 | --- | --- |
-| `npm.cmd test -- test/D2Editorial.test.jsx test/AdminPatrimonios.test.jsx` | **80 aprovados**, 2 arquivos |
+| `npm.cmd test -- test/OrganizacaoEditorial.test.jsx test/AdminPatrimonios.test.jsx` | **80 aprovados**, 2 arquivos |
 | `npm.cmd test` | **261 aprovados**, 14 arquivos |
 
-A baseline pós-redesign era 246 testes. Foram acrescentados 12 casos em `D2Editorial.test.jsx` e três no teste integrado de AdminPatrimonios: **246 + 15 = 261**, sem remoção de testes anteriores.
+A baseline pós-redesign era 246 testes. Foram acrescentados 12 casos em `OrganizacaoEditorial.test.jsx` e três no teste integrado de AdminPatrimonios: **246 + 15 = 261**, sem remoção de testes anteriores.
 
 Cobertura D2: normalização/identidades/zero/NULL; metadados opcionais; criação/edição/inativação/reativação do catálogo; slug estável; ausência de gestão para EDITOR; erros seguros; catálogo vazio; filtros públicos preservando sequência; atribuição regional com número e ordem zero; omissão de vínculo inativo ao editar outros campos; limpeza NULL e preservação do endereço/coordenadas. A suíte completa também cobre D1D, D1E, C3, referências, imagens, categorias, usuários e accordion.
 
@@ -167,7 +167,7 @@ O build conserva aviso não impeditivo de bundle acima de 500 kB: principal apro
 
 ## 9. Smoke 1440 / 390 / 320
 
-`node scripts/smoke-d2b.mjs`: **PASS nas três larguras**, saída nativa **0**, zero exceções JavaScript e ausência de overflow horizontal. Página real, API em memória no Vite e sessões fictícias; nenhuma credencial/API/banco real. Interações usam Tab, Enter, Espaço e setas, com foco visível.
+`node scripts/verificar_organizacao_editorial.mjs`: **PASS nas três larguras**, saída nativa **0**, zero exceções JavaScript e ausência de overflow horizontal. Página real, API em memória no Vite e sessões fictícias; nenhuma credencial/API/banco real. Interações usam Tab, Enter, Espaço e setas, com foco visível.
 
 Em cada largura foram exercitados: catálogo vazio; ADMIN criando/inativando região; seleção no patrimônio; número 12; prioridade zero; filtro público por região/número; sequência recebida da API; metadados no detalhe; galeria/referências; accordion com várias seções abertas; navegação D1D por slug; EXATA, APROXIMADA/DEMOLIDO, REFERENCIA e SEM_ROTA; página de mapa; edição mantendo região inativa; limpeza dos três campos para NULL; D1E completo de adicionar/editar/reordenar/excluir preservando UUID; EDITOR sem gestão regional.
 

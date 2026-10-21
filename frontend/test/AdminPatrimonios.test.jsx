@@ -5,7 +5,7 @@ import AdminPatrimonios from "../src/features/admin/pages/AdminPatrimonios";
 import api from "../src/services/api";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import RotaProtegida from "../src/features/admin/components/RotaProtegida";
-import { normalizarPatrimonio } from "../src/services/fakeApi";
+import { normalizarPatrimonio } from "../src/services/patrimoniosApi";
 import { montarEndereco, chaveEndereco } from "../src/services/maps";
 import { CHAVE_SESSAO_MOCK } from "../src/context/authConstants";
 

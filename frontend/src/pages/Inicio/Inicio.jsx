@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MapPinIcon,
@@ -18,6 +18,7 @@ import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import FavoritoButton from "../../components/FavoritoButton/FavoritoButton";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import BACKGROUND_IMAGE from "../../assets/patrimonios/viaduto_cid_guarulhos.png";
+import "./InicioFiltroDestaques.css";
 
 const CARD_SCROLL_STEP = 236; // largura do card (220px) + gap (16px)
 const QTD_DESTAQUES = 6;
@@ -25,8 +26,41 @@ const QTD_DESTAQUES = 6;
 export default function Inicio() {
   const navigate = useNavigate();
   const trackRef = useRef(null);
-  const { patrimonios, carregando } = usePatrimoniosContext();
-  const destaques = patrimonios.slice(0, QTD_DESTAQUES);
+  // `categorias` já vem do contexto (contagem por slug, calculada da mesma
+  // lista de GET /patrimonios): nenhuma requisição nova.
+  const { patrimonios, categorias, carregando } = usePatrimoniosContext();
+  const [categoriaDestaque, setCategoriaDestaque] = useState("todos");
+  // Nome das categorias que não estão em CATEGORIA_META (futuras categorias).
+  const nomesCategorias = useMemo(() => {
+    const nomes = {};
+    for (const item of patrimonios) {
+      for (const cat of item.categoriasInfo ?? []) nomes[cat.slug] = cat.nome;
+    }
+    return nomes;
+  }, [patrimonios]);
+  const rotuloCategoria = (slug) =>
+    CATEGORIA_META[slug]?.label ?? nomesCategorias[slug] ?? slug;
+  // Ordem preferencial (CATEGORIAS_ORDEM) primeiro; as demais categorias
+  // existentes nos dados entram depois, em ordem alfabética.
+  const slugsComBens = Object.keys(categorias ?? {}).filter(
+    (slug) => categorias[slug] > 0,
+  );
+  const opcoesCategoria = [
+    ...CATEGORIAS_ORDEM.filter((slug) => slugsComBens.includes(slug)),
+    ...slugsComBens
+      .filter((slug) => !CATEGORIAS_ORDEM.includes(slug))
+      .sort((a, b) =>
+        rotuloCategoria(a).localeCompare(rotuloCategoria(b), "pt-BR"),
+      ),
+  ];
+  const categoriaAtiva = opcoesCategoria.includes(categoriaDestaque)
+    ? categoriaDestaque
+    : "todos";
+  const destaques = (
+    categoriaAtiva === "todos"
+      ? patrimonios
+      : patrimonios.filter((item) => (item.categorias ?? [item.categoria]).includes(categoriaAtiva))
+  ).slice(0, QTD_DESTAQUES);
   const [termoBusca, setTermoBusca] = useState("");
 
   const irParaPatrimonios = (termo) => {
@@ -40,6 +74,11 @@ export default function Inicio() {
   const buscar = (e) => {
     e.preventDefault();
     irParaPatrimonios(termoBusca.trim());
+  };
+
+  const trocarCategoriaDestaque = (slug) => {
+    setCategoriaDestaque(slug);
+    trackRef.current?.scrollTo({ left: 0, behavior: "auto" });
   };
 
   const rolarDestaques = (direcao = "next") => {
@@ -129,7 +168,7 @@ export default function Inicio() {
               <Link
                 to="/patrimonios"
                 className="hfc-next"
-                aria-label="Próximo destaque"
+                aria-label="Explorar patrimônios"
                 title="Explorar patrimônios"
               >
                 <ChevronRightIcon width={16} height={16} />
@@ -203,9 +242,24 @@ export default function Inicio() {
             </p>
           </div>
           <label className="ordenar-select">
-            Organizado por
+            Filtrar destaques por categoria
             <span className="ordenar-select-box">
-              Todos <ChevronDownIcon width={14} height={14} />
+              <select
+                value={categoriaAtiva}
+                onChange={(e) => trocarCategoriaDestaque(e.target.value)}
+              >
+                <option value="todos">Todos</option>
+                {opcoesCategoria.map((slug) => (
+                  <option key={slug} value={slug}>
+                    {rotuloCategoria(slug)} ({categorias[slug]})
+                  </option>
+                ))}
+              </select>
+              <ChevronDownIcon
+                width={14}
+                height={14}
+                aria-hidden="true"
+              />
             </span>
           </label>
         </div>

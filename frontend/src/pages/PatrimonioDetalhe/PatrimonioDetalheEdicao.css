@@ -1,0 +1,43 @@
+/* Ação "Editar patrimônio" (somente ADMIN) na ficha pública. Arquivo próprio
+   para não mexer no PatrimonioDetalhe.css. */
+.detalhe-admin-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.detalhe-admin-bar .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+@media (max-width: 480px) {
+  .detalhe-admin-bar .btn-outline {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+/* Quando o PATCH funcionou mas o GET público falhou, orientar sem fingir
+   que a ficha já foi sincronizada. Não modifica o CSS principal da página. */
+.detalhe-admin-atualizacao-erro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--orange);
+  border-radius: var(--radius-card);
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.detalhe-admin-atualizacao-erro .btn-outline {
+  min-height: 40px;
+}

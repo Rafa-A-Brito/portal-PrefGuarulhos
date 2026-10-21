@@ -37,7 +37,7 @@ O contrato foi conferido no select público do backend atual: destinos filtrados
 
 | Situação | Caminho relativo a frontend/ | Função |
 | --- | --- | --- |
-| Alterado | `src/services/fakeApi.js` | Preserva `ligacoes` na normalização |
+| Alterado | `src/services/patrimoniosApi.js` | Preserva `ligacoes` na normalização |
 | Alterado | `src/pages/PatrimonioDetalhe/PatrimonioDetalhe.jsx` | Integra a seção e remove blocos legados de relações inferidas/fatos |
 | Criado | `src/pages/PatrimonioDetalhe/PatrimoniosRelacionados.jsx` | Validação de apresentação e cards editoriais |
 | Criado | `src/pages/PatrimonioDetalhe/PatrimoniosRelacionados.css` | Estilo isolado, responsivo e foco visível |

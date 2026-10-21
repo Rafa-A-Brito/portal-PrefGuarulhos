@@ -1,0 +1,170 @@
+/* Modal de edição administrativa (D3E) na página pública de detalhe.
+   Reaproveita os estilos do painel (.admin-form, .admin-shell ...) e só
+   acrescenta o invólucro. Tokens do site (--paper, --line, --ink-soft...)
+   vêm de styles/global.css. */
+
+.d3e-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(23, 19, 49, 0.55);
+}
+
+.d3e-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, 100%);
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+  background: var(--paper);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(23, 19, 49, 0.35);
+  outline: none;
+}
+
+.d3e-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+.d3e-modal-head h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--navy);
+}
+
+.d3e-modal-head p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.d3e-modal-fechar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.d3e-modal-fechar:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.d3e-modal-fechar:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
+}
+
+.d3e-modal-fechar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.d3e-modal-corpo {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* .admin-shell é o layout de tela cheia do painel (flex + 100vh): aqui ele
+   só serve de "escopo" para tokens e estilos de botões/listas. */
+.admin-shell.d3e-modal-shell {
+  display: block;
+  min-height: 0;
+  background: transparent;
+}
+
+/* O formulário deixa de ser um "cartão" solto: o próprio modal é o cartão. */
+.d3e-modal .admin-form {
+  margin: 0 0 20px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Salvar/Cancelar sempre visíveis enquanto o formulário rola. */
+.d3e-modal .admin-form-acoes {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 20px -20px 0;
+  padding: 12px 20px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
+  .d3e-modal-backdrop {
+    padding: 8px;
+  }
+
+  .d3e-modal {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 12px;
+  }
+
+  .d3e-modal-corpo {
+    padding: 14px;
+  }
+
+  .d3e-modal .admin-form-acoes {
+    margin: 16px -14px 0;
+    padding: 10px 14px;
+  }
+
+  .d3e-modal .admin-form-acoes > button {
+    flex: 1 1 0;
+  }
+}
+
+/* Placeholder visível enquanto o chunk do formulário ainda é carregado. */
+.d3e-modal-preparando {
+  min-height: 180px;
+  padding: 20px 8px;
+  color: var(--ink-soft);
+}
+
+.d3e-modal-preparando p {
+  margin: 0 0 16px;
+}
+
+.d3e-modal-preparando-linhas {
+  display: grid;
+  gap: 12px;
+}
+
+.d3e-modal-preparando-linhas span {
+  height: 40px;
+  border-radius: 10px;
+  background: var(--line);
+  opacity: 0.7;
+}
+
+.d3e-modal-preparando-linhas span:first-child {
+  width: 60%;
+  height: 24px;
+}

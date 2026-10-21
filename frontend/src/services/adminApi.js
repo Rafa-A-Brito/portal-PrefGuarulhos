@@ -1,5 +1,5 @@
 /**
- * Chamadas usadas só pelo painel admin. Separadas do fakeApi.js de
+ * Chamadas usadas só pelo painel admin. Separadas do patrimoniosApi.js de
  * propósito: aqui as escritas mexem em dado de verdade e NÃO têm fallback
  * local. Se o backend estiver fora, a pessoa precisa saber na hora.
  *
@@ -29,7 +29,7 @@ import {
   buscarTodasAsPaginas,
   normalizarPatrimonio,
   resolverUrlPublica,
-} from "./fakeApi";
+} from "./patrimoniosApi";
 
 // ===== Usuários =====
 

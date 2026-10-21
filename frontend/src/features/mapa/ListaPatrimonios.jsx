@@ -1,4 +1,4 @@
-import BACKGROUND_IMAGE from "../../assets/back_image.png";
+import BACKGROUND_IMAGE from "../../assets/patrimonios/back_image.png";
 
 export default function ListaPatrimonios({
   patrimonios,
