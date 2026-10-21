@@ -30,7 +30,7 @@ services:
     ports:
       - "127.0.0.1:${TEST_BACKEND_PORT:-3334}:3333"
     tmpfs:
-      - /app/uploads
+      - /app/uploads:uid=1000,gid=1000,mode=0770
     depends_on:
       db_test:
         condition: service_healthy

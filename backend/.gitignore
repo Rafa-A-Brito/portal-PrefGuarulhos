@@ -9,3 +9,10 @@ uploads/
 # OpenAPI source modules are code, not generated documentation.
 !src/docs/
 !src/docs/*.js
+
+# Manter o procedimento operacional de segurança sob revisão no Git.
+!docs/
+!docs/SEGURANCA.md
+
+!docs/AUTENTICACAO_E_CARGAS.md
+!docs/SESSOES_RENOVAVEIS.md

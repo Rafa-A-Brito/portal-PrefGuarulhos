@@ -31,6 +31,8 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "GET /api/docs",
             "GET /api/docs.json",
             "POST /api/auth/login",
+            "POST /api/auth/refresh",
+            "POST /api/auth/logout",
             "PATCH /api/auth/senha",
             "POST /api/admins",
             "GET /api/admins",

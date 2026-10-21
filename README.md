@@ -1,3 +1,5 @@
+> Instalação, migração tokenVersion e comandos oficiais de carga/atualização: [procedimento atual](backend/docs/AUTENTICACAO_E_CARGAS.md).
+
 # 🏛️ Portal Cultural - Patrimônio Histórico de Guarulhos
 
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=white)
@@ -103,7 +105,7 @@ O backend escuta em 3333 e o Vite em 5173. VITE_API_BASE_URL=http://localhost:33
 
 | Contexto | Variáveis |
 | --- | --- |
-| Backend | DATABASE_URL, PORT, JWT_SECRET, JWT_TTL_SECONDS, CORS_ORIGIN, UPLOAD_DIR |
+| Backend | DATABASE_URL, PORT, JWT_SECRET, JWT_TTL_SECONDS, AUTH_SESSION_TTL_SECONDS, CORS_ORIGIN, UPLOAD_DIR |
 | Compose normal | POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT, BACKEND_PORT, FRONTEND_PORT |
 | Frontend no build | VITE_API_BASE_URL, VITE_GOOGLE_MAPS_API_KEY, VITE_GEOCODING_ATIVO |
 | Opções locais do frontend | VITE_USE_MOCK_MAP, VITE_MOSTRAR_DETALHES_ERRO |
@@ -138,7 +140,7 @@ docker compose config --quiet
 docker compose up --build -d
 ~~~
 
-ATENÇÃO: o backend executa migrate deploy antes de iniciar. Não rode esse comando contra o banco real durante uma validação de infraestrutura; utilize o ambiente descartável descrito abaixo. O boot nunca executa seed. Reinícios não sobrescrevem conteúdo administrativo.
+O job separado migrate aplica migrations com conta própria; a API executa sem privilégios administrativos e só inicia após o job. Não usar banco compartilhado na validação. O boot da API nunca executa seed. Para instalação existente, seguir a transição de contas e a migração tokenVersion documentadas em backend/docs/AUTENTICACAO_E_CARGAS.md.
 
 Os volumes pg_data e uploads_data são persistentes. /app/uploads é o diretório de runtime. src/uploads contém as imagens-fonte da carga e permanece na imagem. .env, node_modules local e uploads de runtime são excluídos pelo .dockerignore. Node assume o PID 1 usando exec. O frontend aguarda o healthcheck HTTP do backend.
 
@@ -193,7 +195,7 @@ O E2E cria seus próprios registros no banco de teste e verifica POST/GET/DELETE
 
 ## Importação conservadora de patrimônios
 
-Fonte: backend/prisma/patrimonioSeedData.js (PATRIMONIOS_SEED). O seed antigo é apenas bootstrap/demonstração: atualiza registros, força publicação e recria detalhes. Não o execute como importador de dados administrativos.
+Fonte canônica: backend/prisma/patrimonioSeedData.js (PATRIMONIOS_SEED). O seed inicial foi corrigido: simula por padrão e cria somente ausentes como RASCUNHO, sem sobrescrever categorias, registros ou relações existentes. seed:pesquisa compartilha essa política e respeita a identidade/curadoria D1B/D1C. Consulte backend/docs/AUTENTICACAO_E_CARGAS.md.
 
 O importador novo usa leitura por padrão:
 
@@ -208,14 +210,14 @@ O dry-run não cria usuário, categoria, diretório ou imagem e não grava no ba
 A escrita exige todas as confirmações:
 
 ~~~sh
-node prisma/import-patrimonios.js --apply --confirm-db=portal_test --created-by-email=autor@example.test
+node prisma/import-patrimonios.js --apply --confirm-db=portal_test --created-by-email=autor@example.test --expected-state-hash=HASH_REVISADO
 ~~~
 
 O autor precisa existir, estar ativo e ser ADMIN ou EDITOR. Categorias precisam existir. Ausências são reportadas; não há criação implícita dessas dependências. Para testar com um arquivo de ambiente contendo TEST_DATABASE_URL, selecione explicitamente esse destino como DATABASE_URL somente no processo do importador; os testes de integração já fazem isso de forma isolada.
 
-Novos registros ficam em RASCUNHO; --status=PUBLICADO é uma escolha explícita. Patrimônios existentes por slug são ignorados sem alteração. Nome normalizado coincidente com slug diferente gera conflito. Dados inválidos impedem a criação daquele item. Não existem --fill-missing, --overwrite ou --create-categorias neste lote; são apenas possibilidades futuras.
+Novos registros ficam em RASCUNHO; --status=PUBLICADO é uma escolha explícita. Patrimônios existentes por slug são ignorados sem alteração. Nome normalizado coincidente com slug diferente gera conflito. Dados inválidos ou conflitos bloqueiam o lote completo antes de escrever. Não existem --fill-missing, --overwrite ou --create-categorias neste lote; são apenas possibilidades futuras.
 
-Cada patrimônio usa uma transação com suas relações. Coordenadas devem estar em par e dentro das faixas; localização só é criada com os campos mínimos. Nomes/extensões e existência das imagens são verificados previamente. A cópia é exclusiva; um destino com conteúdo diferente é erro. Imagem já existente idêntica pode ser reutilizada com aviso. Se a transação falhar, somente a imagem criada pela tentativa é compensada; falha na compensação mantém o erro original e reporta possível órfão.
+O lote completo usa uma transação com suas relações, incluindo backfills. O dry-run usa READ ONLY; apply exige o hash do estado revisado. Coordenadas devem estar em par e dentro das faixas; localização só é criada com os campos mínimos. Nomes/extensões e existência das imagens são verificados previamente. A cópia é exclusiva; um destino com conteúdo diferente é erro. Imagem já existente idêntica pode ser reutilizada com aviso. Se a transação falhar, somente a imagem criada pela tentativa é compensada; falha na compensação mantém o erro original e reporta possível órfão.
 
 O apply não é atomicamente global: um item com erro não desfaz os anteriores. Saída com conflitos/erros retorna código 1; inspecione o relatório e rode novo dry-run. No Lote 06, apply é validado somente em portal_test descartável. Carga real é uma operação manual posterior, precedida de backup e revisão do dry-run.
 
@@ -261,3 +263,8 @@ Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais de
 ## 👥 Autores
 
 Desenvolvido como parte de um projeto acadêmico voltado à valorização do patrimônio histórico e cultural de Guarulhos.
+
+
+Sessões renováveis: acesso padrão 5 minutos, sessão máxima padrão 8 horas,
+sem cookies. Aplicar a migration de sessões antes da API e fazer novo login.
+[Procedimento e contratos atuais](backend/docs/SESSOES_RENOVAVEIS.md).

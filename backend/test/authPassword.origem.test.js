@@ -1,3 +1,4 @@
+import { mockSessionWrites } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
@@ -21,6 +22,7 @@ after(async () => {
     await prisma.$disconnect();
 });
 function mockUser(t, role = "EDITOR", active = true) {
+    mockSessionWrites(t, prisma);
     const originalFind = prisma.user.findUnique;
     const originalUpdate = prisma.user.updateMany;
     const id = randomUUID();
@@ -30,9 +32,11 @@ function mockUser(t, role = "EDITOR", active = true) {
     prisma.user.findUnique = async ({ where }) => where.id === id || where.email === email ? user : null;
     prisma.user.updateMany = async ({ where, data }) => {
         writes++;
-        assert.deepEqual(Object.keys(data), ["passwordHash"]);
+        assert.deepEqual(Object.keys(data), ["passwordHash", "tokenVersion"]);
+        assert.deepEqual(data.tokenVersion, { increment: 1 });
+        assert.equal(where.tokenVersion, user.tokenVersion);
         if (where.id !== id || where.isActive !== true || where.passwordHash !== user.passwordHash || !user.isActive) return { count: 0 };
-        user = { ...user, ...data, updatedAt: new Date() };
+        user = { ...user, ...data, tokenVersion: user.tokenVersion + 1, updatedAt: new Date() };
         return { count: 1 };
     };
     t.after(() => {
@@ -40,8 +44,8 @@ function mockUser(t, role = "EDITOR", active = true) {
         prisma.user.updateMany = originalUpdate;
     });
     return {
-        async initialize() { user = { id, email, name: "Usuário", role, isActive: active, passwordHash: await hashPassword(" SenhaInicial123! "), updatedAt: new Date(0) }; },
-        id, email, token: generateToken(id),
+        async initialize() { user = { id, email, name: "Usuário", role, authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: active, passwordHash: await hashPassword(" SenhaInicial123! "), updatedAt: new Date(0) }; },
+        id, email, token: generateToken(id, 0, id),
         get user() { return user; }, get writes() { return writes; },
     };
 }
@@ -80,6 +84,8 @@ for (const role of ["EDITOR", "ADMIN"]) {
         assert.equal((await call("/auth/login", { method: "POST", body: { email: fixture.email, password: " SenhaInicial123! " } })).status, 401);
         assert.equal((await call("/auth/login", { method: "POST", body: { email: fixture.email, password: " NovaSenhaSegura123! " } })).status, 200);
         assert.equal(verifyToken(token).sub, fixture.id);
+        assert.equal(fixture.user.tokenVersion, 1);
+        assert.equal((await call("/auth/senha", { token, body: { senhaAtual: " NovaSenhaSegura123! ", novaSenha: "TerceiraSenhaSegura123!" } })).status, 401);
         assert.equal(JSON.stringify(changed.body).includes("passwordHash"), false);
         assert.equal(JSON.stringify(changed.body).includes("NovaSenhaSegura123!"), false);
     });

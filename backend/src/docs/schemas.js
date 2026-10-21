@@ -99,6 +99,7 @@ export const schemas = {
             role: ref("Role"),
         },
     },
+    RefreshRequest: { type: "object", additionalProperties: false, required: ["refreshToken"], properties: { refreshToken: { type: "string", pattern: "^[A-Za-z0-9_-]{43}$", description: "Credencial opaca, 256 bits, somente no corpo JSON." } } },
     LoginResponse: {
         type: "object",
         required: ["success", "data"],
@@ -106,11 +107,13 @@ export const schemas = {
             success: { type: "boolean", enum: [true] },
             data: {
                 type: "object",
-                required: ["token", "user"],
+                required: ["token", "user", "refreshToken", "sessionExpiresAt"],
                 properties: {
                     token: string("JWT para usar em Authorize.", {
                         example: "eyJ...token-ficticio",
                     }),
+                    refreshToken: { type: "string", description: "Credencial opaca rotacionada a cada renovação." },
+                    sessionExpiresAt: { type: "string", format: "date-time", description: "Prazo absoluto fixado no login, nunca estendido." },
                     user: ref("LoginUser"),
                 },
             },

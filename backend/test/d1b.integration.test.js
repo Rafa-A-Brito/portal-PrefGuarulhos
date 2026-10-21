@@ -1,3 +1,4 @@
+import { createFixtureSession } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -21,14 +22,16 @@ test("D1B PostgreSQL: CRUD, permissões, relações, transações e constraints"
     const transaction = prisma.$transaction;
     try {
         admin = await prisma.user.create({ data: { name: "D1B admin", email: key + "@admin.test", passwordHash: "unused", role: "ADMIN" } });
+        await createFixtureSession(prisma, admin);
         editor = await prisma.user.create({ data: { name: "D1B editor", email: key + "@editor.test", passwordHash: "unused", role: "EDITOR" } });
+        await createFixtureSession(prisma, editor);
         category = await prisma.categoria.create({ data: { nome: "D1B " + key, slug: "d1b-" + key } });
         const make = (extra = {}) => prisma.patrimonio.create({ data: { nome: "Bem D1B " + key, slug: randomUUID(), descricao: "Descrição preservada", descricaoResumida: "Resumo preservado", categoriaId: category.id, createdBy: admin.id, ...extra } });
         const origin = await make(), published = await make({ status: "PUBLICADO" }), draft = await make(), archived = await make({ status: "ARQUIVADO" });
         server = app.listen(0); await new Promise(resolve => server.once("listening", resolve));
         const base = "http://127.0.0.1:" + server.address().port + "/api";
         const request = async (path, { method = "GET", data, user = admin } = {}) => {
-            const response = await fetch(base + path, { method, headers: { ...(user && { authorization: "Bearer " + generateToken(user.id) }), ...(data && { "content-type": "application/json" }) }, ...(data && { body: JSON.stringify(data) }) });
+            const response = await fetch(base + path, { method, headers: { ...(user && { authorization: "Bearer " + generateToken(user.id, user.tokenVersion, user.id) }), ...(data && { "content-type": "application/json" }) }, ...(data && { body: JSON.stringify(data) }) });
             return { status: response.status, body: await response.json() };
         };
         const route = (tipo, id = origin.id, suffix = "") => `/admin/patrimonios/${id}/${tipo}${suffix}`;

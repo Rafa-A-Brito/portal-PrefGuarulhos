@@ -16,8 +16,8 @@ const { novidadeService } = await import("../src/services/novidadeService.js");
 const { exposicaoService } = await import("../src/services/exposicaoService.js");
 const schemas = await import("../src/schemas/novidadeSchema.js");
 const { caminhoArquivoUpload, removerArquivoUpload } = await import("../src/utils/arquivoUpload.js");
-const admin = { id: randomUUID(), role: "ADMIN", isActive: true };
-const editor = { id: randomUUID(), role: "EDITOR", isActive: true };
+const admin = { id: randomUUID(), role: "ADMIN", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
+const editor = { id: randomUUID(), role: "EDITOR", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
 const dadosNovidade = { titulo: "Notícia", tipo: "NOTICIA", tag: "Cultura", data: "2026-10-06", resumo: "Resumo", texto: "Texto" };
 const dadosExpo = { titulo: "Mostra", artista: "Artista", local: "Centro", periodo: "Outubro", bio: "Biografia" };
 const registro = (extra = {}) => ({
@@ -70,7 +70,7 @@ async function request(url, { user, method = "GET", body } = {}) {
     const multipart = body instanceof FormData;
     const response = await fetch(base + url, {
         method,
-        headers: { ...(user && { authorization: `Bearer ${generateToken(user.id)}` }),
+        headers: { ...(user && { authorization: `Bearer ${generateToken(user.id, 0, user.id)}` }),
             ...(!multipart && body !== undefined && { "content-type": "application/json" }) },
         body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
     });

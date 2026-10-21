@@ -43,9 +43,9 @@ test("dashboard vazio não inventa distribuição", async t => {
 test("endpoint agregado exige autenticação e preserva acesso ADMIN/EDITOR", async t => {
     assert.equal((await fetch(url)).status, 401);
     snapshot(t); let role = "ADMIN";
-    const id = randomUUID(); stub(t, prisma.user, "findUnique", async () => ({ id, role, isActive: true }));
+    const id = randomUUID(); stub(t, prisma.user, "findUnique", async () => ({ id, role, authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true }));
     for (role of ["ADMIN", "EDITOR"]) {
-        const response = await fetch(url, { headers: { authorization: "Bearer " + generateToken(id) } });
+        const response = await fetch(url, { headers: { authorization: "Bearer " + generateToken(id, 0, id) } });
         assert.equal(response.status, 200); assert.equal((await response.json()).data.total, 4);
     }
 });

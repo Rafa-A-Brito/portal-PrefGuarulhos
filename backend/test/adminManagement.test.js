@@ -25,7 +25,7 @@ after(async () => {
 const fields = ["id", "nome", "email", "role", "ativo", "criadoEm", "atualizadoEm"];
 const selection = { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, updatedAt: true };
 function user(name, role = "EDITOR", isActive = true) {
-    return { id: randomUUID(), name, email: `${name.toLowerCase()}@example.test`, role, isActive,
+    return { id: randomUUID(), name, email: `${name.toLowerCase()}@example.test`, role, isActive, authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0,
         passwordHash: "secret-hash-never-returned", createdAt: new Date("2026-01-01Z"), updatedAt: new Date("2026-01-01Z") };
 }
 function safeDto(dto) {
@@ -68,7 +68,7 @@ function setup(t, { actorRole = "ADMIN", otherRole = "EDITOR", otherActive = tru
             .slice(args.skip, args.skip + args.take);
     });
     const tx = { user: {
-        findUnique: async (args) => { assert.ok(locked); assert.deepEqual(args.select, selection); return find(args); },
+        findUnique: async (args) => { assert.ok(locked); if (args.select) assert.deepEqual(args.select, selection); return find(args); },
         count: async (args) => { assert.ok(locked); return prisma.user.count(args); },
         update: async ({ where, data, select }) => {
             assert.ok(locked);
@@ -81,7 +81,8 @@ function setup(t, { actorRole = "ADMIN", otherRole = "EDITOR", otherActive = tru
             Object.assign(row, data, { updatedAt: new Date() });
             return row;
         },
-    }, $queryRaw: async (strings, id) => {
+    }, authSession: { create: async ({ data }) => data }, $queryRaw: async (strings, id) => {
+        if (strings.join("?").includes("SELECT id FROM users WHERE id =")) { locked = true; return []; }
         assert.match(strings.join("?"), /role = 'ADMIN' AND is_active = true/);
         assert.match(strings.join("?"), /ORDER BY id FOR UPDATE/);
         assert.equal(typeof id, "string");
@@ -89,13 +90,13 @@ function setup(t, { actorRole = "ADMIN", otherRole = "EDITOR", otherActive = tru
         return [];
     } };
     stub(t, prisma, "$transaction", async (callback, options) => {
-        assert.equal(options.isolationLevel, "ReadCommitted");
+        if (options) assert.equal(options.isolationLevel, "ReadCommitted");
         const snapshot = structuredClone(rows);
         try { return await callback(tx); }
         catch (error) { rows.splice(0, rows.length, ...snapshot); throw error; }
         finally { locked = false; }
     });
-    return { actor, other, rows, token: generateToken(actor.id),
+    return { actor, other, rows, token: generateToken(actor.id, 0, actor.id),
         get updates() { return updates; }, get lastList() { return lastList; } };
 }
 async function request(token, method = "GET", suffix = "", body) {

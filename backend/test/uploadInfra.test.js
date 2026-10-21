@@ -2,18 +2,18 @@ import assert from "node:assert/strict";
 import { test, before, after } from "node:test";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
-import syncFs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
 const uploads = await fs.mkdtemp(path.join(os.tmpdir(), "lote06-upload-"));
 process.env.UPLOAD_DIR = uploads;
+process.env.UPLOAD_ROOT = uploads;
 process.env.DATABASE_URL = "postgresql://unused:unused@127.0.0.1:1/upload_test";
 process.env.JWT_SECRET = "upload-test-secret-with-at-least-32-characters";
 const { default: app } = await import("../src/app.js");
 const { default: prisma } = await import("../src/config/prisma.js");
 const { generateToken } = await import("../src/utils/token.js");
-const admin = { id: randomUUID(), isActive: true, role: "ADMIN" };
+const admin = { id: randomUUID(), authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true, role: "ADMIN" };
 const patrimonioId = randomUUID();
 const png = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aH5sAAAAASUVORK5CYII=",
@@ -66,7 +66,7 @@ function form(extra = {}, double = false) {
 function upload(body = form()) {
     return fetch(base + "/api/admin/patrimonios/" + patrimonioId + "/imagens", {
         method: "POST",
-        headers: { authorization: "Bearer " + generateToken(admin.id) },
+        headers: { authorization: "Bearer " + generateToken(admin.id, 0, admin.id) },
         body,
     });
 }
@@ -88,7 +88,7 @@ test("rotas de imagem existem e exigem autenticação; DELETE exige ADMIN", asyn
         (
             await fetch(base + route, {
                 method: "DELETE",
-                headers: { authorization: "Bearer " + generateToken(admin.id) },
+                headers: { authorization: "Bearer " + generateToken(admin.id, 0, admin.id) },
             })
         ).status,
         403
@@ -141,8 +141,10 @@ test("falha de filesystem não mascara o 404 original", async (t) => {
 
 test("cópia exclusiva não sobrescreve arquivo preexistente em colisão", async (t) => {
     auth(t);
-    stub(t, syncFs, "writeFileSync", (_file, _content, options) => {
-        assert.equal(options.flag, "wx");
+    const originalOpen = fs.open;
+    stub(t, fs, "open", (file, flag, mode) => {
+        if (flag !== "wx") return originalOpen(file, flag, mode);
+        assert.equal(flag, "wx");
         throw Object.assign(new Error("colisão"), { code: "EEXIST" });
     });
     assert.equal((await upload()).status, 500);
@@ -170,9 +172,9 @@ test("upload de rascunho exige token para leitura, DELETE remove registro e arqu
     const response = await upload();
     assert.equal(response.status, 201);
     const { data } = await response.json();
-    stub(t, prisma.patrimonioImagem, "findFirst", async () => record && ({ patrimonio: { status: "RASCUNHO" } }));
+    stub(t, prisma.patrimonioImagem, "findMany", async () => record ? [{ patrimonio: { status: "RASCUNHO" } }] : []);
     assert.equal((await fetch(base + data.url)).status, 401);
-    assert.deepEqual(Buffer.from(await (await fetch(base + data.url, { headers: { authorization: "Bearer " + generateToken(admin.id) } })).arrayBuffer()), png);
+    assert.deepEqual(Buffer.from(await (await fetch(base + data.url, { headers: { authorization: "Bearer " + generateToken(admin.id, 0, admin.id) } })).arrayBuffer()), png);
     stub(t, prisma.patrimonioImagem, "findUnique", async () => record);
     stub(t, prisma.patrimonioImagem, "delete", async () => {
         const deleted = record;
@@ -183,7 +185,7 @@ test("upload de rascunho exige token para leitura, DELETE remove registro e arqu
         (
             await fetch(base + "/api/admin/patrimonios/imagens/" + data.id, {
                 method: "DELETE",
-                headers: { authorization: "Bearer " + generateToken(admin.id) },
+                headers: { authorization: "Bearer " + generateToken(admin.id, 0, admin.id) },
             })
         ).status,
         200
@@ -289,7 +291,7 @@ test("exclusão legada restaura arquivo se houver rollback após o DELETE", asyn
     });
     const response = await fetch(base + "/api/admin/patrimonios/imagens/" + record.id, {
         method: "DELETE",
-        headers: { authorization: "Bearer " + generateToken(admin.id) },
+        headers: { authorization: "Bearer " + generateToken(admin.id, 0, admin.id) },
     });
     assert.equal(response.status, 500);
     assert.equal(await fs.readFile(path.join(uploads, "patrimonios", name), "utf8"), "original");

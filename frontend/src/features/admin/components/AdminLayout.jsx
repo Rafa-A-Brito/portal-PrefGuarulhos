@@ -1,9 +1,10 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import {
   Squares2X2Icon,
   UsersIcon,
   BuildingLibraryIcon,
   ArrowLeftStartOnRectangleIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
 import "../admin.css";
@@ -21,11 +22,11 @@ import "../admin-extras.css";
  */
 export default function AdminLayout() {
   const { usuario, logout } = useAuth();
-  const navigate = useNavigate();
+
 
   const sair = async () => {
     await logout();
-    navigate("/admin/login", { replace: true });
+
   };
 
   return (
@@ -75,6 +76,9 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar-footer">
+          <NavLink to="/admin/senha" className="admin-sidebar-sair">
+            <LockClosedIcon width={18} height={18} /> Alterar senha
+          </NavLink>
           <div className="admin-sidebar-usuario">
             <strong>{usuario?.nome}</strong>
             <span>{usuario?.email}</span>

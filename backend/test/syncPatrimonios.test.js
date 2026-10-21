@@ -5,17 +5,25 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { importPatrimonios, parseArgs } from "../prisma/import-patrimonios.js";
-import { planSync } from "../prisma/sync-patrimonios.js";
+import { importPatrimonios as executarImport, parseArgs } from "../prisma/import-patrimonios.js";
+import { planSync as planoSync } from "../prisma/sync-patrimonios.js";
 import { PATRIMONIOS_SEED as seed } from "../prisma/patrimonioSeedData.js";
 import { slugify } from "../src/utils/slug.js";
 
 const databaseUrl = "postgresql://unused@localhost:1/sync_test";
 const category = { id: randomUUID(), nome: "Arquitetônico" };
 const author = { id: randomUUID(), role: "ADMIN", isActive: true };
+const planSync = args => planoSync({ ...args, consolidateLegacy: true });
+async function importPatrimonios(args) {
+    if (args.options?.apply && !args.options.expectedStateHash) {
+        const review = await executarImport({ ...args, options: { ...args.options, apply: false } });
+        return executarImport({ ...args, options: { ...args.options, expectedStateHash: review.estado_hash } });
+    }
+    return executarImport(args);
+}
 const source = seed.filter(p => /^(Casa José Maurício|Casarão da Família Albertis)/.test(p.nome));
-const dry = () => parseArgs(["--sync-patrimonios"]);
-const apply = () => parseArgs(["--sync-patrimonios", "--apply", "--confirm-db=sync_test", "--created-by-email=admin@example.test"]);
+const dry = () => parseArgs(["--sync-patrimonios", "--consolidate-legacy"]);
+const apply = () => parseArgs(["--sync-patrimonios", "--consolidate-legacy", "--apply", "--confirm-db=sync_test", "--created-by-email=admin@example.test"]);
 const sourceDir = fileURLToPath(new URL("../src/uploads/patrimonios", import.meta.url));
 function row(nome, extra = {}) {
     return { id: randomUUID(), nome, slug: slugify(nome), descricao: "anterior", descricaoResumida: "resumo", historia: "história anterior", importanciaCultural: "importância anterior", situacao: "PRESERVADO", status: "RASCUNHO", createdBy: author.id, updatedBy: randomUUID(), publicadoEm: null, arquivadoEm: null, categoriaId: category.id, localizacao: null, imagens: [], detalhes: [], documentos: [], rotas: [], categoriasAdicionais: [], ...extra };
@@ -47,7 +55,7 @@ function fake(initial = fixtures(), { failAudit = false, connected = "sync_test"
                 user: { findUnique: async () => author }, categoria: { findMany: async () => [category] },
                 patrimonio: { findMany: async () => structuredClone(pending).map(p => ({ ...p, detalhes: p.detalhes.sort((a,b) => a.ordem-b.ordem), imagens: p.imagens.sort((a,b) => a.ordem-b.ordem) })), update: async ({ where, data }) => { calls.push("write"); Object.assign(get(where.id), data); } },
                 localizacao: { upsert: async ({ where, create, update }) => { calls.push("write"); const p = get(where.patrimonioId); p.localizacao = p.localizacao ? { ...p.localizacao, ...update } : { id: randomUUID(), ...create }; } },
-                auditLog: { create: async ({ data }) => { calls.push("write"); if (failAudit) throw new Error("rollback-teste"); logs.push(data); } },
+                auditLog: { findMany: async () => [], create: async ({ data }) => { calls.push("write"); if (failAudit) throw new Error("rollback-teste"); logs.push(data); } },
             };
             for (const [model, relation] of Object.entries({ patrimonioDetalhe: "detalhes", patrimonioImagem: "imagens", patrimonioDocumento: "documentos", rotaPatrimonio: "rotas", patrimonioCategoria: "categoriasAdicionais" })) {
                 tx[model] = {
@@ -112,10 +120,10 @@ test("D2: sync preserva região, número e prioridade editoriais e inclui escala
     }
 });
 
-test("CLI aceita hash apenas no sync e valida SHA-256", () => {
+test("CLI aceita hash revisado em cargas e sync e valida SHA-256", () => {
     const hash = "a".repeat(64);
     assert.equal(parseArgs(["--sync-patrimonios", "--expected-state-hash=" + hash]).expectedStateHash, hash);
-    assert.throws(() => parseArgs(["--expected-state-hash=" + hash]));
+    assert.equal(parseArgs(["--expected-state-hash=" + hash]).expectedStateHash, hash);
     assert.throws(() => parseArgs(["--sync-patrimonios", "--expected-state-hash=invalido"]));
 });
 

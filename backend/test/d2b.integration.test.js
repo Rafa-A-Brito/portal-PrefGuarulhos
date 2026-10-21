@@ -1,3 +1,4 @@
+import { createFixtureSession } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -19,14 +20,16 @@ test("D2B PostgreSQL: catálogo, patrimônio, constraints e concorrência", { sk
     const regions = [];
     try {
         admin = await prisma.user.create({ data: { name: key, email: key + "@admin.test", passwordHash: "unused", role: "ADMIN" } });
+        await createFixtureSession(prisma, admin);
         editor = await prisma.user.create({ data: { name: key, email: key + "@editor.test", passwordHash: "unused", role: "EDITOR" } });
+        await createFixtureSession(prisma, editor);
         category = await prisma.categoria.create({ data: { nome: key, slug: key } });
         const body = extra => ({ nome: key, descricao: "Descrição preservada", descricaoResumida: "Resumo", categoriaId: category.id, ...extra });
         const make = extra => prisma.patrimonio.create({ data: { ...body(extra), createdBy: admin.id, slug: randomUUID() } });
         const a = await make({ status: "PUBLICADO" }), b = await make({ status: "RASCUNHO" }), c = await make({ status: "ARQUIVADO" });
         server = app.listen(0); await new Promise(resolve => server.once("listening", resolve));
         const request = async (url, { method = "GET", data, user = admin } = {}) => {
-            const response = await fetch(`http://127.0.0.1:${server.address().port}/api` + url, { method, headers: { ...(user && { authorization: "Bearer " + generateToken(user.id) }), ...(data && { "content-type": "application/json" }) }, ...(data && { body: JSON.stringify(data) }) });
+            const response = await fetch(`http://127.0.0.1:${server.address().port}/api` + url, { method, headers: { ...(user && { authorization: "Bearer " + generateToken(user.id, user.tokenVersion, user.id) }), ...(data && { "content-type": "application/json" }) }, ...(data && { body: JSON.stringify(data) }) });
             return { status: response.status, body: await response.json() };
         };
         const patch = (p, data, user = admin) => request("/admin/patrimonios/" + p.id, { method: "PATCH", data, user });

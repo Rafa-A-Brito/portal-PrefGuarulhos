@@ -13,10 +13,14 @@ import { semCacheMidia, servirArquivoLegado } from "./controllers/midiaPublicaCo
 import authenticateOpcional from "./middlewares/authenticateOpcional.js";
 import { validateParams } from "./middlewares/validate.js";
 import { arquivoLegadoParamsSchema } from "./schemas/midiaSchema.js";
+import securityHeaders from "./middlewares/securityHeaders.js";
 
 const app = express();
 
-app.use(cors({ origin: env.CORS_ORIGIN }));
+app.disable("x-powered-by");
+app.set("trust proxy", env.TRUST_PROXY_IPS ? env.TRUST_PROXY_IPS.split(",").map(ip => ip.trim()) : false);
+app.use(securityHeaders);
+app.use(cors({ origin: env.CORS_ORIGIN, exposedHeaders: ["Retry-After"] }));
 app.use(express.json({ limit: "100kb" }));
 for (const pasta of UPLOAD_FOLDERS.filter((pasta) => ["exposicoes", "novidades"].includes(pasta))) {
     app.use(`/uploads/${pasta}`, express.static(path.join(UPLOAD_DIR, pasta), {

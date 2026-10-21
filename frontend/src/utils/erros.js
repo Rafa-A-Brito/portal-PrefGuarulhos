@@ -33,13 +33,14 @@ export function sanitizar(texto) {
     .slice(0, 300);
 }
 
-const MENSAGENS_HTTP = {
+export const MENSAGENS_HTTP = {
   400: "Os dados enviados não foram aceitos. Confira o formulário e tente novamente.",
   401: "Sua sessão expirou ou o acesso não foi reconhecido. Entre novamente.",
   403: "Sua conta não tem permissão para realizar esta ação.",
   404: "Não encontramos o que você procurava.",
   409: "Esses dados entram em conflito com algo que já existe.",
   413: "O arquivo enviado é grande demais.",
+  415: "O formato ou o conteúdo do arquivo não foi aceito. Confira o arquivo e tente novamente.",
   429: "Muitas tentativas em pouco tempo. Aguarde um instante e tente de novo.",
 };
 
@@ -65,6 +66,10 @@ export function normalizarErro(
   if (err instanceof ErroApp) {
     codigo = err.codigo;
     msgUsuario = err.mensagemUsuario;
+    podeSerSubstituida = false;
+  } else if (err?.code === "AUTH_REFRESH_UNCERTAIN") {
+    codigo = "ERR-RENOVACAO";
+    msgUsuario = "Não foi possível confirmar a renovação. Saia e entre novamente para continuar.";
     podeSerSubstituida = false;
   } else if (err?.code === "ECONNABORTED") {
     codigo = "ERR-TIMEOUT";

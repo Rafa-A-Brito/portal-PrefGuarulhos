@@ -1,43 +1,5 @@
-import path from "node:path";
-import fs from "node:fs/promises";
-import { randomUUID } from "node:crypto";
-import { UPLOAD_DIR } from "../config/uploadDir.js";
 import { caminhoArquivoUpload } from "./arquivoUpload.js";
-
-const raizQuarentena = path.join(UPLOAD_DIR, ".quarentena");
-const inseguro = () => Object.assign(new Error("Caminho de mídia inseguro."), { code: "INVALID_MEDIA_PATH" });
-
-async function validarPasta(pasta) {
-    const raizReal = await fs.realpath(UPLOAD_DIR);
-    if (await fs.realpath(pasta) !== path.join(raizReal, path.basename(pasta))) throw inseguro();
-}
-
-async function preparar(url) {
-    const original = caminhoArquivoUpload(url);
-    if (!original) return null; // URL externa/não gerenciada nunca é removida.
-    try {
-        await validarPasta(path.dirname(original));
-        const stat = await fs.lstat(original);
-        if (!stat.isFile() || stat.isSymbolicLink()) throw inseguro();
-    } catch (error) {
-        if (error.code === "ENOENT") return null;
-        throw error;
-    }
-    await fs.mkdir(raizQuarentena, { recursive: true, mode: 0o700 });
-    await validarPasta(raizQuarentena);
-    const quarentena = path.join(raizQuarentena, `${randomUUID()}-${path.basename(original)}`);
-    await fs.rename(original, quarentena);
-    return { original, quarentena };
-}
-
-async function restaurar(arquivo) {
-    await validarPasta(path.dirname(arquivo.original));
-    await validarPasta(raizQuarentena);
-    // Não sobrescrever arquivo que reapareceu. A cópia privada fica disponível
-    // para recuperação se a restauração falhar, inclusive após erro de commit.
-    await fs.copyFile(arquivo.quarentena, arquivo.original, fs.constants.COPYFILE_EXCL);
-    await fs.unlink(arquivo.quarentena);
-}
+import { moverParaQuarentena, restaurarDaQuarentena, apagarArquivoGerenciado } from "./arquivos.js";
 
 function pendencia(acao, arquivo, error) {
     console.error("Pendência de recuperação de mídia.", { acao, ...arquivo, code: error.code });
@@ -49,18 +11,17 @@ export async function comQuarentenaUpload(operacao) {
     let arquivo;
     let result;
     try {
-        result = await operacao(async url => { arquivo = await preparar(url); });
+        result = await operacao(async url => { arquivo = await moverParaQuarentena(caminhoArquivoUpload(url)); });
     } catch (error) {
         if (arquivo) {
-            try { await restaurar(arquivo); }
+            try { await restaurarDaQuarentena(arquivo); }
             catch (restoreError) { pendencia("restaurar", arquivo, restoreError); }
         }
         throw error;
     }
     if (arquivo) {
         try {
-            await validarPasta(raizQuarentena);
-            await fs.unlink(arquivo.quarentena);
+            await apagarArquivoGerenciado(arquivo.quarentena);
         } catch (error) { pendencia("limpar_apos_commit", arquivo, error); }
     }
     return result;

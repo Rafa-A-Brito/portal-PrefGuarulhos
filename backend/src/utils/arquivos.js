@@ -25,7 +25,7 @@ export function nomeArquivoUnico(extensao) {
     return `${randomUUID()}${extensao}`;
 }
 
-// Confere os bytes iniciais para ver se não é um conteúdo malicioso
+// Confere somente a assinatura; não comprova ausência de malware.
 export function detectarMimeReal(cabecalho) {
     const b = cabecalho;
     if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
@@ -55,6 +55,7 @@ export async function apagarArquivoGerenciado(caminho) {
     if ((!relativo || relativo.startsWith("..") || path.isAbsolute(relativo)) && !dentroDaPasta(UPLOAD_DIR, absoluto)) return false;
 
     try {
+        await validarCaminhoGerenciado(absoluto);
         await fs.unlink(absoluto);
         return true;
     } catch (error) {
@@ -70,6 +71,21 @@ export const QUARENTENA_ROOT = path.join(UPLOAD_ROOT, ".quarentena");
 function dentroDaPasta(pasta, caminho) {
     const relativo = path.relative(pasta, path.resolve(caminho));
     return relativo && !relativo.startsWith("..") && !path.isAbsolute(relativo);
+}
+
+async function validarPastaGerenciada(pasta, raiz) {
+    const [raizReal, pastaReal] = await Promise.all([fs.realpath(raiz), fs.realpath(pasta)]);
+    if (pastaReal !== path.join(raizReal, path.relative(raiz, pasta))) {
+        throw Object.assign(new Error("Pasta de mídia redirecionada."), { code: "INVALID_MEDIA_PATH" });
+    }
+}
+
+async function validarCaminhoGerenciado(caminho) {
+    const raiz = dentroDaPasta(UPLOAD_ROOT, caminho) ? UPLOAD_ROOT : UPLOAD_DIR;
+    if (!dentroDaPasta(raiz, caminho)) throw Object.assign(new Error("Caminho fora da pasta gerenciada."), { code: "INVALID_MEDIA_PATH" });
+    await validarPastaGerenciada(path.dirname(caminho), raiz);
+    const stat = await fs.lstat(caminho);
+    if (!stat.isFile() || stat.isSymbolicLink()) throw Object.assign(new Error("Arquivo de mídia inválido."), { code: "INVALID_MEDIA_PATH" });
 }
 
 export function registrarPendenciaArquivo(acao, contexto, error) {
@@ -90,7 +106,8 @@ export async function limparUploadAposFalha(caminho, contexto = {}) {
 export async function moverParaQuarentena(caminho) {
     if (!caminho) return null;
     const original = path.resolve(caminho);
-    if ((!dentroDaPasta(UPLOAD_ROOT, original) && !dentroDaPasta(UPLOAD_DIR, original)) || dentroDaPasta(QUARENTENA_ROOT, original)) {
+    if ((!dentroDaPasta(UPLOAD_ROOT, original) && !dentroDaPasta(UPLOAD_DIR, original)) ||
+        [UPLOAD_ROOT, UPLOAD_DIR].some(raiz => dentroDaPasta(path.join(raiz, ".quarentena"), original))) {
         throw Object.assign(new Error("Caminho de mídia fora da pasta gerenciada."), { code: "INVALID_MEDIA_PATH" });
     }
     // Preserva a proteção do armazenamento legado contra junctions/symlinks.
@@ -107,8 +124,11 @@ export async function moverParaQuarentena(caminho) {
         if (error.code === "ENOENT") return null;
         throw error;
     }
-    await fs.mkdir(QUARENTENA_ROOT, { recursive: true, mode: 0o700 });
-    const quarentena = path.join(QUARENTENA_ROOT, `${randomUUID()}-${path.basename(original)}`);
+    // Fica no mesmo volume do original, inclusive quando as raízes são distintas.
+    const pastaQuarentena = path.join(raiz, ".quarentena");
+    await fs.mkdir(pastaQuarentena, { recursive: true, mode: 0o700 });
+    await validarPastaGerenciada(pastaQuarentena, raiz);
+    const quarentena = path.join(pastaQuarentena, `${randomUUID()}-${path.basename(original)}`);
     try {
         await fs.rename(original, quarentena);
         return { original, quarentena };
@@ -127,10 +147,14 @@ export async function moverParaQuarentena(caminho) {
 }
 
 export async function restaurarDaQuarentena({ original, quarentena }) {
-    if ((!dentroDaPasta(UPLOAD_ROOT, original) && !dentroDaPasta(UPLOAD_DIR, original)) || dentroDaPasta(QUARENTENA_ROOT, original) ||
-        !dentroDaPasta(QUARENTENA_ROOT, quarentena)) {
+    const raiz = dentroDaPasta(UPLOAD_ROOT, original) ? UPLOAD_ROOT : UPLOAD_DIR;
+    const pastaQuarentena = path.join(raiz, ".quarentena");
+    if (!dentroDaPasta(raiz, original) || dentroDaPasta(pastaQuarentena, original) ||
+        !dentroDaPasta(pastaQuarentena, quarentena)) {
         throw Object.assign(new Error("Caminho de restauração inválido."), { code: "INVALID_MEDIA_PATH" });
     }
+    await validarPastaGerenciada(path.dirname(original), raiz);
+    await validarCaminhoGerenciado(quarentena);
     // Evita sobrescrever um arquivo que tenha reaparecido no caminho original.
     // copyFile com EXCL funciona também no Windows; só apaga a cópia privada após restaurar.
     await fs.copyFile(quarentena, original, fs.constants.COPYFILE_EXCL);

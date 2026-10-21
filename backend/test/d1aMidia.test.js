@@ -33,7 +33,7 @@ after(async () => {
 });
 beforeEach(t => {
     imagens = []; documentos = []; role = "ADMIN"; status = "RASCUNHO"; failDelete = false; failCommit = false;
-    stub(t, prisma.user, "findUnique", async () => ({ id: userId, role, isActive: true }));
+    stub(t, prisma.user, "findUnique", async () => ({ id: userId, role, authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true }));
     const findParent = async ({ where }) => where.id === id ? { id, status } : null;
     stub(t, prisma.patrimonio, "findUnique", findParent);
     stub(t, prisma, "$transaction", async callback => {
@@ -58,7 +58,7 @@ beforeEach(t => {
         } catch (error) { imagens = before.imagens; documentos = before.documentos; throw error; }
     });
 });
-const headers = () => ({ authorization: "Bearer " + generateToken(userId) });
+const headers = () => ({ authorization: "Bearer " + generateToken(userId, 0, userId) });
 const imageRoute = mediaId => base + "/imagens/" + mediaId;
 const refRoute = refId => base + "/" + id + "/referencias" + (refId ? "/" + refId : "");
 async function upload(bytes = png, mime = "image/png") {

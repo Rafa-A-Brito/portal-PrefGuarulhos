@@ -8,6 +8,7 @@ RUN --mount=type=secret,id=build_ca \
     npm ci
 COPY . .
 RUN DATABASE_URL="postgresql://u:p@localhost:5432/x" npx prisma generate
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/uploads && chown node:node /app/uploads && chmod 750 /app/uploads
+USER node
 EXPOSE 3333
-CMD ["sh", "-c", "npx prisma migrate deploy && exec node src/server.js"]
+CMD ["node", "src/server.js"]

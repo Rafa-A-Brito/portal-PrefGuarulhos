@@ -119,7 +119,6 @@ export async function removerImagemPatrimonio(id, user) {
         prisma.$transaction(async (tx) => {
             const imagem = await bloquearImagem(tx, id);
             if (
-                imagem.url.startsWith("/uploads/patrimonios/") &&
                 !(await uploadCompartilhado(tx, imagem.url))
             )
                 await preparar(imagem.url);

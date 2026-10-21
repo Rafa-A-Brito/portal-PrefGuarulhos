@@ -24,11 +24,26 @@ const fixtures = [
 const bytes = Buffer.from("fixture de mídia");
 let server, base, status, user, registros, consultas;
 const userId = randomUUID();
-const token = () => ({ authorization: `Bearer ${generateToken(userId)}` });
+const token = () => ({ authorization: `Bearer ${generateToken(userId, 0, userId)}` });
 function stub(t, target, method, implementation) {
     const original = target[method];
     target[method] = implementation;
     t.after(() => { target[method] = original; });
+}
+
+for (const fixture of fixtures) {
+    test(`${fixture.tipo}: URL compartilhada independe da ordem dos vínculos`, async t => {
+        for (const statuses of [["RASCUNHO", "PUBLICADO"], ["PUBLICADO", "ARQUIVADO"], ["ARQUIVADO", "RASCUNHO"]]) {
+            stub(t, prisma[fixture.model], "findMany", async () => statuses.map(status => ({ patrimonio: { status } })));
+            const expected = statuses.includes("PUBLICADO") ? 200 : 401;
+            for (const method of ["GET", "HEAD"]) {
+                const response = await fetch(base + fixture.url, { method });
+                assert.equal(response.status, expected);
+                await response.arrayBuffer();
+            }
+            assert.equal((await fetch(base + fixture.url, { headers: token() })).status, 200);
+        }
+    });
 }
 before(async () => {
     for (const folder of ["patrimonios", "referencias", "imagens", "documentos", "exposicoes", "novidades"]) {
@@ -41,15 +56,15 @@ before(async () => {
 });
 beforeEach((t) => {
     status = "PUBLICADO";
-    user = { id: userId, role: "ADMIN", isActive: true };
+    user = { id: userId, role: "ADMIN", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
     registros = new Set(fixtures.map((fixture) => fixture.url));
     consultas = [];
     stub(t, prisma.user, "findUnique", async () => user);
     for (const model of ["patrimonioImagem", "patrimonioDocumento"]) {
-        stub(t, prisma[model], "findFirst", async ({ where, select }) => {
+        stub(t, prisma[model], "findMany", async ({ where, select }) => {
             consultas.push({ model, url: where.url });
             assert.deepEqual(select, { patrimonio: { select: { status: true } } });
-            return registros.has(where.url) ? { patrimonio: { status } } : null;
+            return registros.has(where.url) ? [{ patrimonio: { status } }] : [];
         });
     }
 });
@@ -103,7 +118,7 @@ for (const fixture of fixtures) {
             assert.equal((await fetch(base + fixture.url, { headers: token() })).status, 401);
             user = null;
             assert.equal((await fetch(base + fixture.url, { headers: token() })).status, 401);
-            user = { id: userId, role: "ADMIN", isActive: true };
+            user = { id: userId, role: "ADMIN", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
         }
     });
     test(`${fixture.tipo}: usuário autenticado sem papel permitido recebe 403`, async () => {
@@ -192,7 +207,7 @@ test("falhas de banco/autenticação e leitura não são convertidas em 404 ou v
     t.mock.method(console, "error", () => {});
     stub(t, prisma.user, "findUnique", async () => { throw new Error("Banco indisponível"); });
     assert.equal((await fetch(base + fixtures[0].url, { headers: token() })).status, 500);
-    stub(t, prisma.patrimonioImagem, "findFirst", async () => { throw new Error("Banco indisponível"); });
+    stub(t, prisma.patrimonioImagem, "findMany", async () => { throw new Error("Banco indisponível"); });
     assert.equal((await fetch(base + fixtures[0].url)).status, 500);
     stub(t, fs, "open", async () => { throw Object.assign(new Error("Permissão negada"), { code: "EACCES" }); });
     assert.equal((await fetch(base + fixtures[1].url)).status, 500);

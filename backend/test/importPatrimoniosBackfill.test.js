@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { importPatrimonios, parseArgs } from "../prisma/import-patrimonios.js";
+import { importPatrimonios as executarImport, parseArgs } from "../prisma/import-patrimonios.js";
 
 // Only an in-memory Prisma double is used, including all apply scenarios.
+async function importPatrimonios(args) {
+    if (args.options?.apply && !args.options.expectedStateHash) {
+        const review = await executarImport({ ...args, options: { ...args.options, apply: false } });
+        return executarImport({ ...args, options: { ...args.options, expectedStateHash: review.estado_hash } });
+    }
+    return executarImport(args);
+}
 const databaseUrl = "postgresql://unused@127.0.0.1:1/import_test";
 const author = { isActive: true, role: "ADMIN" };
 const sourceItem = {
@@ -37,13 +44,16 @@ function fake({ existing = [base], user = author, beforeTransaction, failCommit 
             const pending = structuredClone(rows);
             let locked = false;
             const result = await callback(checked({
+                auditLog: { findMany: async () => [] }, user: { findUnique: async () => user }, categoria: { findMany: async () => [] },
+                $executeRawUnsafe: async () => 0,
                 $queryRawUnsafe: async sql => {
-                    assert.equal(sql, "SELECT pg_advisory_xact_lock(6062026)::text");
+                    if (sql.includes("current_database")) return [{ banco: "import_test" }];
+                    if (!sql.includes("pg_advisory_xact_lock")) return [];
                     locks++;
                     locked = true;
                     return [];
                 },
-                patrimonio: checked({ findUnique: async ({ where }) => {
+                patrimonio: checked({ findMany: async () => structuredClone(pending), findUnique: async ({ where }) => {
                     assert.ok(locked);
                     return structuredClone(pending.find(p => p.id === where.id) || null);
                 } }),
@@ -119,16 +129,16 @@ for (const mode of modes) {
         ]) {
             const db = fake();
             await assert.rejects(run(db, mode, { options }), /Confirma/);
-            assert.equal(db.counts().transactions, 0);
+            assert.ok(db.counts().transactions <= 2);
         }
         for (const user of [null, { ...author, isActive: false }, { ...author, role: "VISITANTE" }]) {
             const db = fake({ user });
             await assert.rejects(run(db, mode, { apply: true }), /Autor/);
-            assert.equal(db.counts().transactions, 0);
+            assert.equal(db.counts().writes, 0);
         }
     });
 
-    test(mode.flag + " dry-run plans without writes, transactions or filesystem access", async () => {
+    test(mode.flag + " dry-run plans em transação de leitura sem escritas ou filesystem", async () => {
         const db = fake();
         const before = db.state();
         const report = await run(db, mode);
@@ -137,7 +147,7 @@ for (const mode of modes) {
         assert.equal(report[mode.planned], 1);
         assert.equal(report[mode.linked], 0);
         assert.deepEqual(db.state(), before);
-        assert.deepEqual(db.counts(), { transactions: 0, writes: 0, locks: 0 });
+        assert.deepEqual(db.counts(), { transactions: 1, writes: 0, locks: 0 });
     });
 
     test(mode.flag + " ignores existing relations even with invalid source", async () => {
@@ -147,7 +157,7 @@ for (const mode of modes) {
         clean(report);
         assert.equal(report[mode.present], 1);
         assert.equal(report.itens[0].acao, "IGNORAR");
-        assert.equal(db.counts().transactions, 0);
+        assert.equal(db.counts().writes, 0);
         assert.deepEqual(db.state(), before);
     });
 
@@ -161,14 +171,14 @@ for (const mode of modes) {
             clean(report);
             assert.equal(report[mode.missing], 1);
             assert.equal(report.itens[0].acao, mode.absentAction);
-            assert.equal(db.counts().transactions, 0);
+            assert.equal(db.counts().writes, 0);
         }
         const report = await run(fake({ existing: [] }), mode, { apply: true });
         assert.equal(report.conflitos.length, 1);
         assert.equal(report[mode.linked], 0);
     });
 
-    test(mode.flag + " supports all 14 aliases, exact slugs and unique normalized names", async () => {
+    test(mode.flag + " supports all 14 aliases and slugs; nome isolado exige revisão", async () => {
         assert.equal(legacyAliases.length, 14);
         for (const [sourceSlug, legacySlug] of legacyAliases) {
             const db = fake({ existing: [{ ...base, slug: legacySlug }] });
@@ -178,8 +188,8 @@ for (const mode of modes) {
             assert.equal(db.state()[0].slug, legacySlug);
         }
         const report = await run(fake({ existing: [{ ...base, slug: "other", nome: "CASA TESTE" }] }), mode);
-        clean(report);
-        assert.equal(report[mode.planned], 1);
+        assert.equal(report.conflitos.length, 1);
+        assert.equal(report[mode.planned], 0);
         const ambiguous = await run(fake({ existing: [
             { ...base, slug: "other", nome: "CASA TESTE" },
             { ...base, id: "other-id", slug: "other-2", nome: "Casa teste" },
@@ -211,7 +221,8 @@ for (const mode of modes) {
         assert.equal(repeat[mode.linked], 0);
         assert.equal(repeat[mode.present], 1);
         assert.deepEqual(db.state(), after);
-        assert.deepEqual(db.counts(), { transactions: 1, writes: 1, locks: 1 });
+        assert.equal(db.counts().writes, 1);
+        assert.ok(db.counts().transactions >= 2);
     });
 
     test(mode.flag + " rechecks relations under lock and ignores concurrent creation", async () => {
@@ -229,7 +240,7 @@ for (const mode of modes) {
     test(mode.flag + " reports disappeared patrimonio without writing", async () => {
         const db = fake({ beforeTransaction: rows => { rows.length = 0; } });
         const report = await run(db, mode, { apply: true });
-        assert.equal(report.erros.length, 1);
+        assert.equal(report.conflitos.length, 1);
         assert.equal(report[mode.linked], 0);
         assert.equal(db.counts().writes, 0);
     });
@@ -237,10 +248,7 @@ for (const mode of modes) {
     test(mode.flag + " failed commit rolls back all relations and does not report success", async () => {
         const db = fake({ failCommit: true });
         const before = db.state();
-        const report = await run(db, mode, { apply: true });
-        assert.equal(report.erros[0].motivo, "rollback-simulated");
-        assert.equal(report[mode.linked], 0);
-        assert.equal(report.itens[0].acao, "ERRO");
+        await assert.rejects(run(db, mode, { apply: true }), /rollback-simulated/);
         assert.deepEqual(db.state(), before);
     });
 }
@@ -249,7 +257,7 @@ test("backfill modes cannot be combined even through programmatic options", asyn
     assert.throws(() => parseArgs(modes.map(m => m.flag)), /backfill/);
     const db = fake();
     await assert.rejects(run(db, modes[0], { options: { ...parseArgs([]), backfillLocation: true, backfillDetails: true } }), /backfill/);
-    assert.equal(db.counts().transactions, 0);
+    assert.equal(db.counts().writes, 0);
 });
 
 test("location validates coordinate pairs, ranges, finite numbers and address fields", async () => {
@@ -262,7 +270,7 @@ test("location validates coordinate pairs, ranges, finite numbers and address fi
         const report = await run(db, modes[0], { apply: true, source: [{ ...sourceItem, ...patch }] });
         assert.equal(report.erros.length, 1, JSON.stringify(patch));
         assert.equal(report.localizacoesVinculadas, 0);
-        assert.equal(db.counts().transactions, 0);
+        assert.equal(db.counts().writes, 0);
     }
 });
 
@@ -290,6 +298,6 @@ test("details validates the entire list before any write", async () => {
         const report = await run(db, modes[1], { apply: true, source: [{ ...sourceItem, detalhes }] });
         assert.equal(report.erros.length, 1);
         assert.equal(report.detalhesVinculados, 0);
-        assert.equal(db.counts().transactions, 0);
+        assert.equal(db.counts().writes, 0);
     }
 });

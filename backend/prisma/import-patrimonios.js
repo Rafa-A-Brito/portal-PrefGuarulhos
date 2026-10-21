@@ -17,31 +17,9 @@ const SOURCE_DIR = fileURLToPath(new URL("../src/uploads/patrimonios/", import.m
 
 // Equivalências explícitas: slug da fonte -> slug legado já cadastrado.
 // Só ignora quando o destino existe; nunca renomeia nem altera o registro legado.
-export const LEGACY_SLUG_ALIASES = new Map([
-    ["centro-municipal-de-educacao-adamastor", "antiga-fabrica-adamastor"],
-    [
-        "antiga-igreja-matriz-colonial-de-n-sra-da-conceicao-demolida",
-        "antiga-igreja-matriz-colonial-de-nossa-senhora-da-conceicao",
-    ],
-    ["parque-bosque-maia", "bosque-maia"],
-    ["casarao-da-familia-albertis-demolido-em-2023", "casarao-da-familia-albertis"],
-    ["casarao-lima-demolido-em-2026", "casarao-lima"],
-    ["casarao-saraceni-demolido-em-2010", "casarao-saraceni"],
-    ["e-e-capistrano-de-abreu", "escola-estadual-capistrano-de-abreu"],
-    ["e-e-conselheiro-crispiniano", "escola-estadual-conselheiro-crispiniano"],
-    ["estacao-ferroviaria-de-guarulhos", "estacao-ferroviaria-central-de-guarulhos"],
-    [
-        "igreja-de-nossa-senhora-de-bonsucesso",
-        "igreja-de-nossa-senhora-de-bonsucesso-e-nucleo-historico",
-    ],
-    [
-        "igreja-de-n-sra-do-rosario-dos-homens-pretos",
-        "igreja-de-nossa-senhora-do-rosario-dos-homens-pretos",
-    ],
-    ["locomotiva-maria-fumaca-n-33-e-vagao", "locomotiva-maria-fumaca-n-33-vagao-e-caixa-d-agua"],
-    ["reserva-e-represa-do-cabucu", "represa-do-cabucu"],
-    ["complexo-sanatorio-padre-bento", "sanatorio-padre-bento"],
-]);
+import { LEGACY_SLUG_ALIASES, candidatosDaFonte, vincularFonte, chaveDaFonte } from "./identidade-carga.js";
+import { hashEstado, ordenarRelacoes } from "../src/utils/estadoHash.js";
+export { LEGACY_SLUG_ALIASES } from "./identidade-carga.js";
 
 export const normalizarNome = (text) =>
     String(text)
@@ -92,12 +70,13 @@ export function parseArgs(args) {
         const value = parts.join("=");
 
         if (
-            ["--apply", "--dry-run", "--json", "--sync-patrimonios", "--backfill-images", "--backfill-location", "--backfill-details"].includes(key) &&
+            ["--apply", "--dry-run", "--json", "--sync-patrimonios", "--consolidate-legacy", "--backfill-images", "--backfill-location", "--backfill-details"].includes(key) &&
             !parts.length
         ) {
             if (key === "--apply") options.apply = true;
             if (key === "--json") options.json = true;
             if (key === "--sync-patrimonios") options.syncPatrimonios = true;
+            if (key === "--consolidate-legacy") options.consolidateLegacy = true;
             if (key === "--backfill-location") options.backfillLocation = true;
             if (key === "--backfill-details") options.backfillDetails = true;
             if (key === "--backfill-images") {
@@ -133,9 +112,10 @@ export function parseArgs(args) {
     }
 
     validarModosBackfill(options);
+    if (options.consolidateLegacy && !options.syncPatrimonios) throw new Error("--consolidate-legacy exige --sync-patrimonios.");
     if (options.syncPatrimonios && seen.has("--status")) throw new Error("Sync preserva status; não aceita --status.");
-    if (options.expectedStateHash && (!options.syncPatrimonios || !/^[a-f0-9]{64}$/.test(options.expectedStateHash))) {
-        throw new Error("--expected-state-hash exige --sync-patrimonios e um SHA-256 válido.");
+    if (options.expectedStateHash && (!/^[a-f0-9]{64}$/.test(options.expectedStateHash))) {
+        throw new Error("--expected-state-hash exige SHA-256 válido.");
     }
 
     return options;
@@ -198,7 +178,7 @@ export async function validarImagem(nome, sourceDir, destinationDir, io) {
     };
 }
 
-export async function importPatrimonios({
+async function executarImportacaoLegada({
     prisma,
     databaseUrl,
     options = parseArgs([]),
@@ -309,21 +289,7 @@ export async function importPatrimonios({
 
     const names = new Set(existing.map((item) => normalizarNome(item.nome)));
 
-    const bySlug = new Map(existing.map((item) => [item.slug, item]));
-
-    const byNormalizedName = new Map();
-
-    for (const item of existing) {
-        const key = normalizarNome(item.nome);
-
-        if (!byNormalizedName.has(key)) {
-            byNormalizedName.set(key, item);
-        } else {
-            byNormalizedName.set(key, null);
-        }
-    }
-
-    const sourceNames = new Map();
+const sourceNames = new Map();
 
     for (const item of source) {
         const key = normalizarNome(item.nome);
@@ -347,6 +313,10 @@ export async function importPatrimonios({
         };
 
         report.itens.push(row);
+        if (candidatosDaFonte(item, existing).length > 1) {
+            report.conflitos.push({ slug, motivo: "Identidade ambígua entre slug e alias." });
+            row.acao = "CONFLITO"; continue;
+        }
 
         // Novos modos escrevem somente nas relações; nem updatedAt do patrimônio é alterado.
         if (options.backfillLocation || options.backfillDetails) {
@@ -363,10 +333,7 @@ export async function importPatrimonios({
             report[analyzed]++;
 
             const patrimonio =
-                bySlug.get(slug) ||
-                (legacySlug ? bySlug.get(legacySlug) : null) ||
-                byNormalizedName.get(normalized) ||
-                null;
+                candidatosDaFonte(item, existing)[0] || null;
 
             if (!patrimonio) {
                 report.conflitos.push({
@@ -490,10 +457,7 @@ export async function importPatrimonios({
             report.analisados++;
 
             const patrimonio =
-                bySlug.get(slug) ||
-                (legacySlug ? bySlug.get(legacySlug) : null) ||
-                byNormalizedName.get(normalized) ||
-                null;
+                candidatosDaFonte(item, existing)[0] || null;
 
             if (!patrimonio) {
                 report.conflitos.push({
@@ -653,7 +617,7 @@ export async function importPatrimonios({
         // ===========================
         // IMPORTAÇÃO NORMAL
         // ===========================
-        if (slugs.has(slug) || slugs.has(legacySlug)) {
+        if (candidatosDaFonte(item, existing).length) {
             report.existentes++;
             report.ignorar++;
             row.acao = "IGNORAR";
@@ -845,7 +809,7 @@ export async function importPatrimonios({
 
                 const { localizacao: local, ...fields } = data;
 
-                await tx.patrimonio.create({
+                const created = await tx.patrimonio.create({
                     data: {
                         ...fields,
                         slug,
@@ -880,6 +844,8 @@ export async function importPatrimonios({
                         }),
                     },
                 });
+                await tx.auditLog.create({ data: { userId: author.id, action: "INITIAL_LOAD_BINDING", entity: "Patrimonio",
+                    entityId: created.id, newValues: { sourceKey: chaveDaFonte(item), tipo: "importador", criado: true } } });
             });
 
             owned = null;
@@ -921,6 +887,74 @@ export async function importPatrimonios({
     }
 
     return report;
+}
+
+// O lote inteiro é revisado e aplicado na mesma transação; nenhum commit por item.
+export async function importPatrimonios(args) {
+    const { prisma, databaseUrl, options = parseArgs([]), source = PATRIMONIOS_SEED, io = fs } = args;
+    if (options.syncPatrimonios) {
+        const { syncPatrimonios } = await import("./sync-patrimonios.js");
+        return syncPatrimonios({ sourceDir: SOURCE_DIR, uploadDir: UPLOAD_DIR, ...args, options, source, io });
+    }
+    validarModosBackfill(options);
+    const target = databaseIdentity(databaseUrl), owned = [];
+    if (options.apply && (options.confirmDb !== target.database || !options.createdByEmail)) throw new Error("Confirmação do banco/autor ausente ou divergente.");
+    const reads = new Map();
+    const reviewedIo = { ...io,
+        readFile: async (...params) => { const value = await io.readFile(...params); reads.set(String(params[0]), hash(value)); return value; },
+        copyFile: async (from, to, flags) => {
+            await io.copyFile(from, to, flags);
+            const stat = await io.lstat(to);
+            owned.push({ path: to, stat, digest: hash(await io.readFile(to)) });
+        },
+    };
+    try {
+        return await prisma.$transaction(async tx => {
+            if (!options.apply) await tx.$executeRawUnsafe("SET TRANSACTION READ ONLY");
+            const [{ banco }] = await tx.$queryRawUnsafe("SELECT current_database() AS banco");
+            if (banco !== target.database) throw new Error("Banco conectado diverge da URL.");
+            if (options.apply) {
+                if (options.confirmDb !== target.database || !options.createdByEmail) throw new Error("Confirmação do banco/autor ausente ou divergente.");
+                await tx.$queryRawUnsafe("SELECT pg_advisory_xact_lock(6062026)::text");
+                await tx.$queryRawUnsafe("SELECT id FROM patrimonio ORDER BY id FOR UPDATE");
+                await tx.$queryRawUnsafe("SELECT id FROM users ORDER BY id FOR UPDATE");
+            }
+            const author = options.createdByEmail ? await tx.user.findUnique({ where: { email: options.createdByEmail.toLowerCase() } }) : null;
+            if ((options.apply || options.createdByEmail) && (!author?.isActive || !["ADMIN", "EDITOR"].includes(author.role))) throw new Error("Autor deve ser usuário existente ativo ADMIN ou EDITOR.");
+            if (options.status === "PUBLICADO" && author?.role !== "ADMIN") throw new Error("Somente ADMIN pode publicar mediante --status=PUBLICADO.");
+            const { SYNC_INCLUDE } = await import("./sync-patrimonios.js");
+            const state = await tx.patrimonio.findMany({ include: SYNC_INCLUDE, orderBy: { id: "asc" } });
+            const categories = await tx.categoria.findMany({ orderBy: { id: "asc" } });
+            const bindings = await tx.auditLog.findMany({ where: { action: "INITIAL_LOAD_BINDING" }, orderBy: { id: "asc" } });
+            const boundSource = vincularFonte(source, bindings);
+            const facade = { ...tx, $transaction: async callback => callback(tx) };
+            const report = await executarImportacaoLegada({ ...args, prisma: facade, options: { ...options, apply: false }, source: boundSource, io: reviewedIo });
+            if (boundSource.some(item => item.bindingIds.some(id => !state.some(row => row.id === id)))) report.conflitos.push({ motivo: "VINCULO_ORIGEM_REMOVIDO" });
+            report.modo = options.apply ? "apply" : "dry-run";
+            report.estado_hash = hashEstado({ target, source, bindings: ordenarRelacoes(bindings), state: ordenarRelacoes(state), categories: ordenarRelacoes(categories),
+                author: author && { id: author.id, role: author.role, isActive: author.isActive },
+                status: options.status, mode: [options.backfillImages, options.backfillLocation, options.backfillDetails].map(Boolean), reads: [...reads].sort() });
+            if (!options.apply) return report;
+            if (!/^[a-f0-9]{64}$/.test(options.expectedStateHash || "")) throw new Error("Apply exige --expected-state-hash revisado.");
+            if (report.estado_hash !== options.expectedStateHash) report.conflitos.push({ motivo: "ESTADO_DESATUALIZADO" });
+            if (report.conflitos.length || report.erros.length) return report;
+            const applied = await executarImportacaoLegada({ ...args, prisma: facade, options, source: boundSource, io: reviewedIo });
+            if (applied.erros.length || applied.conflitos.length) throw Object.assign(new Error("Lote revertido integralmente após falha de aplicação."), { report: applied });
+            return { ...applied, estado_hash: report.estado_hash };
+        }, { isolationLevel: options.apply ? "Serializable" : "RepeatableRead", timeout: 120000, maxWait: 10000 });
+    } catch (error) {
+        if (owned.length) await prisma.$transaction(async tx => {
+            await tx.$queryRawUnsafe("SELECT pg_advisory_xact_lock(6062026)::text");
+            for (const file of owned) {
+                try {
+                    if (await tx.patrimonioImagem.count({ where: { url: "/uploads/patrimonios/" + path.basename(file.path) } })) continue;
+                    const stat = await io.lstat(file.path);
+                    if (stat.dev === file.stat.dev && stat.ino === file.stat.ino && hash(await io.readFile(file.path)) === file.digest) await io.unlink(file.path);
+                } catch (cleanup) { if (cleanup.code !== "ENOENT") console.error("Pendência de compensação do importador.", { code: cleanup.code, caminho: file.path }); }
+            }
+        }).catch(cleanup => console.error("Falha na compensação do importador.", { code: cleanup.code }));
+        throw error;
+    }
 }
 
 async function main() {

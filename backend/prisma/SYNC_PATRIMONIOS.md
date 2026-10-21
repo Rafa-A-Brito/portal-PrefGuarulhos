@@ -1,3 +1,5 @@
+> Atualização operacional: apply exige o hash do dry-run. Consolidação/arquivamento de legados exige --consolidate-legacy explícito em ambos os comandos e revisão própria. Veja [o procedimento vigente](../docs/AUTENTICACAO_E_CARGAS.md). Os resultados datados abaixo são históricos.
+
 # Saneamento e sincronização de patrimônios
 
 A fonte canônica é patrimonioSeedData.js: 34 patrimônios, com textos, localizações, detalhes e imagens locais. SiteHero e o schema não foram alterados. Não há migration nova.
@@ -15,13 +17,13 @@ O modo sync é exclusivo: não pode ser combinado com backfills nem com --status
 
 O dry-run usa transação PostgreSQL READ ONLY, snapshot RepeatableRead e verifica current_database(). Não escreve arquivos de upload nem registros. O JSON exibe cada campo, seu valor atual e seu valor proposto, além das relações a incorporar e duplicados a arquivar. Autor é opcional no dry-run; se informado, deve ser ADMIN/EDITOR ativo.
 
-O sync exige registros canônicos existentes. Procura a união dos candidatos por slug da fonte, alias legado e nome normalizado. Ausência ou ambiguidade bloqueia o lote; ele nunca cria um terceiro patrimônio para resolver identidade duvidosa.
+O sync exige registros canônicos existentes. Procura a união dos candidatos por slug da fonte, aliases estáveis auditados; nome isolado não prova identidade. Ausência ou ambiguidade bloqueia o lote; ele nunca cria um terceiro patrimônio para resolver identidade duvidosa.
 
 Após revisão humana do diff e backup externo, o comando de apply futuro é:
 
 ~~~powershell
 pg_dump -U postgres -h localhost -p 5432 -Fc patrimonio_guarulhos -f patrimonio_guarulhos_pre_sync_final.dump
-node prisma/import-patrimonios.js --sync-patrimonios --apply --confirm-db=patrimonio_guarulhos --created-by-email=EMAIL_DO_RESPONSAVEL
+node prisma/import-patrimonios.js --sync-patrimonios --apply --confirm-db=patrimonio_guarulhos --created-by-email=EMAIL_DO_RESPONSAVEL --expected-state-hash=HASH_REVISADO
 ~~~
 
 Esse comando não foi executado no banco real nesta entrega. O backup e a revisão são pré-condições operacionais, não automatizadas pelo script.

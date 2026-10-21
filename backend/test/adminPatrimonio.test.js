@@ -19,8 +19,8 @@ after(async () => {
     await new Promise((resolve) => server.close(resolve));
     await prisma.$disconnect();
 });
-const admin = { id: randomUUID(), role: "ADMIN", isActive: true };
-const editor = { id: randomUUID(), role: "EDITOR", isActive: true };
+const admin = { id: randomUUID(), role: "ADMIN", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
+const editor = { id: randomUUID(), role: "EDITOR", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
 function stub(t, target, method, implementation) {
     const original = target[method];
     target[method] = implementation;
@@ -82,7 +82,7 @@ async function request(path, { user, method = "GET", body } = {}) {
     const response = await fetch(`${base}${path}`, {
         method,
         headers: {
-            ...(user && { authorization: `Bearer ${generateToken(user.id)}` }),
+            ...(user && { authorization: `Bearer ${generateToken(user.id, 0, user.id)}` }),
             ...(body !== undefined && { "content-type": "application/json" }),
         },
         ...(body !== undefined && { body: JSON.stringify(body) }),

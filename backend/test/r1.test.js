@@ -4,6 +4,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { createPatrimonioSchema, updatePatrimonioSchema } from "../src/schemas/patrimonioSchema.js";
 
+process.env.DATABASE_URL = "postgresql://unused:unused@127.0.0.1:1/r1_test";
+process.env.JWT_SECRET = "r1-regression-fixture-with-at-least-32-characters";
+
 test("R1: PATCH geral rejeita fatos/ligacoes e campos adiados, inclusive arrays vazios", async () => {
     const service = await import("../src/services/patrimonioService.js");
     for (const field of ["fatos", "ligacoes", "secoes", "numeroExibicao", "ordemExibicao"]) {
@@ -31,8 +34,10 @@ test("R1: fonte C2 e migrations aplicadas permanecem preservadas; trilhas nao co
         "20261005004508_categorias_adicionais", "20261006014922_adicionar_detalhes_e_heroes",
         "20261006180000_exposicoes_novidades", "20261014010000_add_fatos_ligacoes",
         "20261016120000_add_regioes_numero_ordem",
+        "20261020190000_add_user_token_version",
+        "20261021130000_add_auth_sessions",
     ]);
-    assert.equal(team.length, 8);
+    assert.equal(team.length, 11);
     assert.equal(team.includes("20261014010000_add_fatos_ligacoes"), false);
     const schema = readFileSync(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
     for (const name of ["PatrimonioFato", "PatrimonioLigacao"]) assert.equal(schema.match(new RegExp("model " + name + " ", "g")).length, 1);

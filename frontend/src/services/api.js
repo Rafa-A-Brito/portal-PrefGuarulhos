@@ -1,90 +1,96 @@
 import axios from "axios";
 import { CHAVE_SESSAO_MOCK } from "../context/authConstants.js";
 
-/**
- * Instância central do axios, usada por toda chamada de rede do front.
- *
- * Em desenvolvimento local (rodando com npm run dev, sem Docker), o
- * backend Express fica em http://localhost:3333, e TODAS as rotas dele
- * vivem sob o prefixo /api (backend/src/app.js: app.use("/api", routes)).
- * Por isso o padrão abaixo já inclui o /api — sem ele, qualquer chamada
- * cai 404. Dentro do Docker Compose, o build do frontend recebe
- * VITE_API_BASE_URL=/api (veja frontend/Dockerfile), e o Nginx que serve
- * os arquivos estáticos encaminha esse /api para o container do backend
- * (veja frontend/nginx.conf). Assim o navegador nunca precisa saber o
- * hostname interno do backend, e não existe problema de CORS.
- */
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3333/api",
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
+export function lerSessao() {
+  try { return JSON.parse(sessionStorage.getItem(CHAVE_SESSAO_MOCK) || "null"); }
+  catch { return null; }
+}
+export const tokenDaSessao = () => lerSessao()?.token || null;
+const mesmaSessao = (a, b) => (a?.sessionId || b?.sessionId)
+  ? !!a?.sessionId && a.sessionId === b?.sessionId
+  : !!a?.token && a.token === b?.token;
+const rotaDeAutenticacao = url => /(?:^|\/)auth\/(?:login|refresh|logout)(?:\?|$)/.test(url || "");
+let renovacao = null;
 
-/**
- * O backend autentica por JWT Bearer (backend/src/middlewares/authenticate.js
- * lê o header Authorization e confere o token — não existe cookie de sessão
- * nem rota /auth/me). Por isso a sessão fica guardada inteira (token + dados
- * do usuário) no sessionStorage pelo AuthContext, e aqui a gente só lê esse
- * token pra anexar em toda requisição, se existir.
- *
- * Isso é um Bearer token comum em sessionStorage, então herda a limitação
- * de sempre: um XSS no front consegue ler esse storage e roubar o token.
- * Não tem como evitar isso sem o backend passar a emitir cookie HttpOnly
- * (o que ele não faz hoje — ver o aviso em context/AuthContext.jsx).
- */
-api.interceptors.request.use((config) => {
-  try {
-    const bruto = sessionStorage.getItem(CHAVE_SESSAO_MOCK);
-    const sessao = bruto ? JSON.parse(bruto) : null;
-
-    if (sessao?.token) {
-      config.headers.Authorization = `Bearer ${sessao.token}`;
-    }
-  } catch {
-    // sessionStorage bloqueado ou JSON corrompido: segue sem o header,
-    // o backend vai tratar isso como requisição sem login (401).
+export function encerrarSessao(snapshot, motivo = "expirou") {
+  const atual = lerSessao();
+  if (!mesmaSessao(snapshot, atual)) return false;
+  sessionStorage.removeItem(CHAVE_SESSAO_MOCK);
+  window.dispatchEvent?.(new Event("auth:session-ended"));
+  if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
+    window.location.assign("/admin/login?" + motivo + "=1");
   }
+  return true;
+}
 
+async function renovar(snapshot) {
+  if (renovacao && mesmaSessao(renovacao.snapshot, snapshot)) return renovacao.promise;
+  if (snapshot.renewalUncertain) {
+    const error = new Error("Não foi possível confirmar a renovação.");
+    error.code = "AUTH_REFRESH_UNCERTAIN";
+    throw error;
+  }
+  const pendente = { snapshot };
+  pendente.promise = (async () => {
+    try {
+      const response = await api.post("/auth/refresh", { refreshToken: snapshot.refreshToken }, { semCredenciais: true });
+      const atual = lerSessao();
+      if (!mesmaSessao(snapshot, atual) || atual.refreshToken !== snapshot.refreshToken) throw new Error("Sessão substituída durante a renovação.");
+      const data = response.data.data;
+      if (!data?.token || !data.refreshToken || !Number.isFinite(Date.parse(data.sessionExpiresAt))) throw new Error("Resposta de renovação inválida.");
+      const next = { ...atual, token: data.token, refreshToken: data.refreshToken, sessionExpiresAt: data.sessionExpiresAt };
+      sessionStorage.setItem(CHAVE_SESSAO_MOCK, JSON.stringify(next));
+      window.dispatchEvent(new Event("auth:session-updated"));
+      return next;
+    } catch (error) {
+      const atual = lerSessao();
+      if (mesmaSessao(snapshot, atual) && snapshot.refreshToken === atual.refreshToken) {
+        if ([400, 401, 403].includes(error.response?.status)) {
+          error.sessaoTratada = true;
+          encerrarSessao(snapshot);
+        } else {
+          // Não reenviar uma credencial cuja rotação pode ter sido confirmada.
+          sessionStorage.setItem(CHAVE_SESSAO_MOCK, JSON.stringify({ ...atual, renewalUncertain: true }));
+        }
+      } else { error.sessaoTratada = true; }
+      throw error;
+    } finally { if (renovacao === pendente) renovacao = null; }
+  })();
+  renovacao = pendente;
+  return pendente.promise;
+}
+
+api.interceptors.request.use(config => {
+  const sessao = lerSessao();
+  if (!config.semCredenciais && sessao?.token) config.headers.Authorization = `Bearer ${sessao.token}`;
+  if (config.semCredenciais) delete config.headers.Authorization;
+  config.tokenDaRequisicao = config.semCredenciais ? null : sessao?.token || null;
+  config.idDaSessao = config.semCredenciais ? null : sessao?.sessionId || null;
   return config;
 });
 
-// Tratamento global de erros nas respostas.
-//
-// 401 em rota autenticada = token expirado (JWT_TTL_SECONDS, 15 min por padrão)
-// ou conta desativada. Não existe refresh token, então a sessão local é
-// descartada e a pessoa volta para o login. O próprio POST /auth/login também
-// responde 401 (senha errada): esse caso NÃO é sessão expirada, é tratado pelo
-// AuthContext.
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error.response?.status;
-    const ehLogin = error.config?.url?.includes("/auth/login");
-
-    if (status === 401 && !ehLogin) {
-      try {
-        if (sessionStorage.getItem(CHAVE_SESSAO_MOCK)) {
-          sessionStorage.removeItem(CHAVE_SESSAO_MOCK);
-
-          if (
-            window.location.pathname.startsWith("/admin") &&
-            window.location.pathname !== "/admin/login"
-          ) {
-            window.location.assign("/admin/login?expirou=1");
-          }
-        }
-      } catch {
-        // storage bloqueado: nada a limpar.
-      }
-    }
-
-    if (import.meta.env.DEV) {
-      console.error("[API Error]:", error.response?.data || error.message);
-    }
-    return Promise.reject(error);
-  },
-);
-
+api.interceptors.response.use(response => response, async error => {
+  const config = error.config;
+  if (error.response?.status !== 401 || rotaDeAutenticacao(config?.url)) return Promise.reject(error);
+  const atual = lerSessao();
+  const snapshot = { sessionId: config?.idDaSessao, token: config?.tokenDaRequisicao };
+  if (snapshot.token) error.sessaoTratada = true;
+  if (!mesmaSessao(snapshot, atual)) return Promise.reject(error);
+  if (error.response.data?.error?.code === "ACCESS_TOKEN_EXPIRED" && !config.repetidaAposRenovacao && atual.refreshToken) {
+    if (Date.parse(atual.sessionExpiresAt) <= Date.now()) { encerrarSessao(atual); return Promise.reject(error); }
+    const next = atual.token !== snapshot.token ? atual : await renovar(atual);
+    if (!mesmaSessao(next, lerSessao())) return Promise.reject(error);
+    // A API garante rejeição na autenticação, antes de qualquer efeito de negócio.
+    config.repetidaAposRenovacao = true;
+    return api.request(config);
+  }
+  // Um 401 antigo não encerra credenciais que já foram renovadas.
+  if (atual.token === snapshot.token) encerrarSessao(atual);
+  return Promise.reject(error);
+});
 export default api;
