@@ -5,16 +5,9 @@
    apagar o bloco correspondente.
    ========================================================= */
 
-/* ---------- 1) Barra lateral: hover em azul-escuro translúcido ----------
-   A lateral é navy (admin.css), então um navy translúcido não apareceria.
-   O hover usa o --indigo (azul escurecido da marca, 43, 127, 179) com 38% de
-   opacidade: dá um azul-escuro visível sobre o navy e continua diferente do
-   item ativo (--blue sólido). Para mais ou menos destaque, mude só o último
-   número do rgba. */
-.admin-sidebar-nav a:hover:not(.active) {
-  background: rgba(43, 127, 179, 0.38);
-  color: #fff;
-}
+/* ---------- 1) Barra lateral ----------
+   O hover da lateral agora é definido por grupo no admin.css (cor de cada
+   grupo da paleta); o bloco antigo foi removido para não sobrescrevê-lo. */
 
 /* ---------- 2) Ícones do dashboard: uma cor por tipo ---------- */
 .admin-dashboard-icon--usuarios {

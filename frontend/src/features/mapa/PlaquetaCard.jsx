@@ -38,7 +38,7 @@ export default function PlaquetaCard({ item }) {
           {politica.aviso || item.bairro}
         </div>
         {politica.exibirEndereco && item.cep && (
-          <span className="cep">CEP {item.cep}</span>
+          <span className="cep">{item.cep}</span>
         )}
         <p className="resumo">{item.resumo}</p>
         <Link

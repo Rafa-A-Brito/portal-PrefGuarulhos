@@ -20,13 +20,18 @@
   --admin-radius-md: 14px; /* cards, tabelas, listas */
   --admin-radius-lg: 16px; /* formulários e seções grandes */
   --admin-ring: 0 0 0 3px rgba(62, 163, 220, 0.3);
-  --admin-shadow-soft: 0 1px 2px rgba(43, 37, 92, 0.05), 0 6px 18px rgba(43, 37, 92, 0.06);
+  --admin-shadow-soft:
+    0 1px 2px rgba(43, 37, 92, 0.05), 0 6px 18px rgba(43, 37, 92, 0.06);
   display: flex;
   min-height: 100vh;
   background: var(--paper);
 }
 
-/* ---------- Barra lateral ---------- */
+/* ---------- Barra lateral ----------
+   Estrutura: marca → grupos de links (cada grupo com uma cor da paleta) →
+   rodapé (cartão do usuário + ações). A cor do grupo vem de duas variáveis:
+   --grp-icon (ícone e bolinha do rótulo, sobre o navy) e --grp-bg/--grp-fg
+   (fundo e texto do item ativo, escolhidos para ter contraste legível). */
 
 .admin-sidebar {
   width: 240px;
@@ -35,11 +40,11 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  padding: 20px 16px;
+  padding: 20px 14px 16px;
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow-y: auto; /* telas baixas: o menu rola em vez de cortar Exposições/Sair */
+  overflow-y: auto; /* telas baixas: o menu rola em vez de cortar itens */
   overscroll-behavior: contain;
 }
 
@@ -49,42 +54,120 @@
   gap: 10px;
   font-weight: 700;
   font-size: 15px;
-  padding: 0 8px 20px;
-  margin-bottom: 12px;
+  padding: 0 10px 18px;
+  margin-bottom: 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.admin-sidebar-brand svg {
+  color: var(--yellow);
+  flex: none;
 }
 
 .admin-sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   flex: 1;
 }
 
+/* ----- Grupos ----- */
+.admin-sidebar-group {
+  --grp-icon: var(--blue);
+  --grp-bg: var(--blue);
+  --grp-fg: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sidebar-group + .admin-sidebar-group {
+  margin-top: 18px;
+}
+
+.admin-sidebar-group--visao {
+  --grp-icon: var(--blue);
+  --grp-bg: var(--blue);
+  --grp-fg: #fff;
+}
+
+.admin-sidebar-group--acervo {
+  --grp-icon: #4ccc72; /* --green clareado p/ ler sobre o navy */
+  --grp-bg: var(--accent-dark);
+  --grp-fg: #fff;
+}
+
+.admin-sidebar-group--conteudo {
+  --grp-icon: var(--orange);
+  --grp-bg: var(--orange);
+  --grp-fg: var(--navy);
+}
+
+.admin-sidebar-group--gestao {
+  --grp-icon: var(--olive);
+  --grp-bg: var(--olive);
+  --grp-fg: var(--navy);
+}
+
+.admin-sidebar-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 12px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.admin-sidebar-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--grp-icon);
+  flex: none;
+}
+
+/* ----- Links ----- */
 .admin-sidebar-nav a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  min-height: 38px;
+  padding: 8px 12px;
   border-radius: var(--admin-radius-sm);
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
+  line-height: 1.2;
   transition:
     background 0.15s ease,
     color 0.15s ease;
 }
 
-.admin-sidebar-nav a:hover {
-  background: rgba(255, 255, 255, 0.08);
+.admin-sidebar-nav a svg {
+  flex: none;
+  color: var(--grp-icon);
+  transition: color 0.15s ease;
+}
+
+.admin-sidebar-nav a:hover:not(.active) {
+  background: color-mix(in srgb, var(--grp-icon) 22%, transparent);
   color: #fff;
 }
 
 .admin-sidebar-nav a.active {
-  background: var(--blue);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  background: var(--grp-bg);
+  color: var(--grp-fg);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-sidebar-nav a.active svg {
+  color: currentColor;
 }
 
 .admin-sidebar-nav a:focus-visible,
@@ -93,27 +176,85 @@
   outline-offset: 2px;
 }
 
+/* ----- Rodapé ----- */
 .admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding-top: 16px;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .admin-sidebar-usuario {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--admin-radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-sidebar-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.admin-sidebar-usuario-info {
+  display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 0 8px 12px;
+  min-width: 0;
 }
 
 .admin-sidebar-usuario strong {
   font-size: 13px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.admin-sidebar-usuario span {
+.admin-sidebar-usuario-email {
   font-size: 11.5px;
   color: rgba(255, 255, 255, 0.6);
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mesma lógica dos selos da tabela: administrador = azul, editor = laranja */
+.admin-sidebar-perfil {
+  align-self: flex-start;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(62, 163, 220, 0.25);
+  color: #cfeafa;
+}
+
+.admin-sidebar-perfil[data-perfil="EDITOR"] {
+  background: rgba(250, 183, 72, 0.22);
+  color: var(--yellow);
+}
+
+.admin-sidebar-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .admin-sidebar-sair {
@@ -121,19 +262,39 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  min-height: 38px;
+  padding: 8px 12px;
   border-radius: var(--admin-radius-sm);
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: 13.5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .admin-sidebar-sair:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+/* "Sair" é a única ação que encerra a sessão: ganha preenchimento */
+button.admin-sidebar-sair {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+  color: #fff;
+}
+
+button.admin-sidebar-sair:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 /* ---------- Conteúdo ---------- */
@@ -383,7 +544,10 @@
   accent-color: var(--navy);
 }
 
-.admin-form input:not([type="checkbox"], [type="radio"], [type="file"]):hover:not(:disabled),
+.admin-form
+  input:not([type="checkbox"], [type="radio"], [type="file"]):hover:not(
+    :disabled
+  ),
 .admin-form select:hover:not(:disabled),
 .admin-form textarea:hover:not(:disabled) {
   border-color: #c3c8d2;
@@ -543,18 +707,18 @@
 }
 
 /* ---------- Mobile: menu vira barra compacta no topo ----------
-   Linha 1 = marca e "Sair"; abaixo, os links quebram em linhas (nada fica
-   escondido atrás de rolagem horizontal). Nome/e-mail do usuário só no
-   desktop. */
+   Marca no topo, links quebrando em linhas (grupos "dissolvem": os rótulos
+   somem e os links fluem juntos) e, por último, as ações do rodapé.
+   O cartão do usuário só aparece no desktop. */
 @media (max-width: 720px) {
   .admin-sidebar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "marca sair"
-      "menu menu";
-    align-items: center;
-    gap: 10px 12px;
+      "marca"
+      "menu"
+      "rodape";
+    gap: 10px;
     width: 100%;
     height: auto;
     padding: 10px 12px 12px;
@@ -569,20 +733,6 @@
     border: 0;
   }
 
-  .admin-sidebar-footer {
-    display: contents; /* o botão "Sair" entra direto na grade */
-  }
-
-  .admin-sidebar-usuario {
-    display: none;
-  }
-
-  .admin-sidebar-sair {
-    grid-area: sair;
-    width: auto;
-    padding: 8px 12px;
-  }
-
   .admin-sidebar-nav {
     grid-area: menu;
     flex: none;
@@ -591,12 +741,46 @@
     gap: 6px;
   }
 
+  .admin-sidebar-group {
+    display: contents;
+  }
+
+  .admin-sidebar-group + .admin-sidebar-group {
+    margin-top: 0;
+  }
+
+  .admin-sidebar-label {
+    display: none;
+  }
+
   .admin-sidebar-nav a {
     flex: 1 1 auto;
     justify-content: center;
     padding: 9px 10px;
     font-size: 13px;
     white-space: nowrap;
+  }
+
+  .admin-sidebar-footer {
+    grid-area: rodape;
+    margin: 0;
+    padding-top: 10px;
+  }
+
+  .admin-sidebar-usuario {
+    display: none;
+  }
+
+  .admin-sidebar-acoes {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-sidebar-sair {
+    flex: 1 1 auto;
+    width: auto;
+    justify-content: center;
+    padding: 8px 12px;
   }
 
   .admin-content {
