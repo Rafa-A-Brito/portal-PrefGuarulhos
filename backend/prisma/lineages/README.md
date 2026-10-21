@@ -49,6 +49,10 @@ exclusivos `portal_r1_*_test`, valida replay/upgrade e executa os testes. Nao co
 ao banco da aplicacao, nao executa seed e remove somente os bancos que ele criou.
 Logs e resultados ficam em `.cache/r1`, ignorada pelo Git.
 
+## Revogação de sessões — 20/10/2026
+
+As duas trilhas receberam somente a migration aditiva `20261020190000_add_user_token_version`. Nenhuma migration histórica foi editada. O replay das duas trilhas foi testado em PostgreSQL descartável. Implantação exige Prisma Client atualizado e novo login de todas as sessões anteriores; ver `../../docs/AUTENTICACAO_E_CARGAS.md`.
+
 ## Compatibilidade atual da trilha da equipe
 
 A migration adicional `20261021120000_add_current_region_relation` cria somente

@@ -36,7 +36,7 @@ function stub(t, target, method, implementation) {
 beforeEach(t => {
     documentos = []; role = "ADMIN"; failCreate = false; failDelete = false; writes = [];
     patrimonio = { id, status: "RASCUNHO", descricaoResumida: "Resumo manual preservado.", documentos, categoriasAdicionais: [] };
-    stub(t, prisma.user, "findUnique", async () => ({ id: userId, role, isActive: true }));
+    stub(t, prisma.user, "findUnique", async () => ({ id: userId, role, authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true }));
     stub(t, prisma.patrimonio, "findUnique", async ({ where }) => where.id === id ? patrimonio : null);
     stub(t, prisma.patrimonioDocumento, "findMany", async ({ where }) => {
         const registro = documentos.find((documento) => documento.url === where.url);
@@ -66,7 +66,7 @@ beforeEach(t => {
         } catch (error) { documentos.splice(0, documentos.length, ...snapshot); throw error; }
     });
 });
-const headers = () => ({ authorization: `Bearer ${generateToken(userId)}` });
+const headers = () => ({ authorization: `Bearer ${generateToken(userId, 0, userId)}` });
 const route = pid => `${base}/api/admin/patrimonios/${pid}/referencias`;
 const link = (data = { url: "https://example.org/fonte", descricao: "Fonte editorial" }, pid = id) => fetch(route(pid), { method: "POST", headers: { ...headers(), "Content-Type": "application/json" }, body: JSON.stringify(data) });
 function form(ext = "txt", mime = "text/plain", contents = "Texto de referência", extra = {}) {

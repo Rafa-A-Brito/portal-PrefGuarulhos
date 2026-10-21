@@ -1,3 +1,4 @@
+import { createFixtureSession } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
@@ -44,8 +45,9 @@ test(
                     passwordHash: await hashPassword(senhaAtual),
                 },
             });
+        await createFixtureSession(prisma, user);
             assert.equal((await login(senhaAtual)).status, 200);
-            const token = generateToken(user.id);
+            const token = generateToken(user.id, user.tokenVersion, user.id);
             const response = await fetch(`${base}/auth/senha`, {
                 method: "PATCH",
                 headers: {

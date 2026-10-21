@@ -27,6 +27,7 @@ import AdminPatrimonios from "./features/admin/pages/AdminPatrimonios";
 import AdminRegioes from "./features/admin/pages/AdminRegioes";
 import AdminExposicoes from "./features/admin/pages/AdminExposicoes";
 import AdminNovidades from "./features/admin/pages/AdminNovidades";
+import AdminSenha from "./features/admin/pages/AdminSenha";
 import ConhecaMaisDetalhes from "./pages/ConheceMaisDetalhes/ConhecaMaisDetalhes";
 
 // Tempo mínimo de cada etapa da transição, só para a tela não "piscar" quando
@@ -191,6 +192,7 @@ function AppRoutes() {
           <Route path="/admin/patrimonios" element={<AdminPatrimonios />} />
           <Route path="/admin/exposicoes" element={<AdminExposicoes />} />
           <Route path="/admin/novidades" element={<AdminNovidades />} />
+          <Route path="/admin/senha" element={<AdminSenha />} />
 
           <Route element={<RotaProtegida permissoes={["ADMIN"]} />}>
             <Route path="/admin/regioes" element={<AdminRegioes />} />

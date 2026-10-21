@@ -4,6 +4,45 @@ Este documento substitui as instruções antigas sobre seeds que sobrescreviam
 registros ou usavam `PatrimonioSecao`. As fontes documentais originais permanecem
 preservadas; não foram unificadas por nome nem reescritas para satisfazer o schema.
 
+A autenticação foi ampliada posteriormente com acesso padrão de 300s e sessão
+renovável por até 8h. Para tokens, refresh, logout e implantação, prevalece
+[SESSOES_RENOVAVEIS.md](SESSOES_RENOVAVEIS.md). As instruções de cargas abaixo
+continuam válidas.
+
+## Instalação e implantação
+
+1. Preparar o ambiente e os segredos exclusivos conforme [SEGURANCA.md](SEGURANCA.md).
+   O Docker separa API, job de migração e conta administrativa. Nenhuma carga roda
+   ao iniciar a API.
+2. Conferir a trilha real aplicada e fazer backup antes de qualquer instalação
+   existente. Aplicar **somente a trilha correspondente**, sem editar migrations
+   antigas, reset, db push ou recriação de volumes.
+3. A migração aditiva `20261020190000_add_user_token_version` existe nas duas
+   trilhas: adiciona `users.token_version INTEGER NOT NULL DEFAULT 0`, com CHECK
+   não negativo. Na trilha padrão, o job usa `MIGRATION_DATABASE_URL` e
+   `node scripts/migrate-deploy.js`. A trilha da equipe continua usando seu config
+   específico e `EQUIPE_DATABASE_URL`; não misturar históricos.
+4. Gerar o Prisma Client atual com `npm run prisma:generate` antes de usar a API.
+   O cliente contém `User.tokenVersion`. Implantar API e frontend compatíveis após
+   a migração. **Todas as sessões anteriores precisarão fazer novo login**, porque
+   JWTs sem versão são recusados. Não há compatibilidade temporária com eles.
+   A trilha da equipe também recebeu a migration aditiva
+   `20261021120000_add_current_region_relation`: cria a relação atual de regiões,
+   preservando o enum em `local.regiao`, as seções e a numeração legadas. Não
+   atribui regiões automaticamente. O validador confere todas as colunas dos
+   modelos atuais nas duas trilhas. Os testes reais de cargas usam a padrão.
+5. Em banco vazio, criar o primeiro ADMIN pelo processo separado `npm run
+   admin:create`, com as variáveis/entrada privada já exigidas pelo script.
+   Nenhuma senha padrão foi adicionada. Só então considerar a carga opcional.
+
+A troca de senha mantém `PATCH /api/auth/senha`, campos e envelope de sucesso.
+Ela verifica a senha atual e usa um único UPDATE condicional por hash e versão
+para gravar o novo hash e incrementar tokenVersion. Falha/conflito não deixa
+alterações parciais. Todos os JWTs anteriores, inclusive o usado na troca, passam
+a receber 401. Novos logins usam a versão atual. Assinatura HS256, expiração,
+conta existente/ativa são mantidos. A rodada posterior adicionou sessões e refresh
+rotativo, com logout remoto e acesso padrão de 300s; ver SESSOES_RENOVAVEIS.md.
+Não há cookies. A troca de senha também revoga todas as sessões na mesma transação.
 
 ## Fonte canônica e pesquisa
 
@@ -137,6 +176,50 @@ Erros de validação/identidade bloqueiam o lote antes das escritas; erro de ban
 commit reverte o lote inteiro. Banco e filesystem não são atômicos: falhas de
 compensação são registradas para recuperação, sem apagar por suposição.
 
+## Frontend reaproveitado
+
+O cliente Axios, contexto de autenticação, sessionStorage e Authorization: Bearer
+foram mantidos. O interceptor existente trata 401 fora do login e compara token e
+identificador local da sessão antes de limpar, evitando apagar um login recente
+com uma resposta atrasada. Falhas simultâneas só causam um redirecionamento.
+403 e falhas de rede não encerram a sessão; não há repetição automática de escrita.
+
+O painel ganhou apenas a página **Alterar senha**, com classes e componentes
+existentes. Ela usa `adminApi.alterarSenha` e `logout`; o guard existente redireciona
+e mantém “Senha alterada com sucesso. Entre novamente para continuar.” no login.
+O aviso de sessão expirada também abrange encerramento/revogação.
+
+Login 429 reutiliza a mensagem geral, aceita Retry-After em segundos/data HTTP,
+mostra o tempo e bloqueia envio só quando há prazo válido. Ao terminar, libera sem
+tentar automaticamente. O CORS já expunha Retry-After e suas origens não mudaram.
+415 usa mensagem comum de formato/conteúdo não aceito em imagens, referências,
+exposições e novidades; os tratamentos de 400/413 e contratos multipart permanecem.
+
+## Validação reproduzível
+
+```sh
+# backend
+npm run lint
+npm test
+npm run test:auth-seeds:postgres
+# frontend
+npm run lint
+npm test -- --maxWorkers=2
+npm run build
+```
+
+O validador PostgreSQL usa `PG_BIN` (padrão Windows PostgreSQL 18), cria cluster
+temporário exclusivo com senha efêmera e porta loopback disponível, aplica ambas
+as trilhas, gera bancos separados por teste e os remove ao encerrar. Não lê a
+DATABASE_URL da aplicação. O Prisma Client deve estar gerado pelo schema atual.
+Os testes também podem receber TEST_DATABASE_URL e TEST_DATABASE_EXCLUSIVE=1
+pelas guardas existentes, exclusivamente em bancos descartáveis com sufixo `_test`.
+Arquivos `.reference` não são considerados executados.
+
+Nenhum banco compartilhado ou de produção foi modificado. Implantação real,
+smoke visual em desktop/celular e atualização coordenada das sessões precisam de
+conferência operacional; não foi feito deploy, push ou merge.
+
 ### Banco local com histórico da equipe
 
 O nome do banco não identifica sua trilha. Se o banco local tem as migrations
@@ -154,3 +237,7 @@ Com essas variáveis configuradas de forma privada:
 npx prisma migrate status --config prisma.local-equipe.config.js
 npx prisma migrate deploy --config prisma.local-equipe.config.js
 ```
+
+Esse procedimento não roda seeds. Em 20/10, após autorização adicional do usuário,
+o banco local foi atualizado e suas 13 tabelas existentes foram conferidas por
+contagem e hash, sem alterações de dados. Ver [registro P2022](../reports/p2022-local.md).

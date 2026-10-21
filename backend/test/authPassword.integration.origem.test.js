@@ -1,3 +1,4 @@
+import { createFixtureSession } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
@@ -31,8 +32,9 @@ test("PostgreSQL: troca real de senha preserva login e não expõe hash", {
             name: "Teste de senha", email: `${randomUUID()}@example.test`, role: "EDITOR", isActive: true,
             passwordHash: await hashPassword(senhaAtual),
         } });
+        await createFixtureSession(prisma, user);
         assert.equal((await login(senhaAtual)).status, 200);
-        const token = generateToken(user.id);
+        const token = generateToken(user.id, user.tokenVersion, user.id);
         const response = await fetch(`${base}/auth/senha`, { method: "PATCH", headers: {
             authorization: `Bearer ${token}`, "content-type": "application/json",
         }, body: JSON.stringify({ senhaAtual, novaSenha }) });

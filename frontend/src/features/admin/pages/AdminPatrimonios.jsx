@@ -555,6 +555,7 @@ export default function AdminPatrimonios() {
       403: "Você não tem permissão para esta ação.",
       404: "Patrimônio ou imagem não encontrado. Recarregue a página.",
       413: "A imagem é grande demais para o servidor (máximo de 10 MB).",
+      415: adminApi.extrairMensagemDeErro(err),
     };
 
     if (status === 400) {
@@ -672,6 +673,7 @@ export default function AdminPatrimonios() {
       403: "Você não tem permissão para esta ação.",
       404: "Rota de referências não encontrada no servidor (ou o patrimônio não existe). Recarregue a página e confira o backend.",
       413: `O arquivo é grande demais para o servidor (máximo de ${referenciasApi.TAMANHO_MAX_REFERENCIA_MB} MB).`,
+      415: adminApi.extrairMensagemDeErro(err),
     };
 
     if (status === 400) {

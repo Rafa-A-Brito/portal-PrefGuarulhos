@@ -1,3 +1,5 @@
+> Procedimento vigente para instalação, migração de sessões, seeds e atualizações: [AUTENTICACAO_E_CARGAS.md](docs/AUTENTICACAO_E_CARGAS.md). As instruções históricas não autorizam cargas automáticas.
+
 # 🏛️ Patrimônio Histórico de Guarulhos — Portal Cultural & Mapeamento
 
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=white)
@@ -138,7 +140,8 @@ DATABASE_URL=postgresql://usuario:senha@localhost:5432/patrimonio_guarulhos
 PORT=3333
 CORS_ORIGIN=http://localhost:5173
 JWT_SECRET=um-segredo-aleatorio-com-pelo-menos-32-caracteres
-JWT_TTL_SECONDS=900
+JWT_TTL_SECONDS=300
+AUTH_SESSION_TTL_SECONDS=28800
 ```
 
 ### Configuração do Prisma
@@ -184,7 +187,7 @@ Para testar as rotas protegidas, faça `POST /api/auth/login` na própria interf
 
 Use **Try it out** para preencher os parâmetros e executar uma requisição. Consultas públicas como `GET /api/patrimonios?pagina=1&limite=20` não exigem autenticação. **Atenção:** Try it out nas operações POST e PATCH executa ações reais no banco configurado. Confira a variável de ambiente do banco antes de criar administradores, patrimônios ou trocar senhas.
 
-Para trocar a própria senha, faça login com uma conta EDITOR ou ADMIN, autorize o token e execute `PATCH /api/auth/senha` com `senhaAtual` e `novaSenha`. A nova senha deve ter pelo menos 12 caracteres e no máximo 72 bytes em UTF-8. A senha antiga deixará de funcionar no próximo login. JWTs já emitidos continuam válidos até expirar, pois a API não possui revogação de tokens.
+Para trocar a própria senha, faça login com uma conta EDITOR ou ADMIN, autorize o token e execute `PATCH /api/auth/senha` com `senhaAtual` e `novaSenha`. A nova senha deve ter pelo menos 12 caracteres e no máximo 72 bytes em UTF-8. A senha antiga deixará de funcionar no próximo login. Todos os JWTs anteriores são revogados, inclusive o usado na troca. É necessário fazer novo login.
 
 Para executar o frontend, utilize o procedimento definido no README do respectivo repositório.
 
@@ -327,3 +330,8 @@ Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais de
 ## 👥 Autores
 
 Desenvolvido como parte de um projeto acadêmico voltado à valorização do patrimônio histórico e cultural de Guarulhos.
+
+
+Autenticação atual: acesso Bearer de 300s e sessão renovável limitada a 8h,
+com refresh rotativo e logout no servidor. A migration de sessões exige novo login.
+Ver [contratos e implantação](docs/SESSOES_RENOVAVEIS.md).

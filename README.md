@@ -1,3 +1,5 @@
+> Instalação, migração tokenVersion e comandos oficiais de carga/atualização: [procedimento atual](backend/docs/AUTENTICACAO_E_CARGAS.md).
+
 # 🏛️ Portal Cultural - Patrimônio Histórico de Guarulhos
 
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=white)
@@ -103,7 +105,7 @@ O backend escuta em 3333 e o Vite em 5173. VITE_API_BASE_URL=http://localhost:33
 
 | Contexto | Variáveis |
 | --- | --- |
-| Backend | DATABASE_URL, PORT, JWT_SECRET, JWT_TTL_SECONDS, CORS_ORIGIN, UPLOAD_DIR |
+| Backend | DATABASE_URL, PORT, JWT_SECRET, JWT_TTL_SECONDS, AUTH_SESSION_TTL_SECONDS, CORS_ORIGIN, UPLOAD_DIR |
 | Compose normal | POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT, BACKEND_PORT, FRONTEND_PORT |
 | Frontend no build | VITE_API_BASE_URL, VITE_GOOGLE_MAPS_API_KEY, VITE_GEOCODING_ATIVO |
 | Opções locais do frontend | VITE_USE_MOCK_MAP, VITE_MOSTRAR_DETALHES_ERRO |
@@ -138,7 +140,7 @@ docker compose config --quiet
 docker compose up --build -d
 ~~~
 
-ATENÇÃO: o backend executa migrate deploy antes de iniciar. Não rode esse comando contra o banco real durante uma validação de infraestrutura; utilize o ambiente descartável descrito abaixo. O boot nunca executa seed. Reinícios não sobrescrevem conteúdo administrativo.
+O job separado migrate aplica migrations com conta própria; a API executa sem privilégios administrativos e só inicia após o job. Não usar banco compartilhado na validação. O boot da API nunca executa seed. Para instalação existente, seguir a transição de contas e a migração tokenVersion documentadas em backend/docs/AUTENTICACAO_E_CARGAS.md.
 
 Os volumes pg_data e uploads_data são persistentes. /app/uploads é o diretório de runtime. src/uploads contém as imagens-fonte da carga e permanece na imagem. .env, node_modules local e uploads de runtime são excluídos pelo .dockerignore. Node assume o PID 1 usando exec. O frontend aguarda o healthcheck HTTP do backend.
 
@@ -261,3 +263,8 @@ Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais de
 ## 👥 Autores
 
 Desenvolvido como parte de um projeto acadêmico voltado à valorização do patrimônio histórico e cultural de Guarulhos.
+
+
+Sessões renováveis: acesso padrão 5 minutos, sessão máxima padrão 8 horas,
+sem cookies. Aplicar a migration de sessões antes da API e fazer novo login.
+[Procedimento e contratos atuais](backend/docs/SESSOES_RENOVAVEIS.md).

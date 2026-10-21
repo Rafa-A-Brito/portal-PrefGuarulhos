@@ -1,3 +1,4 @@
+import { createFixtureSession } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
@@ -22,7 +23,9 @@ test("PostgreSQL: URLs antigas consultam vínculo, status e usuário ativo após
     let admin, editor, categoria, patrimonio, server;
     try {
         admin = await prisma.user.create({ data: { name: "Admin mídia", email: `${key}-admin@example.test`, passwordHash: "unused", role: "ADMIN" } });
+        await createFixtureSession(prisma, admin);
         editor = await prisma.user.create({ data: { name: "Editor mídia", email: `${key}-editor@example.test`, passwordHash: "unused", role: "EDITOR" } });
+        await createFixtureSession(prisma, editor);
         categoria = await prisma.categoria.create({ data: { nome: key, slug: key } });
         patrimonio = await prisma.patrimonio.create({ data: {
             nome: key, slug: key, descricao: "Descrição da fixture", descricaoResumida: "Resumo da fixture",
@@ -43,7 +46,7 @@ test("PostgreSQL: URLs antigas consultam vínculo, status e usuário ativo após
         server = app.listen(0);
         await new Promise((resolve) => server.once("listening", resolve));
         const base = `http://127.0.0.1:${server.address().port}`;
-        const headers = (user) => ({ authorization: `Bearer ${generateToken(user.id)}` });
+        const headers = (user) => ({ authorization: `Bearer ${generateToken(user.id, user.tokenVersion, user.id)}` });
         for (const item of cases) {
             assert.equal((await fetch(base + item.url)).status, 401);
             for (const user of [admin, editor]) assert.equal((await fetch(base + item.url, { headers: headers(user) })).status, 200);

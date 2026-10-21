@@ -36,7 +36,8 @@
         "test:uploads:e2e": "node scripts/upload-e2e.js",
         "seed:pesquisa": "node prisma/seed.patrimonios.js",
         "lint": "eslint .",
-        "seed:inicial": "node prisma/seed.js"
+        "seed:inicial": "node prisma/seed.js",
+        "test:auth-seeds:postgres": "node scripts/validate-auth-seeds.js"
     },
     "dependencies": {
         "@prisma/adapter-pg": "7.10.0",

@@ -37,10 +37,8 @@ const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const TEMPO_SUCESSO_MS = 650;
 const DURACAO_TREMOR_MS = 500;
 
-const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export default function LoginAdmin() {
-  const { login, erro } = useAuth();
+  const { login, erro, retryAt, limparEspera, motivoSaida } = useAuth();
   const { mostrarErro } = useErroModal();
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +46,7 @@ export default function LoginAdmin() {
   const destino = location.state?.from?.pathname || "/admin";
   // O interceptor de api.js manda para cá com ?expirou=1 quando o token vence.
   const sessaoExpirou = new URLSearchParams(location.search).has("expirou");
+  const senhaAlterada = new URLSearchParams(location.search).has("senhaAlterada");
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -63,10 +62,25 @@ export default function LoginAdmin() {
   const emailRef = useRef(null);
   const senhaRef = useRef(null);
   const timerTremorRef = useRef(null);
+  const timerSucessoRef = useRef(null);
+  const pendenteRef = useRef(false);
+  const ativoRef = useRef(true);
+  const bloqueado = !!retryAt;
+  useEffect(() => {
+    if (!retryAt) return undefined;
+    const timer = setTimeout(limparEspera, Math.max(0, retryAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [retryAt, limparEspera]);
 
   useEffect(() => {
     const timer = timerTremorRef;
-    return () => clearTimeout(timer.current);
+    const timerSucesso = timerSucessoRef;
+    ativoRef.current = true;
+    return () => {
+      ativoRef.current = false;
+      clearTimeout(timer.current);
+      clearTimeout(timerSucesso.current);
+    };
   }, []);
 
   const emailValido = REGEX_EMAIL.test(email.trim());
@@ -94,6 +108,7 @@ export default function LoginAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (pendenteRef.current || bloqueado || sucesso) return;
 
     setTocado({ email: true, senha: true });
 
@@ -103,15 +118,18 @@ export default function LoginAdmin() {
       return;
     }
 
+    pendenteRef.current = true;
     setEnviando(true);
 
     try {
       const ok = await login(email, senha);
+      if (!ativoRef.current) return;
 
       if (ok) {
         // Mostra o "acesso confirmado" por um instante antes de trocar de tela.
         setSucesso(true);
-        await esperar(TEMPO_SUCESSO_MS);
+        await new Promise(resolve => { timerSucessoRef.current = setTimeout(resolve, TEMPO_SUCESSO_MS); });
+        if (!ativoRef.current) return;
         navigate(destino, { replace: true });
         return;
       }
@@ -126,7 +144,8 @@ export default function LoginAdmin() {
         mensagem: "Não foi possível validar o acesso agora.",
       });
     } finally {
-      setEnviando(false);
+      pendenteRef.current = false;
+      if (ativoRef.current) setEnviando(false);
     }
   };
 
@@ -271,9 +290,21 @@ export default function LoginAdmin() {
               </div>
             </div>
 
-            {sessaoExpirou && !erro && !enviando && !sucesso && (
+            {motivoSaida === "logoutLocal" && !erro && (
+              <p className="admin-login-erro" role="status">Você saiu neste navegador. Não foi possível confirmar o encerramento no servidor.</p>
+            )}
+            {motivoSaida === "logout" && !erro && (
+              <p className="admin-login-erro" role="status">Você saiu da conta neste navegador.</p>
+            )}
+            {senhaAlterada && !erro && !enviando && !sucesso && (
               <p className="admin-login-erro" role="status">
-                Sua sessão expirou. Entre novamente para continuar.
+                Senha alterada com sucesso. Entre novamente para continuar.
+              </p>
+            )}
+
+            {sessaoExpirou && !senhaAlterada && !erro && !enviando && !sucesso && (
+              <p className="admin-login-erro" role="status">
+                Sua sessão expirou ou foi encerrada. Entre novamente para continuar.
               </p>
             )}
 
@@ -286,7 +317,7 @@ export default function LoginAdmin() {
             <button
               type="submit"
               className={`btn-solid admin-login-submit${sucesso ? " is-success" : ""}`}
-              disabled={enviando}
+              disabled={enviando || sucesso || bloqueado}
               aria-live="polite"
             >
               {sucesso ? (

@@ -18,7 +18,7 @@ import { useAuth } from "../../../hooks/useAuth";
  * usuário logado precisa estar nessa lista.
  */
 export default function RotaProtegida({ permissoes }) {
-  const { autenticado, carregando, usuario } = useAuth();
+  const { autenticado, carregando, usuario, motivoSaida } = useAuth();
   const location = useLocation();
 
   if (carregando) {
@@ -28,7 +28,7 @@ export default function RotaProtegida({ permissoes }) {
   if (!autenticado) {
     // O "state: { from }" guarda pra onde a pessoa ia, pra devolver ela
     // pra lá depois que fizer login com sucesso.
-    return <Navigate to="/admin/login" replace state={{ from: location }} />;
+    return <Navigate to={motivoSaida === "senhaAlterada" ? "/admin/login?senhaAlterada=1" : motivoSaida === "expirou" ? "/admin/login?expirou=1" : "/admin/login"} replace state={{ from: location }} />;
   }
 
   if (permissoes && !permissoes.includes(usuario?.perfil)) {

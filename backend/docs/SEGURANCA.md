@@ -174,3 +174,21 @@ privilégios e recusa de CREATE/ALTER/DROP/SET ROLE. Sem URLs fica explicitament
 ignorado; não é evidência de privilégios validados. O Docker daemon não estava
 disponível na implementação, portanto build, execução non-root, Nginx real e
 privilégios reais ainda precisam dessa validação descartável.
+
+O tratamento de HTTP 429/Retry-After e a contagem de espera no frontend foram
+implementados na rodada posterior descrita em
+[AUTENTICACAO_E_CARGAS.md](AUTENTICACAO_E_CARGAS.md), sem tentativa automática
+de login. Rotas, campos, formatos e envelopes de sucesso foram preservados;
+as recusas técnicas de multipart continuam estritas.
+
+Revogação após trocar senha e cargas preservadoras foram aprovadas e implementadas depois desta revisão: ver [AUTENTICACAO_E_CARGAS.md](AUTENTICACAO_E_CARGAS.md). Permanecem para decisão da equipe cookies HttpOnly, permissões editoriais, publicidade de outros conteúdos, reconciliação histórica de migrações, auditoria persistente e eventual antivírus. Múltiplas réplicas exigem
+armazenamento compartilhado do limitador.
+
+Referências técnicas: [Busboy](https://github.com/mscdex/busboy#api),
+[Express atrás de proxies](https://expressjs.com/en/guide/behind-proxies/),
+[correção de proxy-addr](https://github.com/advisories/GHSA-jqcg-44mw-7w3h).
+
+
+Atualização de autenticação: refresh rotativo, sessões no servidor, acesso de
+300s e limite de 8h foram autorizados em escopo posterior. O procedimento atual
+está em [SESSOES_RENOVAVEIS.md](SESSOES_RENOVAVEIS.md). Cookies não foram adicionados.

@@ -25,6 +25,7 @@
  * patrimônio (só arquivar).
  */
 import api from "./api";
+import { normalizarErro } from "../utils/erros.js";
 import {
   buscarTodasAsPaginas,
   normalizarPatrimonio,
@@ -170,6 +171,7 @@ export async function removerImagemPatrimonio(imagemId) {
  * { success:false, message, details:[{field,message}], error:{code,message} }.
  */
 export function extrairMensagemDeErro(err) {
+  if ([413, 415, 429].includes(err.response?.status)) return normalizarErro(err).mensagem;
   const corpo = err.response?.data;
 
   if (corpo?.details?.length) {

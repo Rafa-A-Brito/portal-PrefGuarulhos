@@ -15,8 +15,12 @@ export function ErroModalProvider({ children }) {
   const [erro, setErro] = useState(null);
 
   const mostrarErro = useCallback((err, opcoes) => {
+    // O login já apresenta o aviso de sessão encerrada; não abrir modais por
+    // cada resposta 401 simultânea ou atrasada que o cliente central tratou.
+    if (err?.sessaoTratada) return null;
     const normalizado = normalizarErro(err, opcoes);
-    console.error(`[${normalizado.codigo}] ${normalizado.origem}`, err);
+    // Axios inclui Authorization e corpos JSON no erro; nunca registrar credenciais.
+    console.error(`[${normalizado.codigo}] ${normalizado.origem}`, { status: normalizado.status });
     setErro(normalizado);
     return normalizado.id;
   }, []);

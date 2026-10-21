@@ -37,7 +37,8 @@ services:
       DATABASE_URL: postgresql://portal_api:${API_DB_PASSWORD:?defina API_DB_PASSWORD}@db:5432/${POSTGRES_DB:-patrimonio_guarulhos}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8090}
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env (mínimo 32 caracteres)}
-      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-900}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-300}
+      AUTH_SESSION_TTL_SECONDS: ${AUTH_SESSION_TTL_SECONDS:-28800}
       UPLOAD_DIR: /app/uploads
       UPLOAD_ROOT: /app/uploads
       TRUST_PROXY_IPS: 172.30.87.2

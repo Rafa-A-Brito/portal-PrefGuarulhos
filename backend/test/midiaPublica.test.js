@@ -24,7 +24,7 @@ const fixtures = [
 const bytes = Buffer.from("fixture de mídia");
 let server, base, status, user, registros, consultas;
 const userId = randomUUID();
-const token = () => ({ authorization: `Bearer ${generateToken(userId)}` });
+const token = () => ({ authorization: `Bearer ${generateToken(userId, 0, userId)}` });
 function stub(t, target, method, implementation) {
     const original = target[method];
     target[method] = implementation;
@@ -56,7 +56,7 @@ before(async () => {
 });
 beforeEach((t) => {
     status = "PUBLICADO";
-    user = { id: userId, role: "ADMIN", isActive: true };
+    user = { id: userId, role: "ADMIN", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
     registros = new Set(fixtures.map((fixture) => fixture.url));
     consultas = [];
     stub(t, prisma.user, "findUnique", async () => user);
@@ -118,7 +118,7 @@ for (const fixture of fixtures) {
             assert.equal((await fetch(base + fixture.url, { headers: token() })).status, 401);
             user = null;
             assert.equal((await fetch(base + fixture.url, { headers: token() })).status, 401);
-            user = { id: userId, role: "ADMIN", isActive: true };
+            user = { id: userId, role: "ADMIN", authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true };
         }
     });
     test(`${fixture.tipo}: usuário autenticado sem papel permitido recebe 403`, async () => {

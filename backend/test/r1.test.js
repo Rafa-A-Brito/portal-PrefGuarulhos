@@ -34,8 +34,10 @@ test("R1: fonte C2 e migrations aplicadas permanecem preservadas; trilhas nao co
         "20261005004508_categorias_adicionais", "20261006014922_adicionar_detalhes_e_heroes",
         "20261006180000_exposicoes_novidades", "20261014010000_add_fatos_ligacoes",
         "20261016120000_add_regioes_numero_ordem",
+        "20261020190000_add_user_token_version",
+        "20261021130000_add_auth_sessions",
     ]);
-    assert.equal(team.length, 9);
+    assert.equal(team.length, 11);
     assert.equal(team.includes("20261014010000_add_fatos_ligacoes"), false);
     const schema = readFileSync(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
     for (const name of ["PatrimonioFato", "PatrimonioLigacao"]) assert.equal(schema.match(new RegExp("model " + name + " ", "g")).length, 1);

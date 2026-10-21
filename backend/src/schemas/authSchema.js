@@ -14,3 +14,5 @@ export const changePasswordSchema = z.strictObject({
     senhaAtual: loginSchema.shape.password,
     novaSenha: passwordSchema,
 });
+
+export const refreshSchema = z.strictObject({ refreshToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/) });

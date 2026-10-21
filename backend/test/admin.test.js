@@ -1,3 +1,4 @@
+import { mockSessionWrites } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
@@ -49,7 +50,7 @@ function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
                 name: "Administrador",
                 email: "admin@example.com",
                 role: authenticatedRole,
-                isActive: true,
+                authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true,
             };
         }
         return null;
@@ -61,7 +62,7 @@ function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
         });
 
     return {
-        token: generateToken(authenticatedUserId),
+        token: generateToken(authenticatedUserId, 0, authenticatedUserId),
         restore() {
             prisma.user.findUnique = originalFindUnique;
             prisma.user.create = originalCreate;
@@ -232,17 +233,18 @@ test("violação P2002 de e-mail retorna 409 com ADMIN_ALREADY_EXISTS", async ()
     }
 });
 
-test("conta criada consegue login pelo endpoint existente", async () => {
+test("conta criada consegue login pelo endpoint existente", async (t) => {
+    mockSessionWrites(t, prisma);
     let stored;
     const mock = mockUsers({
         onCreate: async ({ data }) => {
-            stored = { id: randomUUID(), ...data };
+            stored = { id: randomUUID(), authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, ...data };
             return stored;
         },
     });
     const originalFindUnique = prisma.user.findUnique;
     prisma.user.findUnique = async (args) => {
-        if (stored && args.where.email === stored.email) return stored;
+        if (stored && (args.where.email === stored.email || args.where.id === stored.id)) return stored;
         return originalFindUnique(args);
     };
 

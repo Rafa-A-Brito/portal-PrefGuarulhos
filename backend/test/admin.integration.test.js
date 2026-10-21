@@ -1,3 +1,4 @@
+import { createFixtureSession } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
@@ -44,6 +45,7 @@ test(
                 },
                 select: { id: true },
             });
+        await createFixtureSession(prisma, bootstrap);
 
             createdIds.push(bootstrap.id);
             const email = `novo-${randomUUID()}@example.test`;
@@ -52,7 +54,7 @@ test(
             const createResponse = await fetch(`${baseUrl}/api/admins`, {
                 method: "POST",
                 headers: {
-                    authorization: `Bearer ${generateToken(bootstrap.id)}`,
+                    authorization: `Bearer ${generateToken(bootstrap.id, bootstrap.tokenVersion, bootstrap.id)}`,
                     "content-type": "application/json",
                 },
                 body: JSON.stringify({ nome: "Nova Editora", email, role: "EDITOR", password }),
@@ -72,7 +74,7 @@ test(
             const duplicateResponse = await fetch(`${baseUrl}/api/admins`, {
                 method: "POST",
                 headers: {
-                    authorization: `Bearer ${generateToken(bootstrap.id)}`,
+                    authorization: `Bearer ${generateToken(bootstrap.id, bootstrap.tokenVersion, bootstrap.id)}`,
                     "content-type": "application/json",
                 },
                 body: JSON.stringify({ nome: "Outra", email, role: "ADMIN", password }),
@@ -93,7 +95,7 @@ test(
             assert.equal(login.data.user.id, stored.id);
 
             const service = await import("../src/services/adminService.js");
-            const adminToken = generateToken(bootstrap.id);
+            const adminToken = generateToken(bootstrap.id, bootstrap.tokenVersion, bootstrap.id);
             const adminRequest = (path, method = "GET", data) => fetch(`${baseUrl}/api/admins${path}`, {
                 method,
                 headers: { authorization: `Bearer ${adminToken}`, "content-type": "application/json" },

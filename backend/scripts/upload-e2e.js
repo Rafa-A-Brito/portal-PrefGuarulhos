@@ -19,7 +19,8 @@ try {
     author = await prisma.user.create({ data: { name: "E2E uploads", email: randomUUID() + "@example.test", passwordHash: "fixture-sem-login", role: "ADMIN", isActive: true } });
     category = await prisma.categoria.create({ data: { nome: "E2E " + randomUUID(), slug: "e2e-" + randomUUID() } });
     patrimonio = await prisma.patrimonio.create({ data: { nome: "Patrimônio E2E", slug: "e2e-" + randomUUID(), descricao: "Teste", descricaoResumida: "Teste", createdBy: author.id, categoriaId: category.id } });
-    const token = jwt.sign({}, process.env.TEST_JWT_SECRET, { subject: author.id, expiresIn: 900 });
+    await prisma.authSession.create({ data: { id: author.id, userId: author.id, tokenVersion: author.tokenVersion, expiresAt: new Date(Date.now() + 3600000) } });
+    const token = jwt.sign({ sid: author.id, tokenVersion: author.tokenVersion }, process.env.TEST_JWT_SECRET, { algorithm: "HS256", subject: author.id, expiresIn: 300 });
     async function request(base, route, method, body, expected) {
         const response = await fetch(base + "/api" + route, { method, headers: { authorization: "Bearer " + token }, body });
         const result = await response.json();

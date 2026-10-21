@@ -8,7 +8,7 @@ const error = (description, code, message) => ({
     content: { "application/json": { schema: schema("Error"), example: { success: false, message, details: [], error: { code, message } } } },
 });
 const badRequest = error("Dados inválidos (incluindo JSON inválido).", "BAD_REQUEST", "Dados inválidos.");
-const unauthorized = error("Token ausente, inválido, expirado ou conta inativa.", "UNAUTHORIZED", "Autenticação necessária.");
+const unauthorized = error("Token ausente, inválido ou conta/sessão inativa. Somente acesso expirado com sessão ainda válida usa error.code=ACCESS_TOKEN_EXPIRED, sempre antes de efeitos de negócio.", "UNAUTHORIZED", "Autenticação necessária.");
 const forbidden = error("Papel sem permissão.", "FORBIDDEN", "Você não possui permissão para realizar esta ação.");
 const tooLarge = error("Corpo JSON acima de 100 kb.", "INTERNAL_ERROR", "Corpo da requisição muito grande.");
 const internal = error("Falha inesperada, inclusive falha de acesso ao banco.", "INTERNAL_ERROR", "Erro interno do servidor.");
@@ -45,12 +45,24 @@ export const paths = {
     "/api/docs.json": {
         get: { tags: ["Sistema"], summary: "Obtém a especificação OpenAPI", responses: { 200: { description: "Documento OpenAPI 3.0.3 em JSON.", content: { "application/json": { schema: { type: "object", description: "Especificação OpenAPI 3.0.3." } } } } } },
     },
+    "/api/auth/refresh": {
+        post: { tags: ["Autenticação"], summary: "Rotaciona a credencial de renovação",
+            description: "Não exige JWT. Refresh opaco de uso único; preserva o limite absoluto da sessão. Reutilização revoga a sessão. Resposta no-store. HTTP 401 é definitivo; falha de rede/5xx não deve provocar nova tentativa automática.",
+            requestBody: body("RefreshRequest", { refreshToken: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }),
+            responses: { 200: { ...response("Tokens renovados.", "LoginResponse"), headers: { "Cache-Control": { schema: { type: "string", example: "no-store" } } } }, 400: badRequest, 401: unauthorized, 429: error("Excesso de tentativas.", "TOO_MANY_REQUESTS", "Aguarde e tente novamente."), 500: internal } },
+    },
+    "/api/auth/logout": {
+        post: { tags: ["Autenticação"], summary: "Revoga a sessão por credencial de renovação",
+            description: "Idempotente para tokens conhecidos ou desconhecidos sintaticamente válidos. Funciona sem JWT, inclusive após expiração do acesso; revoga também quando o refresh já foi consumido.",
+            requestBody: body("RefreshRequest", { refreshToken: "credencial-opaca-ficticia" }),
+            responses: { 200: response("Sessão encerrada.", "ChangePasswordResponse", { success: true, message: "Sessão encerrada." }), 400: badRequest, 500: internal } },
+    },
     "/api/auth/login": {
         post: {
-            tags: ["Autenticação"], summary: "Autentica um usuário", description: "Aceita somente contas ativas. Use o token retornado no botão Authorize para testar rotas protegidas.",
+            tags: ["Autenticação"], summary: "Autentica um usuário", description: "Aceita somente contas ativas. Retorna token, user, refreshToken e sessionExpiresAt com Cache-Control: no-store. Acesso padrão 300s, sessão máxima padrão 8h sem extensão. Use o token retornado no botão Authorize para testar rotas protegidas.",
             requestBody: body("LoginRequest", { email: "editor@example.org", password: "SenhaFicticia123!" }),
             responses: {
-                200: response("Autenticado.", "LoginResponse", { success: true, data: { token: "eyJ...token-ficticio", user: { id: usuarioId, name: "Pessoa Exemplo", email: "editor@example.org", role: "EDITOR" } } }),
+                200: response("Autenticado.", "LoginResponse", { success: true, data: { token: "eyJ...token-ficticio", refreshToken: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", sessionExpiresAt: "2026-10-20T23:00:00.000Z", user: { id: usuarioId, name: "Pessoa Exemplo", email: "editor@example.org", role: "EDITOR" } } }),
                 400: badRequest, 401: error("Credenciais inválidas ou conta inativa.", "UNAUTHORIZED", "E-mail ou senha incorretos."), 413: tooLarge, 500: internal,
             },
         },
@@ -141,7 +153,7 @@ paths["/api/admin/patrimonios/{id}"] = {
 paths["/api/auth/senha"] = {
     patch: {
         tags: ["Autenticação"], summary: "Troca a própria senha",
-        description: "EDITOR e ADMIN autenticados. Confere a senha atual e altera somente a senha da conta do token. A nova senha deve ser diferente. JWTs já emitidos continuam válidos até expirar, pois a API não possui revogação de tokens. Use o novo valor para o próximo login.",
+        description: "EDITOR e ADMIN autenticados. Confere a senha atual e altera somente a senha da conta do token. A nova senha deve ser diferente. A troca revoga atomicamente todas as sessões e JWTs anteriores da conta, inclusive o utilizado nesta operação. Faça novo login com a nova senha.",
         security: bearerAuth,
         requestBody: body("ChangePasswordRequest", { senhaAtual: "SenhaAtual123!", novaSenha: "NovaSenhaSegura123!" }),
         responses: {

@@ -411,7 +411,7 @@ test("ADMIN e EDITOR podem cadastrar patrimônio pela rota protegida", async () 
         name: "Usuário interno",
         email: `${currentRole.toLowerCase()}@example.com`,
         role: currentRole,
-        isActive: true,
+        authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true,
     });
     prisma.$transaction = async (callback) => callback({
         categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
@@ -432,7 +432,7 @@ test("ADMIN e EDITOR podem cadastrar patrimônio pela rota protegida", async () 
             const response = await fetch(`${baseUrl}/api/admin/patrimonios`, {
                 method: "POST",
                 headers: {
-                    authorization: `Bearer ${generateToken(currentUserId)}`,
+                    authorization: `Bearer ${generateToken(currentUserId, 0, currentUserId)}`,
                     "content-type": "application/json",
                 },
                 body: JSON.stringify({
