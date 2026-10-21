@@ -1,0 +1,13 @@
+/* Indicador reutilizável de criação/troca de senha; sem dependências externas. */
+.forca-senha { --forca-cor: #697586; margin-top: 7px; font-size: 12px; font-weight: 400; color: var(--ink-soft, #485465); }
+.forca-senha--fraca { --forca-cor: #b42318; --forca-largura: 33.333%; }
+.forca-senha--media { --forca-cor: #946200; --forca-largura: 66.666%; }
+.forca-senha--forte { --forca-cor: #137047; --forca-largura: 100%; }
+.forca-senha--vazia { --forca-largura: 0%; }
+.forca-senha-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.forca-senha-topo strong { color: var(--forca-cor); font-size: 12px; }
+.forca-senha-trilha { height: 7px; border-radius: 99px; background: #dfe4ea; overflow: hidden; margin-top: 6px; }
+.forca-senha-barra { display: block; width: var(--forca-largura); height: 100%; background: var(--forca-cor); transition: width .18s ease, background-color .18s ease; }
+.forca-senha-ajuda { margin: 7px 0 0; line-height: 1.4; }
+.forca-senha-limite { margin: 4px 0 0; font-weight: 600; color: #b42318; }
+@media (prefers-reduced-motion: reduce) { .forca-senha-barra { transition: none; } }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { PlusIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import { useErroModal } from "../../../hooks/useErroModal";
 import { useAuth } from "../../../hooks/useAuth";
+import ForcaSenha from "../components/ForcaSenha";
 import * as adminApi from "../../../services/adminApi";
 
 const FORMULARIO_VAZIO = { nome: "", email: "", password: "", role: "EDITOR" };
@@ -171,10 +172,14 @@ export default function AdminUsuarios() {
                 <input type="email" required maxLength={254} autoComplete="off" value={formulario.email}
                   onChange={(e) => setFormulario((f) => ({ ...f, email: e.target.value }))} />
               </label>
-              {!editando && <label>Senha
-                <input type="password" required autoComplete="new-password" placeholder="Mínimo de 12 caracteres"
-                  value={formulario.password} onChange={(e) => setFormulario((f) => ({ ...f, password: e.target.value }))} />
-              </label>}
+              {!editando && <div>
+                <label>Senha
+                  <input type="password" required autoComplete="new-password" placeholder="Mínimo de 12 caracteres"
+                    aria-describedby="forca-senha-usuario"
+                    value={formulario.password} onChange={(e) => setFormulario((f) => ({ ...f, password: e.target.value }))} />
+                </label>
+                <ForcaSenha senha={formulario.password} id="forca-senha-usuario" />
+              </div>}
               <label>Perfil
                 <select value={formulario.role} disabled={propriaConta}
                   aria-describedby={propriaConta ? "aviso-proprio-perfil" : undefined}

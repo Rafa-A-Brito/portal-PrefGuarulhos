@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import {
   Bars3Icon,
   XMarkIcon,
@@ -9,6 +10,7 @@ import {
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const { autenticado, carregando } = useAuth();
   const [menuAberto, setMenuAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [termoBusca, setTermoBusca] = useState("");
@@ -108,7 +110,7 @@ export default function Navbar() {
         {/* Acesso administrativo — só a "porta de entrada" visual.
             A segurança de verdade está em RotaProtegida + backend. */}
         <Link
-          to="/admin/login"
+          to={!carregando && autenticado ? "/admin" : "/admin/login"}
           className="navbar-search-btn"
           aria-label="Área administrativa"
           title="Área administrativa"

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
@@ -38,7 +38,15 @@ const TEMPO_SUCESSO_MS = 650;
 const DURACAO_TREMOR_MS = 500;
 
 export default function LoginAdmin() {
-  const { login, erro, retryAt, limparEspera, motivoSaida } = useAuth();
+  const {
+    login,
+    erro,
+    retryAt,
+    limparEspera,
+    motivoSaida,
+    autenticado,
+    carregando,
+  } = useAuth();
   const { mostrarErro } = useErroModal();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,7 +54,9 @@ export default function LoginAdmin() {
   const destino = location.state?.from?.pathname || "/admin";
   // O interceptor de api.js manda para cá com ?expirou=1 quando o token vence.
   const sessaoExpirou = new URLSearchParams(location.search).has("expirou");
-  const senhaAlterada = new URLSearchParams(location.search).has("senhaAlterada");
+  const senhaAlterada = new URLSearchParams(location.search).has(
+    "senhaAlterada",
+  );
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -128,7 +138,9 @@ export default function LoginAdmin() {
       if (ok) {
         // Mostra o "acesso confirmado" por um instante antes de trocar de tela.
         setSucesso(true);
-        await new Promise(resolve => { timerSucessoRef.current = setTimeout(resolve, TEMPO_SUCESSO_MS); });
+        await new Promise((resolve) => {
+          timerSucessoRef.current = setTimeout(resolve, TEMPO_SUCESSO_MS);
+        });
         if (!ativoRef.current) return;
         navigate(destino, { replace: true });
         return;
@@ -153,6 +165,19 @@ export default function LoginAdmin() {
     ["admin-login-field", valido && "is-valid", invalido && "is-invalid"]
       .filter(Boolean)
       .join(" ");
+
+  if (carregando) {
+    return (
+      <div className="empty-state" role="status">
+        Verificando sessão...
+      </div>
+    );
+  }
+
+  // Acesso direto ao login com sessão ativa; preserva a confirmação de um novo login.
+  if (autenticado && !enviando && !sucesso) {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <div className="admin-login-shell">
@@ -291,22 +316,32 @@ export default function LoginAdmin() {
             </div>
 
             {motivoSaida === "logoutLocal" && !erro && (
-              <p className="admin-login-erro" role="status">Você saiu neste navegador. Não foi possível confirmar o encerramento no servidor.</p>
+              <p className="admin-login-erro" role="status">
+                Você saiu neste navegador. Não foi possível confirmar o
+                encerramento no servidor.
+              </p>
             )}
             {motivoSaida === "logout" && !erro && (
-              <p className="admin-login-erro" role="status">Você saiu da conta neste navegador.</p>
+              <p className="admin-login-erro" role="status">
+                Você saiu da conta neste navegador.
+              </p>
             )}
             {senhaAlterada && !erro && !enviando && !sucesso && (
-              <p className="admin-login-erro" role="status">
+              <p className="admin-login-erro-alteracao" role="status">
                 Senha alterada com sucesso. Entre novamente para continuar.
               </p>
             )}
 
-            {sessaoExpirou && !senhaAlterada && !erro && !enviando && !sucesso && (
-              <p className="admin-login-erro" role="status">
-                Sua sessão expirou ou foi encerrada. Entre novamente para continuar.
-              </p>
-            )}
+            {sessaoExpirou &&
+              !senhaAlterada &&
+              !erro &&
+              !enviando &&
+              !sucesso && (
+                <p className="admin-login-erro" role="status">
+                  Sua sessão expirou ou foi encerrada. Entre novamente para
+                  continuar.
+                </p>
+              )}
 
             {erro && !enviando && !sucesso && (
               <p className="admin-login-erro" role="alert">

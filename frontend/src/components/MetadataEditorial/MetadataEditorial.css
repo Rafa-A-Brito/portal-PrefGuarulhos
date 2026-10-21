@@ -1,2 +1,42 @@
-.metadata-editorial { display: flex; flex-wrap: wrap; gap: .4rem .8rem; font-size: .85rem; margin: .6rem 0; overflow-wrap: anywhere; }
-.metadata-editorial span { color: var(--navy); background: var(--paper); padding: .3rem .6rem; border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }
+/* Identificação editorial (número + região) — usada nos cards e na página de
+   detalhe. Escala e formato seguem o card: textos de 10–11px em pílulas (como
+   o .cat-badge). Número = verde de destaque da marca; região = navy. */
+.metadata-editorial {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.metadata-editorial span {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Nº — mesmo verde do antigo .num do card */
+.metadata-editorial .metadata-editorial-num {
+  background: var(--navy);
+  color: white;
+}
+
+/* Região — navy translúcido; o rótulo fica mais leve que o nome */
+.metadata-editorial .metadata-editorial-regiao {
+  background: #2b2c2d;
+  color: white;
+}
+
+.metadata-editorial-regiao small {
+  margin-right: 4px;
+  font-size: inherit;
+  font-weight: 500;
+}

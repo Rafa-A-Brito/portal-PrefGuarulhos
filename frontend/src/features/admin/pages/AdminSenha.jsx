@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { useAuth } from "../../../hooks/useAuth";
 import { alterarSenha, extrairMensagemDeErro } from "../../../services/adminApi";
 import { lerSessao } from "../../../services/api";
+import ForcaSenha from "../components/ForcaSenha";
+import { avaliarForcaSenha } from "../../../utils/forcaSenha.js";
 
 export default function AdminSenha() {
   const { logout } = useAuth();
@@ -15,6 +17,10 @@ export default function AdminSenha() {
   async function salvar(event) {
     event.preventDefault();
     if (pendente.current) return;
+    if (!avaliarForcaSenha(novaSenha).atendeLimites) {
+      setErro("A nova senha deve ter pelo menos 12 caracteres e no máximo 72 bytes UTF-8.");
+      return;
+    }
     if (novaSenha !== confirmacao) { setErro("A confirmação deve ser igual à nova senha."); return; }
     const sessao = lerSessao();
     pendente.current = true;
@@ -40,8 +46,12 @@ export default function AdminSenha() {
         <div className="admin-form-grid">
           <label>Senha atual<input type="password" autoComplete="current-password" required
             value={senhaAtual} onChange={event => setSenhaAtual(event.target.value)} disabled={salvando} /></label>
-          <label>Nova senha<input type="password" autoComplete="new-password" required minLength={12}
-            value={novaSenha} onChange={event => setNovaSenha(event.target.value)} disabled={salvando} /></label>
+          <div>
+            <label>Nova senha<input type="password" autoComplete="new-password" required minLength={12}
+              aria-describedby="forca-senha-alteracao"
+              value={novaSenha} onChange={event => setNovaSenha(event.target.value)} disabled={salvando} /></label>
+            <ForcaSenha senha={novaSenha} id="forca-senha-alteracao" />
+          </div>
           <label>Confirmar nova senha<input type="password" autoComplete="new-password" required minLength={12}
             value={confirmacao} onChange={event => setConfirmacao(event.target.value)} disabled={salvando} /></label>
         </div>

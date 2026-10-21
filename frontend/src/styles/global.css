@@ -3231,6 +3231,11 @@ input:focus-visible {
   text-align: left;
 }
 
+.admin-login-erro-altercao {
+  color: var(--green);
+  font-size: inherit;
+}
+
 /* Validação por campo */
 
 .admin-login-field.is-valid input {
