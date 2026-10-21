@@ -49,6 +49,10 @@ web_modules/
 
 # Optional npm cache directory
 .npm
+.npm-cache/
+
+# Local backups preserved when switching branches
+/branch-switch-backup-*/
 
 # Optional eslint cache
 .eslintcache
