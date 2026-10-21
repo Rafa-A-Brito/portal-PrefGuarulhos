@@ -1,248 +1,44 @@
-import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
-
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 import { detectarMimeImagem } from "../utils/imagemBinaria.js";
-
-import { UPLOAD_DIR as uploadDir, UPLOAD_FOLDERS } from "../config/uploadDir.js";
-import { PASTAS, LIMITES, URL_PREFIXO } from "../config/storage.js";
+import { lerCabecalho } from "../utils/arquivos.js";
+import { UPLOAD_DIR, UPLOAD_FOLDERS } from "../config/uploadDir.js";
+import { PASTAS, LIMITES, URL_PREFIXO, UPLOAD_ROOT } from "../config/storage.js";
+import multipart from "./multipart.js";
 
 const MAX_SIZE = 10 * 1024 * 1024;
-
-const TIPOS = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-
-const EXTENSOES = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
-};
-
-const PASTAS_PERMITIDAS = new Set(UPLOAD_FOLDERS.filter((pasta) => pasta !== "referencias"));
-
-function parseContentDisposition(value) {
-    const out = {};
-
-    for (const part of value.split(";")) {
-        const [rawKey, rawValue] = part.trim().split("=");
-
-        if (!rawKey || rawValue === undefined) {
-            continue;
-        }
-
-        out[rawKey] = rawValue.replace(/^"|"$/g, "");
-    }
-
-    return out;
-}
-
-function parseHeaders(buffer) {
-    const headers = {};
-
-    for (const line of buffer.toString("utf8").split("\r\n")) {
-        const index = line.indexOf(":");
-
-        if (index > 0) {
-            headers[line.slice(0, index).trim().toLowerCase()] = line.slice(index + 1).trim();
-        }
-    }
-
-    return headers;
-}
+const TIPOS = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif" };
 
 export function uploadImagem(pasta, { opcional = false, aceitarArquivo = false } = {}) {
-    if (!PASTAS_PERMITIDAS.has(pasta)) {
-        throw new Error(`Pasta de upload inválida: ${pasta}`);
-    }
-
-    const destinoUploadDir = path.join(uploadDir, pasta);
-
-    return function uploadImagemMiddleware(req, _res, next) {
-        const contentType = req.get("content-type") || "";
-
-        const match = contentType.match(/^multipart\/form-data;\s*boundary=(?:"([^"]+)"|([^;]+))/i);
-
-        if (!match) {
-            if (opcional && !/^multipart\//i.test(contentType)) return next();
-            return next(new BadRequestError("Envie a imagem usando multipart/form-data."));
-        }
-
-        const boundary = Buffer.from(`--${match[1] || match[2]}`);
-
-        const chunks = [];
-
-        let total = 0;
-        let finalizado = false;
-
-        req.on("data", (chunk) => {
-            if (finalizado) {
-                return;
+    if (!UPLOAD_FOLDERS.includes(pasta) || pasta === "referencias") throw new Error("Pasta de upload inválida.");
+    return multipart({
+        opcional,
+        maxFileSize: aceitarArquivo ? Math.max(MAX_SIZE, LIMITES.imagem) : MAX_SIZE,
+        selecionar(name, info) {
+            const arquivo = name === "arquivo" && aceitarArquivo;
+            if (name !== "imagem" && !arquivo) throw new BadRequestError("Envie um arquivo no campo imagem.");
+            const mime = info.mimeType;
+            if (!TIPOS[mime] || (arquivo && mime === "image/gif")) {
+                const error = new BaseError("Formato de imagem não suportado.", arquivo ? 415 : 400);
+                if (arquivo) error.code = "UNSUPPORTED_MEDIA_TYPE";
+                throw error;
             }
-
-            total += chunk.length;
-
-            if (total > MAX_SIZE + 1024 * 1024) {
-                finalizado = true;
-
-                req.resume();
-
-                next(new BaseError("O upload excede o limite de 10 MB.", 413));
-
-                return;
+            return { pasta: arquivo ? PASTAS.imagem : path.join(UPLOAD_DIR, pasta),
+                raiz: arquivo ? UPLOAD_ROOT : UPLOAD_DIR, ext: TIPOS[mime], mime,
+                limite: arquivo ? LIMITES.imagem : MAX_SIZE,
+                url: arquivo ? URL_PREFIXO.imagem : "/uploads/" + pasta };
+        },
+        async validar(file) {
+            if (detectarMimeImagem(await lerCabecalho(file.path, 32)) !== file.mimetype) {
+                const error = new BaseError("O conteúdo da imagem não corresponde ao formato declarado.", file.fieldname === "arquivo" ? 415 : 400);
+                if (file.fieldname === "arquivo") error.code = "UNSUPPORTED_MEDIA_TYPE";
+                throw error;
             }
-
-            chunks.push(chunk);
-        });
-
-        req.on("error", (error) => {
-            if (!finalizado) {
-                finalizado = true;
-                next(error);
-            }
-        });
-
-        req.on("end", () => {
-            if (finalizado) {
-                return;
-            }
-
-            try {
-                const body = Buffer.concat(chunks);
-
-                req.body = {};
-
-                let pos = body.indexOf(boundary);
-                let file;
-
-                while (pos !== -1) {
-                    const start = pos + boundary.length;
-
-                    if (body.slice(start, start + 2).toString() === "--") {
-                        break;
-                    }
-
-                    const headerStart = start + 2;
-
-                    const headerEnd = body.indexOf(Buffer.from("\r\n\r\n"), headerStart);
-
-                    if (headerEnd === -1) {
-                        break;
-                    }
-
-                    const headers = parseHeaders(body.slice(headerStart, headerEnd));
-
-                    const disposition = parseContentDisposition(
-                        headers["content-disposition"] || ""
-                    );
-
-                    const nextBoundary = body.indexOf(boundary, headerEnd + 4);
-
-                    if (nextBoundary === -1) {
-                        break;
-                    }
-
-                    const contentEnd = nextBoundary - 2;
-
-                    const content = body.slice(headerEnd + 4, contentEnd);
-
-                    if (
-                        disposition.name === "imagem" ||
-                        (aceitarArquivo && disposition.name === "arquivo")
-                    ) {
-                        if (opcional && !disposition.filename && content.length === 0) {
-                            pos = nextBoundary;
-                            continue;
-                        }
-                        if (file) throw new BadRequestError("Envie apenas uma imagem.");
-                        if (!disposition.filename || content.length === 0) {
-                            throw new BadRequestError("Envie um arquivo de imagem.");
-                        }
-
-                        const mime = (headers["content-type"] || "")
-                            .split(";")[0]
-                            .trim()
-                            .toLowerCase();
-
-                        const contratoArquivo = disposition.name === "arquivo";
-                        if (contratoArquivo && (!TIPOS.has(mime) || mime === "image/gif")) {
-                            const error = new BaseError(
-                                "Formato não suportado. Envie JPEG, PNG ou WebP.",
-                                415
-                            );
-                            error.code = "UNSUPPORTED_MEDIA_TYPE";
-                            throw error;
-                        }
-
-                        if (!TIPOS.has(mime)) {
-                            throw new BadRequestError(
-                                "Formato de imagem não suportado. Use JPG, PNG, WEBP ou GIF."
-                            );
-                        }
-
-                        if (content.length > (contratoArquivo ? LIMITES.imagem : MAX_SIZE)) {
-                            const error = new BaseError(
-                                "Arquivo excede o tamanho máximo permitido.",
-                                413
-                            );
-                            if (contratoArquivo) error.code = "FILE_TOO_LARGE";
-                            throw error;
-                        }
-
-                        if (detectarMimeImagem(content) !== mime) {
-                            const error = new BaseError("O conteúdo da imagem não corresponde ao formato declarado.", contratoArquivo ? 415 : 400);
-                            if (contratoArquivo) error.code = "UNSUPPORTED_MEDIA_TYPE";
-                            throw error;
-                        }
-
-                        const pastaArquivo = contratoArquivo ? PASTAS.imagem : destinoUploadDir;
-                        fs.mkdirSync(pastaArquivo, {
-                            recursive: true,
-                        });
-
-                        const filename = `${randomUUID()}${EXTENSOES[mime]}`;
-
-                        const filePath = path.join(pastaArquivo, filename);
-
-                        fs.writeFileSync(filePath, content, { flag: "wx" });
-
-                        file = req.file = {
-                            fieldname: disposition.name,
-                            path: filePath,
-                            filename,
-                            originalname: disposition.filename,
-                            mimetype: mime,
-                            size: content.length,
-
-                            // Caminho relativo dentro de uploads/
-                            relativePath: `${pasta}/${filename}`,
-
-                            // URL pública que pode ser salva no banco
-                            url: contratoArquivo
-                                ? `${URL_PREFIXO.imagem}/${filename}`
-                                : `/uploads/${pasta}/${filename}`,
-                        };
-                    } else if (disposition.name) {
-                        req.body[disposition.name] = content.toString("utf8");
-                    }
-
-                    pos = nextBoundary;
-                }
-
-                if (!file && !opcional) {
-                    throw new BadRequestError("Envie um arquivo no campo imagem.");
-                }
-
-                if (file) req.file = file;
-
-                finalizado = true;
-
-                next();
-            } catch (error) {
-                finalizado = true;
-                next(error);
-            }
-        });
-    };
+        },
+        finalizar(body, file) {
+            if (!file && (!opcional || body.imagem)) throw new BadRequestError("Envie um arquivo no campo imagem.");
+            if (opcional && body.imagem === "") delete body.imagem;
+        },
+    });
 }

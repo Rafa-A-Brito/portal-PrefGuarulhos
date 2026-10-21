@@ -4,6 +4,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { createPatrimonioSchema, updatePatrimonioSchema } from "../src/schemas/patrimonioSchema.js";
 
+process.env.DATABASE_URL = "postgresql://unused:unused@127.0.0.1:1/r1_test";
+process.env.JWT_SECRET = "r1-regression-fixture-with-at-least-32-characters";
+
 test("R1: PATCH geral rejeita fatos/ligacoes e campos adiados, inclusive arrays vazios", async () => {
     const service = await import("../src/services/patrimonioService.js");
     for (const field of ["fatos", "ligacoes", "secoes", "numeroExibicao", "ordemExibicao"]) {

@@ -5,9 +5,11 @@ import authenticate from "../middlewares/authenticate.js";
 import authorize from "../middlewares/authorize.js";
 import { loginSchema, changePasswordSchema } from "../schemas/authSchema.js";
 
+import loginLimiter from "../middlewares/loginLimiter.js";
+
 const router = Router();
 
-router.post("/login", validate(loginSchema), login);
+router.post("/login", loginLimiter, validate(loginSchema), login);
 router.patch("/senha", authenticate, authorize("EDITOR", "ADMIN"), validate(changePasswordSchema), changePassword);
 
 export default router;

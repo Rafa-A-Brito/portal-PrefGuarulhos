@@ -18,8 +18,8 @@ export function semCacheMidia(_req, res, next) {
     next();
 }
 
-function autorizar(registro, user) {
-    if (registro.patrimonio.status === "PUBLICADO") return;
+function autorizar(registros, user) {
+    if (registros.some(registro => registro.patrimonio.status === "PUBLICADO")) return;
     if (!user?.isActive) throw new UnauthorizedError("Mídia disponível apenas para usuários autenticados.");
     if (!["ADMIN", "EDITOR"].includes(user.role)) throw new ForbiddenError();
 }
@@ -55,17 +55,17 @@ async function abrirArquivo(raiz, pasta, nome) {
 
 async function entregar(req, res, next, { raiz, pasta, url, model, attachment }) {
     const { arquivo } = req.validatedParams;
-    const registro = await prisma[model].findFirst({
+    const registros = await prisma[model].findMany({
         where: { url: `${url}/${arquivo}` },
         select: { patrimonio: { select: { status: true } } },
     });
-    if (!registro) throw new NotFoundError("Arquivo não encontrado.");
+    if (!registros.length) throw new NotFoundError("Arquivo não encontrado.");
 
     let handle;
     try {
         const aberto = await abrirArquivo(raiz, pasta, arquivo);
         handle = aberto.handle;
-        autorizar(registro, req.user);
+        autorizar(registros, req.user);
         res.type(arquivo);
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.setHeader("Content-Disposition", attachment ? "attachment" : `inline; filename="${encodeURIComponent(arquivo)}"`);

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { uploadCompartilhado } from "../utils/quarentenaUpload.js";
 import prisma from "../config/prisma.js";
-import { PASTAS, URL_PREFIXO } from "../config/storage.js";
+import { URL_PREFIXO } from "../config/storage.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
 import ForbiddenError from "../errors/ForbiddenError.js";
@@ -47,16 +47,6 @@ export async function bloquearEAutorizar(transaction, patrimonioId, user, imagem
 
 // Converte a URL pública em caminho de disco. URL externa devolve null, o que
 // garante que a API nunca apague arquivo que não gerencia.
-function caminhoDoArquivo(url) {
-    for (const [tipo, prefixo] of Object.entries(URL_PREFIXO)) {
-        if (url.startsWith(`${prefixo}/`)) {
-            const nome = url.slice(prefixo.length + 1);
-            if (!nome || nome === "." || nome === ".." || nome.includes("/") || nome.includes("\\")) return null;
-            return path.join(PASTAS[tipo], nome);
-        }
-    }
-    return caminhoArquivoUpload(url);
-}
 
 // Confere a assinatura do arquivo que o multer já gravou.
 async function validarConteudo(arquivo, tiposPermitidos) {
@@ -202,7 +192,7 @@ async function excluirMidiaComQuarentena(patrimonioId, midiaId, user, model, men
         midia = await prisma.$transaction(async (transaction) => {
             await bloquearEAutorizar(transaction, patrimonioId, user);
             const atual = await exigirMidia(transaction, model, { id: midiaId, patrimonioId }, mensagem, codigo);
-            const caminho = caminhoDoArquivo(atual.url);
+            const caminho = caminhoArquivoUpload(atual.url);
             contexto = { model, midiaId, patrimonioId, url: atual.url, caminhoOriginal: caminho };
             try {
                 if (!(await uploadCompartilhado(transaction, atual.url))) arquivo = await moverParaQuarentena(caminho);

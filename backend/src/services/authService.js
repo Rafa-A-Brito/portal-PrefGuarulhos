@@ -4,10 +4,13 @@ import BadRequestError from "../errors/BadRequestError.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import { generateToken } from "../utils/token.js";
 
+const DUMMY_HASH = "$2b$12$Z/juidp1FLKNPXCpp9Zf9exflW34B7DM3r1JJgR/YeID/BuxgwhGG";
+
 export async function login({ email, password }) {
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user || !user.isActive || !(await verifyPassword(password, user.passwordHash))) {
+    const valid = await verifyPassword(password, user?.isActive ? user.passwordHash : DUMMY_HASH);
+    if (!user || !user.isActive || !valid) {
         throw new UnauthorizedError("E-mail ou senha incorretos.");
     }
 

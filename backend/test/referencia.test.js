@@ -38,9 +38,9 @@ beforeEach(t => {
     patrimonio = { id, status: "RASCUNHO", descricaoResumida: "Resumo manual preservado.", documentos, categoriasAdicionais: [] };
     stub(t, prisma.user, "findUnique", async () => ({ id: userId, role, isActive: true }));
     stub(t, prisma.patrimonio, "findUnique", async ({ where }) => where.id === id ? patrimonio : null);
-    stub(t, prisma.patrimonioDocumento, "findFirst", async ({ where }) => {
+    stub(t, prisma.patrimonioDocumento, "findMany", async ({ where }) => {
         const registro = documentos.find((documento) => documento.url === where.url);
-        return registro ? { patrimonio: { status: patrimonio.status } } : null;
+        return registro ? [{ patrimonio: { status: patrimonio.status } }] : [];
     });
     stub(t, prisma, "$transaction", async callback => {
         const snapshot = [...documentos];
