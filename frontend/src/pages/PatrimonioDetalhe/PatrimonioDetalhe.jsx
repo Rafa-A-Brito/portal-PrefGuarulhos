@@ -29,7 +29,11 @@ export default function PatrimonioDetalhe() {
 
 function DetalhePorSlug({ slug }) {
   const navigate = useNavigate();
-  const { patrimonios = [], setSelecionado, recarregar: recarregarCatalogo } = usePatrimoniosContext();
+  const {
+    patrimonios = [],
+    setSelecionado,
+    recarregar: recarregarCatalogo,
+  } = usePatrimoniosContext();
   const [estado, setEstado] = useState({
     carregando: true,
     detalhe: null,
@@ -68,7 +72,7 @@ function DetalhePorSlug({ slug }) {
         const detalhe = await buscarPatrimonioPorId(slug);
         if (detalhe) {
           setEstado({ carregando: false, detalhe, erro: false });
-          setSelecionado((atual) => atual?.uuid === uuid ? detalhe : atual);
+          setSelecionado((atual) => (atual?.uuid === uuid ? detalhe : atual));
           setErroSincronizacao(false);
           return true;
         }
@@ -253,7 +257,8 @@ function DetalhePorSlug({ slug }) {
             {erroSincronizacao && (
               <div className="detalhe-admin-atualizacao-erro" role="alert">
                 <span>
-                  A alteração pode ter sido salva, mas a ficha pública não pôde ser atualizada.
+                  A alteração pode ter sido salva, mas a ficha pública não pôde
+                  ser atualizada.
                 </span>
                 <button
                   type="button"
@@ -415,7 +420,10 @@ function DetalhePorSlug({ slug }) {
             </ul>
           </section>
         )}
-        <PatrimoniosRelacionados ligacoes={item.ligacoes} patrimonios={patrimonios} />
+        <PatrimoniosRelacionados
+          ligacoes={item.ligacoes}
+          patrimonios={patrimonios}
+        />
       </div>
 
       {podeEditar && editando && (
