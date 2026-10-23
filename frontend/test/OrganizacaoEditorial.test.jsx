@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import AdminRegioes from "../src/features/admin/pages/AdminRegioes";
 import Patrimonios from "../src/pages/Patrimonios/Patrimonios";
 import MetadataEditorial from "../src/components/MetadataEditorial/MetadataEditorial";
@@ -49,7 +49,8 @@ test("D2 metadata não inventa número nem expõe prioridade/UUID/rota", () => {
   const view = render(<MetadataEditorial item={{ numeroExibicao: null, ordemExibicao: 0 }} />);
   expect(view.container.textContent).toBe("");
   view.rerender(<MetadataEditorial item={{ numeroExibicao: 12, ordemExibicao: 999, regiao: region }} />);
-  expect(screen.getByText("Nº 12")).toBeTruthy(); expect(screen.getByText("Região: Região de teste")).toBeTruthy();
+  expect(screen.getByText("Nº 12")).toBeTruthy();
+  expect(screen.getByText("Região:").parentElement.textContent).toBe("Região: Região de teste");
   expect(view.container.textContent).not.toContain("999"); expect(view.container.textContent).not.toContain(region.id);
   expect(view.container.querySelector("a")).toBeNull();
 });
@@ -96,23 +97,32 @@ const items = [
   { id: "a-sem-prioridade", nome: "A sem prioridade", numeroExibicao: null, ordemExibicao: null },
   { id: "m-regional", nome: "M regional", numeroExibicao: 7, ordemExibicao: 0, regiao: region },
 ].map(p => ({ categoria: "historico", categorias: ["historico"], bairro: "Teste", endereco: "Rua", cep: "07010-000", resumo: "Resumo", imagemPrincipal: "/fixture.jpg", ...p }));
-function listing(url = "/patrimonios") {
-  return render(<MemoryRouter initialEntries={[url]}><PatrimoniosContext.Provider value={{ patrimonios: items, carregando: false, erro: null, setSelecionado: vi.fn() }}><Patrimonios /></PatrimoniosContext.Provider></MemoryRouter>);
+function LocalAtual() {
+  const location = useLocation();
+  return <output data-testid="local">{location.pathname + location.search}</output>;
 }
-test("D2 filtros locais preservam ordem da API e número exato não é busca textual", async () => {
-  regions = [region]; const user = userEvent.setup(); listing();
+function listing(url = "/patrimonios") {
+  return render(<MemoryRouter initialEntries={[url]}><PatrimoniosContext.Provider value={{ patrimonios: items, carregando: false, erro: null, setSelecionado: vi.fn() }}><Patrimonios /><LocalAtual /></PatrimoniosContext.Provider></MemoryRouter>);
+}
+test("filtro regional preserva ordem e numeração editorial; parâmetro numérico antigo é removido", async () => {
+  regions = [region]; const user = userEvent.setup(); listing("/patrimonios?numeroExibicao=7");
   const nomes = () => screen.getAllByRole("article").map(el => within(el).getByRole("heading").textContent);
   expect(nomes()).toEqual(items.map(p => p.nome));
-  await user.selectOptions(await screen.findByLabelText("Região"), region.slug);
+  await waitFor(() => expect(screen.getByTestId("local").textContent).toBe("/patrimonios"));
+  expect(screen.queryByLabelText("Número do patrimônio")).toBeNull();
+  const filtroRegional = await screen.findByRole("button", { name: /^Região de teste\s*2$/ });
+  await user.click(filtroRegional);
   expect(nomes()).toEqual(["Z priorizado", "M regional"]);
-  await user.type(screen.getByLabelText("Número do patrimônio"), "7");
-  expect(nomes()).toEqual(["M regional"]);
+  expect(filtroRegional.getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByTestId("local").textContent).toBe("/patrimonios?regiao=regiao-teste");
+  expect(screen.getByText("Nº 12")).toBeTruthy();
+  expect(screen.getByText("Nº 7")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Limpar filtros editoriais" }));
   expect(nomes()).toEqual(items.map(p => p.nome));
 });
 test("D2 catálogo vazio não exibe seletor; filtro de URL pode ser limpo", async () => {
   const user = userEvent.setup(); listing("/patrimonios?regiao=regiao-teste");
-  await waitFor(() => expect(screen.queryByLabelText("Região")).toBeNull());
+  await waitFor(() => expect(screen.queryByRole("group", { name: "Filtrar por região" })).toBeNull());
   expect(screen.getAllByRole("article")).toHaveLength(2);
   await user.click(screen.getByRole("button", { name: "Limpar filtros editoriais" }));
   expect(screen.getAllByRole("article")).toHaveLength(3);

@@ -51,12 +51,20 @@ function database(t, initial = record()) {
     const writes = [];
     let locks = 0;
     const tx = {
+        $executeRaw: async (query) => {
+            assert.match(query.join(""), /pg_advisory_xact_lock\(73033, 1\)/);
+            return 1;
+        },
         $queryRaw: async () => {
             locks++;
             return [];
         },
         categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
         patrimonio: {
+            aggregate: async () => ({ _max: {
+                numeroExibicao: state?.numeroExibicao ?? null,
+                ordemExibicao: state?.ordemExibicao ?? null,
+            } }),
             findUnique: async () => state,
             update: async ({ data }) => {
                 writes.push(data);

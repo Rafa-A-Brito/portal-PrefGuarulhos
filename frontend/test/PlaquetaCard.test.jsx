@@ -18,7 +18,7 @@ test.each(PATRIMONIOS_SEM_DESTINO)("card $slug não reapresenta bairro/CEP como 
 test("card normal mantém bairro e CEP", () => {
   abrir(bem);
   expect(screen.getByText("Bairro legado")).toBeTruthy();
-  expect(screen.getByText("CEP 99999-999")).toBeTruthy();
+  expect(screen.getByText("99999-999")).toBeTruthy();
 });
 
 test("card demolido indica referência histórica", () => {

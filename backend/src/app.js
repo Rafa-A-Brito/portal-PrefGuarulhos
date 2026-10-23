@@ -21,6 +21,11 @@ app.disable("x-powered-by");
 app.set("trust proxy", env.TRUST_PROXY_IPS ? env.TRUST_PROXY_IPS.split(",").map(ip => ip.trim()) : false);
 app.use(securityHeaders);
 app.use(cors({ origin: env.CORS_ORIGIN, exposedHeaders: ["Retry-After"] }));
+// Inclui erros de validação/autenticação que não chegam aos controllers.
+app.use(["/api/auth", "/api/admin", "/api/admins"], (_req, res, next) => {
+    res.setHeader("Cache-Control", "no-store");
+    next();
+});
 app.use(express.json({ limit: "100kb" }));
 for (const pasta of UPLOAD_FOLDERS.filter((pasta) => ["exposicoes", "novidades"].includes(pasta))) {
     app.use(`/uploads/${pasta}`, express.static(path.join(UPLOAD_DIR, pasta), {

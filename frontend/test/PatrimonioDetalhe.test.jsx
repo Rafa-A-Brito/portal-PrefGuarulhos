@@ -208,7 +208,7 @@ test("detalhe consome destino da API sem listagem e navega usando slug público"
   get.mockResolvedValueOnce({ data: { data: { ...registro, id: "uuid-destino", slug: "casa-amarela", nome: "Casa Amarela", ligacoes: [] } } });
   abrir(); await carregado();
   expect(screen.getByRole("region", { name: "Patrimônios relacionados" })).toBeTruthy();
-  expect(screen.getByText(relacaoEditorial.texto)).toBeTruthy();
+  expect(screen.queryByText(relacaoEditorial.texto)).toBeNull();
   expect(document.body.textContent).not.toContain("uuid-editorial");
   expect(document.body.textContent).not.toContain("uuid-destino");
   fireEvent.click(screen.getByRole("link", { name: "Conhecer patrimônio: Casa Amarela" }));

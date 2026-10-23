@@ -260,7 +260,7 @@ test("falha ao carregar outro detalhe é visível e preserva formulário e image
   const user = await edit();
   hook = config => { if (config.url.endsWith(secondId)) rejectApi(config, 404, "Patrimônio removido."); };
   await user.click(screen.getByRole("button", { name: "Editar Outro patrimônio" }));
-  expect((await screen.findByRole("alert")).textContent).toBe("Patrimônio removido.");
+  expect(within(await screen.findByRole("alert")).getByText("Patrimônio removido.")).toBeTruthy();
   expect(screen.getByLabelText("Nome").value).toBe("Estação");
   expect(screen.getByRole("img", { name: "Fachada existente" })).toBeTruthy();
   expect(flags.mostrarErro).toHaveBeenCalled();
@@ -872,7 +872,7 @@ test.each([["ADMIN", true], ["EDITOR", false]])("D3D+: %s — botão “+ Nova r
   await edit();
   await waitFor(() => expect(screen.getByLabelText("Região").disabled).toBe(false));
   expect(!!screen.queryByRole("button", { name: "+ Nova região" })).toBe(visivel);
-  expect(screen.getByRole("option", { name: "Não informada" })).toBeTruthy();
+  expect(within(screen.getByLabelText("Região")).getByRole("option", { name: "Não informada" })).toBeTruthy();
 });
 
 test("D3D+: ADMIN cadastra região dentro do formulário de patrimônio, seleciona-a e preserva os campos em edição", async () => {

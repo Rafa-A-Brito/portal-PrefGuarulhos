@@ -91,6 +91,7 @@ test("EDITOR não pode cadastrar contas", async () => {
             password: "senha-segura-123",
         });
         assert.equal(response.status, 403);
+        assert.equal(response.headers.get("cache-control"), "no-store");
         assert.equal((await response.json()).error.code, "FORBIDDEN");
     } finally {
         mock.restore();
@@ -161,6 +162,7 @@ test("ADMIN cria contas ADMIN e EDITOR ativas, com hash e resposta sem senha", a
             const body = await response.json();
 
             assert.equal(response.status, 201);
+            assert.equal(response.headers.get("cache-control"), "no-store");
             assert.equal(body.success, true);
             assert.deepEqual(body.data, {
                 id: created.at(-1).id,
@@ -266,6 +268,7 @@ test("conta criada consegue login pelo endpoint existente", async (t) => {
         });
         const body = await response.json();
         assert.equal(response.status, 200);
+        assert.equal(response.headers.get("cache-control"), "no-store");
         assert.equal(body.data.user.id, stored.id);
         assert.equal(body.data.user.role, "EDITOR");
         assert.equal(typeof body.data.token, "string");

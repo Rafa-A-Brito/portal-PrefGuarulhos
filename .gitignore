@@ -164,4 +164,5 @@ pgpass.conf
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.github/
 AGENTS.md

@@ -36,7 +36,7 @@ test("Favoritar continua independente e acessível sem navegar ao ativá-lo", as
   const user = userEvent.setup(); inicio();
   const card = screen.getByRole("heading", { name: "Casa histórica" }).closest("article");
   const link = within(card).getByRole("link");
-  const favorito = within(card).getByRole("button", { name: "Favoritar" });
+  const favorito = within(card).getByRole("button", { name: "Adicionar Casa histórica aos favoritos" });
   link.focus(); await user.tab();
   expect(document.activeElement).toBe(favorito);
   expect(favorito.closest("a")).toBeNull();

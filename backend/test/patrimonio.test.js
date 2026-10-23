@@ -20,6 +20,11 @@ const {
 } = await import("../src/services/patrimonioService.js");
 const { generateToken } = await import("../src/utils/token.js");
 
+async function lockEditorial(query) {
+    assert.match(query.join(""), /pg_advisory_xact_lock\(73033, 1\)/);
+    return 1;
+}
+
 let server;
 let baseUrl;
 
@@ -289,6 +294,7 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
     let slugSearches = 0;
 
     prisma.$transaction = async (callback) => callback({
+        $executeRaw: lockEditorial,
         categoria: {
             findUnique: async () => ({ id: categoriaId }),
         },
@@ -341,6 +347,7 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
 test("retorna erro quando a categoria não existe", async () => {
     const originalTransaction = prisma.$transaction;
     prisma.$transaction = async (callback) => callback({
+        $executeRaw: lockEditorial,
         categoria: { findUnique: async () => null },
         patrimonio: {},
     });
@@ -414,6 +421,7 @@ test("ADMIN e EDITOR podem cadastrar patrimônio pela rota protegida", async () 
         authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true,
     });
     prisma.$transaction = async (callback) => callback({
+        $executeRaw: lockEditorial,
         categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
         patrimonio: {
             findUnique: async () => null,
@@ -485,6 +493,7 @@ test("cria patrimônio com categorias adicionais e rejeita adicional inexistente
     let encontradas = [{ id: adicional }];
 
     prisma.$transaction = async (callback) => callback({
+        $executeRaw: lockEditorial,
         categoria: {
             findUnique: async () => ({ id: categoriaId }),
             findMany: async () => encontradas,
