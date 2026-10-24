@@ -1,3 +1,4 @@
+import { prepararLimpezaFixtures } from "./limpezaFixtures.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -14,6 +15,7 @@ test("PostgreSQL: pesquisa em banco vazio usa detalhes atuais e preserva assets 
     assertTestDatabase();
     const { PrismaClient } = await import("@prisma/client"), { PrismaPg } = await import("@prisma/adapter-pg");
     const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.TEST_DATABASE_URL }) });
+    const limparFixtures = await prepararLimpezaFixtures(prisma);
     const uploadDir = await fs.mkdtemp(path.join(os.tmpdir(), "initial-research-test-"));
     const email = randomUUID() + "@example.test";
     const catalog = catalogoInicial("research");
@@ -37,7 +39,7 @@ test("PostgreSQL: pesquisa em banco vazio usa detalhes atuais e preserva assets 
         assert.deepEqual(await fs.readdir(uploadDir), []);
         assert.deepEqual(await hashes(), assetsBefore);
     } finally {
-        await prisma.$disconnect();
+        try { await limparFixtures(); } finally { await prisma.$disconnect(); }
         assert.equal(path.dirname(uploadDir), os.tmpdir()); assert.ok(path.basename(uploadDir).startsWith("initial-research-test-"));
         await fs.rm(uploadDir, { recursive: true, force: true });
     }

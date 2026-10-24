@@ -19,7 +19,7 @@ export function semCacheMidia(_req, res, next) {
 }
 
 function autorizar(registros, user) {
-    if (registros.some(registro => registro.patrimonio.status === "PUBLICADO")) return;
+    if (registros.some(registro => (registro.patrimonio?.status ?? registro.status) === "PUBLICADO")) return;
     if (!user?.isActive) throw new UnauthorizedError("Mídia disponível apenas para usuários autenticados.");
     if (!["ADMIN", "EDITOR"].includes(user.role)) throw new ForbiddenError();
 }
@@ -53,11 +53,11 @@ async function abrirArquivo(raiz, pasta, nome) {
     }
 }
 
-async function entregar(req, res, next, { raiz, pasta, url, model, attachment }) {
+async function entregar(req, res, next, { raiz, pasta, url, model, attachment, editorial = false }) {
     const { arquivo } = req.validatedParams;
     const registros = await prisma[model].findMany({
-        where: { url: `${url}/${arquivo}` },
-        select: { patrimonio: { select: { status: true } } },
+        where: { [editorial ? "imagemUrl" : "url"]: `${url}/${arquivo}` },
+        select: editorial ? { status: true } : { patrimonio: { select: { status: true } } },
     });
     if (!registros.length) throw new NotFoundError("Arquivo não encontrado.");
 
@@ -104,5 +104,15 @@ export function servirArquivoLegado(req, res, next) {
     return entregar(req, res, next, {
         raiz: UPLOAD_DIR, pasta: path.join(UPLOAD_DIR, tipo), url: `/uploads/${tipo}`,
         model: tipo === "patrimonios" ? "patrimonioImagem" : "patrimonioDocumento", attachment: tipo === "referencias",
+    });
+}
+
+
+// Reutiliza a entrega segura e consulta o status a cada GET/HEAD.
+export function servirImagemEditorial(req, res, next) {
+    const { tipo } = req.validatedParams;
+    return entregar(req, res, next, {
+        raiz: UPLOAD_DIR, pasta: path.join(UPLOAD_DIR, tipo), url: `/uploads/${tipo}`,
+        model: tipo === "exposicoes" ? "exposicao" : "novidade", attachment: false, editorial: true,
     });
 }

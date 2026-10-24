@@ -1,3 +1,4 @@
+import { prepararLimpezaFixtures } from "./limpezaFixtures.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fs from "node:fs/promises";
@@ -15,6 +16,7 @@ test("PostgreSQL: lotes revisados, backfills, rollback, concorrência e novidade
     const { PrismaClient } = await import("@prisma/client"), { PrismaPg } = await import("@prisma/adapter-pg");
     const databaseUrl = process.env.TEST_DATABASE_URL, database = new URL(databaseUrl).pathname.slice(1);
     const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+    const limparFixtures = await prepararLimpezaFixtures(prisma);
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "import-safety-test-"));
     const sourceDir = path.join(root, "source"), uploadDir = path.join(root, "uploads");
     await fs.mkdir(sourceDir); await fs.writeFile(path.join(sourceDir, "fixture.png"), "bytes da fixture");
@@ -79,7 +81,7 @@ test("PostgreSQL: lotes revisados, backfills, rollback, concorrência e novidade
         assert.equal((await news({ options: { ...newsApply, expectedStateHash: newsRepeat.estado_hash } })).aplicados, 0);
         assert.equal(await prisma.novidade.count(), 16);
     } finally {
-        await prisma.$disconnect();
+        try { await limparFixtures(); } finally { await prisma.$disconnect(); }
         assert.equal(path.dirname(root), os.tmpdir()); assert.ok(path.basename(root).startsWith("import-safety-test-"));
         await fs.rm(root, { recursive: true, force: true });
     }

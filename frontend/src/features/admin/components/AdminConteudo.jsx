@@ -6,6 +6,7 @@ import {
   ArchiveBoxArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
+import ImagemAdmin from "./ImagemAdmin";
 import { useErroModal } from "../../../hooks/useErroModal";
 import {
   extrairMensagemDeErro,
@@ -317,7 +318,7 @@ export default function AdminConteudo({ tipo, api }) {
               </label>
               {imagem && (
                 <div className="admin-form-col-2">
-                  <img
+                  <ImagemAdmin
                     src={imagem}
                     alt="Prévia da imagem"
                     style={{

@@ -43,11 +43,10 @@ test(
                     role: "ADMIN",
                     isActive: true,
                 },
-                select: { id: true },
+                select: { id: true, tokenVersion: true },
             });
-        await createFixtureSession(prisma, bootstrap);
-
             createdIds.push(bootstrap.id);
+            await createFixtureSession(prisma, bootstrap);
             const email = `novo-${randomUUID()}@example.test`;
             const password = "senha-de-teste-123";
             let baseUrl = await startServer();

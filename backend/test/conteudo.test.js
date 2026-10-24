@@ -5,7 +5,7 @@ import { mkdtemp, mkdir, writeFile, access, readdir, rm } from "node:fs/promises
 import path from "node:path";
 import os from "node:os";
 
-process.env.DATABASE_URL = "postgresql://localhost:5432/test_conteudo";
+process.env.DATABASE_URL = "postgresql://unused:unused@127.0.0.1:1/test_conteudo";
 process.env.JWT_SECRET = "test-secret-with-at-least-32-characters";
 const uploads = await mkdtemp(path.join(os.tmpdir(), "lote03-test-"));
 process.env.UPLOAD_DIR = uploads;
@@ -221,16 +221,25 @@ test("Limpeza recusa traversal, URLs externas e pastas fora do lote", async () =
     }
 });
 
-test("Upload de exposição fica disponível pela URL devolvida, sem autenticação", async (t) => {
+test("upload de exposição exige sessão até publicar e volta a ser privado ao arquivar", async (t) => {
     auth(t);
-    stub(t, prisma.exposicao, "create", async ({ data }) => ({ id: randomUUID(), ...data }));
+    let criada;
+    stub(t, prisma.exposicao, "create", async ({ data }) => (criada = { id: randomUUID(), ...data }));
+    stub(t, prisma.exposicao, "findMany", async ({ where }) => where.imagemUrl === criada.imagemUrl ? [{ status: criada.status }] : []);
     const result = await request("/admin/exposicoes", { user: editor, method: "POST", body: multipart(dadosExpo) });
     assert.equal(result.status, 201);
     assert.match(result.body.data.imagemUrl, /^\/uploads\/exposicoes\//);
-    const response = await fetch(base.replace(/\/api$/, "") + result.body.data.imagemUrl);
+    const url = base.replace(/\/api$/, "") + result.body.data.imagemUrl;
+    assert.equal(criada.status, "RASCUNHO");
+    assert.equal((await fetch(url)).status, 401);
+    const response = await fetch(url, { headers: { authorization: `Bearer ${generateToken(editor.id, 0, editor.id)}` } });
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-type"), /image\/png/);
     assert.equal((await response.arrayBuffer()).byteLength, 8);
+    criada.status = "PUBLICADO";
+    assert.equal((await fetch(url)).status, 200);
+    criada.status = "ARQUIVADO";
+    assert.equal((await fetch(url)).status, 401);
 });
 
 test("Novidade aceita multipart sem arquivo; upload recusado por permissão não deixa órfão", async (t) => {

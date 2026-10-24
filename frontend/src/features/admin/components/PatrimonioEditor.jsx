@@ -36,6 +36,8 @@ import "./PatrimonioEditor.css";
  * Props:
  *  - idInicial: "novo" ou o UUID do patrimônio. Para trocar de patrimônio,
  *    quem usa muda a `key` do componente (ele carrega uma vez ao montar).
+ *  - detalheInicial: detalhe já validado ao alternar de outro formulário;
+ *    evita uma segunda consulta e preserva o editor anterior em caso de erro.
  *  - categorias: opcional; se ausente o editor busca GET /categorias.
  *  - semTitulo: esconde o <h2> (o modal já tem o próprio cabeçalho).
  *  - rolarAoAbrir: rola até o formulário ao abrir (dashboard). No modal, não.
@@ -141,6 +143,7 @@ function paraFormulario(patrimonio) {
 }
 export default function PatrimonioEditor({
   idInicial,
+  detalheInicial = null,
   categorias: categoriasProp,
   semTitulo = false,
   rolarAoAbrir = true,
@@ -315,7 +318,7 @@ export default function PatrimonioEditor({
   // Devolve true quando o formulário ficou pronto. Respostas de pedidos
   // antigos (troca de item, fechamento, desmontagem) são descartadas.
   const carregar = useCallback(
-    async (alvo, aviso = null) => {
+    async (alvo, aviso = null, detalhePrecarregado = null) => {
       cancelarConsultaCep();
       const pedido = ++pedidoEdicaoRef.current;
       setCarregandoEdicao(true);
@@ -323,7 +326,7 @@ export default function PatrimonioEditor({
 
       try {
         const [detalhe, cats] = await Promise.all([
-          alvo === "novo" ? null : adminApi.buscarPatrimonioAdmin(alvo),
+          alvo === "novo" ? null : (detalhePrecarregado ?? adminApi.buscarPatrimonioAdmin(alvo)),
           categoriasProp ?? listarCategorias(),
         ]);
         if (pedido !== pedidoEdicaoRef.current) return false;
@@ -387,7 +390,7 @@ export default function PatrimonioEditor({
   useEffect(() => {
     // Carga inicial: roda uma vez por montagem (quem usa troca a `key`).
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void carregar(idInicial);
+    void carregar(idInicial, null, detalheInicial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

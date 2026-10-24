@@ -164,5 +164,9 @@ pgpass.conf
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.github/
+# Versionar somente o workflow revisado; demais arquivos locais continuam ignorados.
+/.github/*
+!/.github/workflows/
+/.github/workflows/*
+!/.github/workflows/predeploy.yml
 AGENTS.md

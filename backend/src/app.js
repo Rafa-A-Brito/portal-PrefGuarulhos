@@ -1,6 +1,4 @@
 import express from "express";
-import { UPLOAD_DIR, UPLOAD_FOLDERS } from "./config/uploadDir.js";
-import path from "node:path";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import env from "./config/env.js";
@@ -9,10 +7,10 @@ import routes from "./routes/index.js";
 import notFoundHandler from "./middlewares/notFoundHandler.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import { PATRIMONIOS_IMAGE_DIR, PATRIMONIOS_IMAGE_ROUTE } from "./config/arquivos.js";
-import { semCacheMidia, servirArquivoLegado } from "./controllers/midiaPublicaController.js";
+import { semCacheMidia, servirArquivoLegado, servirImagemEditorial } from "./controllers/midiaPublicaController.js";
 import authenticateOpcional from "./middlewares/authenticateOpcional.js";
 import { validateParams } from "./middlewares/validate.js";
-import { arquivoLegadoParamsSchema } from "./schemas/midiaSchema.js";
+import { arquivoLegadoParamsSchema, imagemEditorialParamsSchema } from "./schemas/midiaSchema.js";
 import securityHeaders from "./middlewares/securityHeaders.js";
 
 const app = express();
@@ -27,14 +25,14 @@ app.use(["/api/auth", "/api/admin", "/api/admins"], (_req, res, next) => {
     next();
 });
 app.use(express.json({ limit: "100kb" }));
-for (const pasta of UPLOAD_FOLDERS.filter((pasta) => ["exposicoes", "novidades"].includes(pasta))) {
-    app.use(`/uploads/${pasta}`, express.static(path.join(UPLOAD_DIR, pasta), {
-        dotfiles: "deny",
-        index: false,
-        setHeaders: (res) => {
-            res.setHeader("X-Content-Type-Options", "nosniff");
-        },
-    }));
+// Exposições/novidades em rascunho não podem ser expostas por express.static.
+// A mídia só é pública quando há pelo menos um registro PUBLICADO vinculado.
+for (const tipo of ["exposicoes", "novidades"]) {
+    app.get(`/uploads/${tipo}/:arquivo`, semCacheMidia, authenticateOpcional,
+        (req, res, next) => {
+            req.params.tipo = tipo;
+            return validateParams(imagemEditorialParamsSchema)(req, res, next);
+        }, servirImagemEditorial);
 }
 for (const tipo of ["patrimonios", "referencias"]) {
     app.get(`/uploads/${tipo}/:arquivo`, semCacheMidia, authenticateOpcional,

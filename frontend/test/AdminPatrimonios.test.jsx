@@ -128,6 +128,33 @@ async function edit() {
   return user;
 }
 
+test("troca pendente mantém o editor inerte e falha preserva o rascunho local", async () => {
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Nome ainda não salvo" } });
+  let falhar;
+  hook = config => config.url === `/admin/patrimonios/${secondId}`
+    ? new Promise((_, reject) => { falhar = () => reject(Object.assign(new Error("Indisponível"), { config, response: { status: 503 } })); })
+    : null;
+  await user.click(screen.getByRole("button", { name: "Editar Outro patrimônio" }));
+  expect(screen.getByLabelText("Nome").closest("[inert]")).not.toBeNull();
+  expect(screen.getByRole("button", { name: "Novo patrimônio" }).disabled).toBe(true);
+  await act(async () => falhar());
+  expect(screen.getByLabelText("Nome").value).toBe("Nome ainda não salvo");
+  expect(screen.getByLabelText("Nome").closest("[inert]")).toBeNull();
+  expect(calls.filter(c => c.method !== "get")).toHaveLength(0);
+});
+
+test("EDITOR preserva formulário quando o destino foi publicado após listar", async () => {
+  flags.perfil = "EDITOR";
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Rascunho local" } });
+  records[1].status = "PUBLICADO";
+  await user.click(screen.getByRole("button", { name: "Editar Outro patrimônio" }));
+  await screen.findByText(/não está mais em rascunho/);
+  expect(screen.getByLabelText("Nome").value).toBe("Rascunho local");
+  expect(calls.filter(c => c.method !== "get")).toHaveLength(0);
+});
+
 test("D2: prioridade zero, número e região sem alterar endereço ou geocodificar", async () => {
   const region = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", nome: "Região teste", slug: "regiao-teste", ativo: true };
   hook = config => config.url === "/admin/regioes" ? reply(config, { itens: [region], paginacao: { totalPaginas: 1 } }) : null;
@@ -219,7 +246,7 @@ test("lápis busca pelo UUID, aguarda detalhe e abre edição completa com foco 
   expect(screen.getByLabelText("Endereço").value).toBe("Rua Teste");
   expect(screen.getByLabelText("História (opcional)").value).toBe(records[0].historia);
   expect(screen.getByRole("img", { name: "Fachada existente" }).src).toBe("http://localhost:3333/uploads/patrimonios/existente.jpg");
-  expect(document.activeElement).toBe(screen.getByLabelText("Nome"));
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText("Nome")));
   expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
   expect(screen.queryByRole("heading", { name: "Novo patrimônio" })).toBeNull();
 });
@@ -254,6 +281,24 @@ test.each([400, 401, 403, 404, 409])("erro %i ao salvar aparece e mantém formul
   expect(screen.getByLabelText("Nome").value).toBe("Estação");
   expect(screen.getByRole("img", { name: "Fachada existente" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Salvar" }).disabled).toBe(false);
+});
+
+test("falha ao alternar para outro patrimônio preserva alterações não salvas", async () => {
+  const user = await edit();
+  await user.clear(screen.getByLabelText("Nome"));
+  await user.type(screen.getByLabelText("Nome"), "Rascunho local que não pode sumir");
+  hook = config => { if (config.url.endsWith(secondId)) rejectApi(config, 404, "Patrimônio removido."); };
+  await user.click(screen.getByRole("button", { name: "Editar Outro patrimônio" }));
+  await screen.findByText("Patrimônio removido.");
+  expect(screen.getByLabelText("Nome").value).toBe("Rascunho local que não pode sumir");
+  expect(screen.getByRole("img", { name: "Fachada existente" })).toBeTruthy();
+});
+
+test("alternar com sucesso faz uma consulta para o novo detalhe", async () => {
+  const user = await edit();
+  await user.click(screen.getByRole("button", { name: "Editar Outro patrimônio" }));
+  await waitFor(() => expect(screen.getByLabelText("Nome").value).toBe("Outro patrimônio"));
+  expect(calls.filter(c => c.method === "get" && c.url === `/admin/patrimonios/${secondId}`)).toHaveLength(1);
 });
 
 test("falha ao carregar outro detalhe é visível e preserva formulário e imagens atuais", async () => {

@@ -40,8 +40,8 @@
         "test:auth-seeds:postgres": "node scripts/validate-auth-seeds.js"
     },
     "dependencies": {
-        "@prisma/adapter-pg": "7.10.0",
-        "@prisma/client": "7.10.0",
+        "@prisma/adapter-pg": "7.10.1",
+        "@prisma/client": "7.10.1",
         "bcrypt": "^6.0.0",
         "busboy": "^1.6.0",
         "cors": "^2.8.6",
@@ -58,6 +58,6 @@
         "eslint": "^10.8.1",
         "globals": "^17.11.0",
         "nodemon": "^3.1.14",
-        "prisma": "7.10.0"
+        "prisma": "7.10.1"
     }
 }

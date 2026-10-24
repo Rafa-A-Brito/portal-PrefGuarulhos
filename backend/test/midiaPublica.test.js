@@ -20,6 +20,8 @@ const fixtures = [
     { tipo: "referencias", url: "/uploads/referencias/fonte_acervo.txt", model: "patrimonioDocumento", mime: "text/plain", attachment: true },
     { tipo: "imagens", url: `/api/uploads/imagens/${randomUUID()}.png`, model: "patrimonioImagem", mime: "image/png", attachment: false },
     { tipo: "documentos", url: `/api/uploads/documentos/${randomUUID()}.pdf`, model: "patrimonioDocumento", mime: "application/pdf", attachment: false },
+    { tipo: "exposicoes", url: "/uploads/exposicoes/editorial.png", model: "exposicao", mime: "image/png", attachment: false, editorial: true },
+    { tipo: "novidades", url: "/uploads/novidades/editorial.png", model: "novidade", mime: "image/png", attachment: false, editorial: true },
 ];
 const bytes = Buffer.from("fixture de mídia");
 let server, base, status, user, registros, consultas;
@@ -34,7 +36,7 @@ function stub(t, target, method, implementation) {
 for (const fixture of fixtures) {
     test(`${fixture.tipo}: URL compartilhada independe da ordem dos vínculos`, async t => {
         for (const statuses of [["RASCUNHO", "PUBLICADO"], ["PUBLICADO", "ARQUIVADO"], ["ARQUIVADO", "RASCUNHO"]]) {
-            stub(t, prisma[fixture.model], "findMany", async () => statuses.map(status => ({ patrimonio: { status } })));
+            stub(t, prisma[fixture.model], "findMany", async () => statuses.map(status => fixture.editorial ? { status } : { patrimonio: { status } }));
             const expected = statuses.includes("PUBLICADO") ? 200 : 401;
             for (const method of ["GET", "HEAD"]) {
                 const response = await fetch(base + fixture.url, { method });
@@ -60,11 +62,13 @@ beforeEach((t) => {
     registros = new Set(fixtures.map((fixture) => fixture.url));
     consultas = [];
     stub(t, prisma.user, "findUnique", async () => user);
-    for (const model of ["patrimonioImagem", "patrimonioDocumento"]) {
+    for (const model of ["patrimonioImagem", "patrimonioDocumento", "exposicao", "novidade"]) {
         stub(t, prisma[model], "findMany", async ({ where, select }) => {
-            consultas.push({ model, url: where.url });
-            assert.deepEqual(select, { patrimonio: { select: { status: true } } });
-            return registros.has(where.url) ? [{ patrimonio: { status } }] : [];
+            const editorial = ["exposicao", "novidade"].includes(model);
+            const url = editorial ? where.imagemUrl : where.url;
+            consultas.push({ model, url });
+            assert.deepEqual(select, editorial ? { status: true } : { patrimonio: { select: { status: true } } });
+            return registros.has(url) ? [editorial ? { status } : { patrimonio: { status } }] : [];
         });
     }
 });
@@ -148,6 +152,8 @@ for (const fixture of fixtures) {
 
 test("tentativas de traversal, subpastas e pasta privada não chegam ao banco nem ao static", async () => {
     for (const url of [
+        "/uploads/exposicoes/..%2Fnovidades%2Feditorial.png", "/uploads/novidades/subpasta/editorial.png",
+        "/uploads/exposicoes/arquivo.svg", "/uploads/novidades/..%5Cfora.png",
         "/uploads/patrimonios/..%2Fnovidades%2Fpublica.png", "/uploads/referencias/..%5Cfora.txt",
         "/uploads/patrimonios/subpasta/publica.png", "/uploads/referencias/.oculto.txt",
         "/uploads/patrimonios/arquivo.pdf", "/uploads/referencias/imagem.png",
@@ -188,14 +194,7 @@ test("symlink de arquivo é recusado antes de abrir o descritor", async (t) => {
     for (const fixture of fixtures) assert.equal((await fetch(base + fixture.url)).status, 404);
 });
 
-test("exposições, novidades e arquivos da pesquisa permanecem públicos sem consultar o banco", async () => {
-    for (const folder of ["exposicoes", "novidades"]) {
-        await fs.writeFile(path.join(root, folder, "publica.png"), bytes);
-        const response = await fetch(`${base}/uploads/${folder}/publica.png`);
-        assert.equal(response.status, 200);
-        assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes);
-        assert.equal(response.headers.get("x-content-type-options"), "nosniff");
-    }
+test("arquivos da pesquisa permanecem p\u00fablicos sem consultar o banco", async () => {
     const name = "casa_jose_mauricio.jpg";
     const response = await fetch(`${base}/arquivos/patrimonios/${name}`);
     assert.equal(response.status, 200);
@@ -245,5 +244,38 @@ for (const depoisDosHeaders of [false, true]) {
             assert.equal(response.status, 500);
             assert.equal((await response.json()).error.code, "INTERNAL_ERROR");
         }
+    });
+}
+
+
+for (const [tipo, model] of [["exposicoes", "exposicao"], ["novidades", "novidade"]]) {
+    test(`${tipo}: arquivo de rascunho/arquivado protegido e publicado acessível`, async t => {
+        const arquivo = "editorial_teste.png";
+        const url = `/uploads/${tipo}/${arquivo}`;
+        await fs.writeFile(path.join(root, tipo, arquivo), bytes);
+        let situacao = "RASCUNHO";
+        stub(t, prisma[model], "findMany", async ({ where, select }) => {
+            assert.deepEqual(where, { imagemUrl: url });
+            assert.deepEqual(select, { status: true });
+            return [{ status: situacao }];
+        });
+        for (const status of ["RASCUNHO", "ARQUIVADO"]) {
+            situacao = status;
+            for (const method of ["GET", "HEAD"]) {
+                const anonimo = await fetch(base + url, { method });
+                assert.equal(anonimo.status, 401);
+                assert.equal(anonimo.headers.get("cache-control"), "private, no-store");
+                await anonimo.arrayBuffer();
+                const autenticado = await fetch(base + url, { method, headers: token() });
+                assert.equal(autenticado.status, 200);
+                await autenticado.arrayBuffer();
+            }
+        }
+        situacao = "PUBLICADO";
+        const publico = await fetch(base + url);
+        assert.equal(publico.status, 200);
+        assert.deepEqual(Buffer.from(await publico.arrayBuffer()), bytes);
+        assert.equal(publico.headers.get("cache-control"), "private, no-store");
+        assert.match(publico.headers.get("vary"), /Authorization/);
     });
 }

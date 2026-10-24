@@ -87,12 +87,25 @@ test("D2B PostgreSQL: catálogo, patrimônio, constraints e concorrência", { sk
             assert.equal(logs.length, 2); assert.equal(logs[1].oldValues.ativo, true); assert.equal(logs[1].newValues.ativo, false);
             await regional.salvarRegiao(region.id, { ativo: true }, admin);
         });
+        await t.test("publicações simultâneas recebem números e ordens distintos sem renumerar existentes", async () => {
+            const existentes = await prisma.patrimonio.findMany({ select: { id: true, numeroExibicao: true, ordemExibicao: true }, orderBy: { id: "asc" } });
+            const maximo = campo => Math.max(0, ...existentes.map(p => p[campo] ?? 0));
+            const x = await make({}), y = await make({});
+            await Promise.all([service.changePatrimonioStatus(x.id, "PUBLICADO", admin), service.changePatrimonioStatus(y.id, "PUBLICADO", admin)]);
+            const publicados = await prisma.patrimonio.findMany({ where: { id: { in: [x.id, y.id] } } });
+            for (const campo of ["numeroExibicao", "ordemExibicao"]) {
+                assert.deepEqual(publicados.map(p => p[campo]).sort((a, b) => a - b), [maximo(campo) + 1, maximo(campo) + 2]);
+            }
+            assert.deepEqual(await prisma.patrimonio.findMany({ where: { id: { in: existentes.map(p => p.id) } },
+                select: { id: true, numeroExibicao: true, ordemExibicao: true }, orderBy: { id: "asc" } }), existentes);
+        });
         await t.test("SQL constraints: número único incluindo arquivo, prioridades repetidas, FK e RESTRICT", async () => {
             const update = (id, column, value) => sql.query(`UPDATE patrimonio SET ${column}=$1 WHERE id=$2`, [value, id]);
-            await update(c.id, "numero_exibicao", 1);
+            const numeroLivre = (await prisma.patrimonio.aggregate({ _max: { numeroExibicao: true } }))._max.numeroExibicao + 1;
+            await update(c.id, "numero_exibicao", numeroLivre);
             for (const value of [0, -1]) await assert.rejects(update(b.id, "numero_exibicao", value), { code: "23514" });
-            await assert.rejects(update(b.id, "numero_exibicao", 1), { code: "23505" });
-            assert.equal((await patch(b, { numeroExibicao: 1 })).status, 409);
+            await assert.rejects(update(b.id, "numero_exibicao", numeroLivre), { code: "23505" });
+            assert.equal((await patch(b, { numeroExibicao: numeroLivre })).status, 409);
             await assert.rejects(update(a.id, "ordem_exibicao", -1), { code: "23514" });
             await update(a.id, "ordem_exibicao", 0); await update(b.id, "ordem_exibicao", 0);
             await update(a.id, "numero_exibicao", null); await update(b.id, "numero_exibicao", null);

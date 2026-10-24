@@ -77,6 +77,12 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(response => response, async error => {
   const config = error.config;
   if (error.response?.status !== 401 || rotaDeAutenticacao(config?.url)) return Promise.reject(error);
+  // Downloads de mídia usam Blob, inclusive para o envelope JSON de erro.
+  // Decodificar antes da decisão evita tratar expiração renovável como logout.
+  if (error.response.data instanceof Blob && error.response.data.type.includes("application/json")) {
+    try { error.response.data = JSON.parse(await error.response.data.text()); }
+    catch { /* Resposta inválida continua sujeita ao tratamento normal de 401. */ }
+  }
   const atual = lerSessao();
   const snapshot = { sessionId: config?.idDaSessao, token: config?.tokenDaRequisicao };
   if (snapshot.token) error.sessaoTratada = true;

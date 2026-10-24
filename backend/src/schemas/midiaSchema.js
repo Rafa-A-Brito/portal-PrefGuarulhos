@@ -69,3 +69,12 @@ export const arquivoLegadoParamsSchema = z.union([
     z.strictObject({ tipo: z.literal("referencias"), arquivo: z.string().min(1).max(255)
         .regex(/^[\p{L}\p{N}_-]+\.(?:pdf|doc|docx|odt|txt|md)$/iu) }),
 ]);
+
+
+// Um único componente de caminho, inclusive nomes legados com acentos.
+// Não admite barras, diretórios, extensões perigosas nem caminhos relativos.
+export const imagemEditorialParamsSchema = z.strictObject({
+    tipo: z.enum(["exposicoes", "novidades"]),
+    arquivo: z.string().min(1).max(255)
+        .regex(/^[\p{L}\p{N}_-]+\.(?:jpg|jpeg|png|webp|gif)$/iu),
+});

@@ -193,7 +193,10 @@ test("upload de rascunho exige token para leitura, DELETE remove registro e arqu
     assert.equal((await fetch(base + data.url)).status, 404);
 });
 
-test("Express mantém exposição e novidade estáticas sem transformar arquivos em HTML", async () => {
+test("imagens editoriais publicadas mant\u00eam MIME e prote\u00e7\u00e3o contra HTML", async (t) => {
+    for (const model of ["exposicao", "novidade"]) {
+        stub(t, prisma[model], "findMany", async () => [{ status: "PUBLICADO" }]);
+    }
     for (const folder of ["exposicoes", "novidades"]) {
         await fs.mkdir(path.join(uploads, folder), { recursive: true });
         await fs.writeFile(path.join(uploads, folder, "publica.png"), folder);

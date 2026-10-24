@@ -50,8 +50,18 @@ BEGIN
         JOIN pg_class t ON t.oid = c.conrelid
         WHERE n.nspname = 'public'
           AND c.contype = 'f'
-          AND t.relname IN ('users', 'categoria', 'patrimonio', 'local', 'patrimonio_imagens', 'patrimonio_documentos', 'rota', 'rota_patrimonio', 'audit_log')) <> 9 THEN
+          AND t.relname IN ('users', 'categoria', 'patrimonio', 'local', 'patrimonio_imagens', 'patrimonio_documentos', 'rota', 'rota_patrimonio', 'audit_log')) <> 10 THEN
         RAISE EXCEPTION 'Quantidade inesperada de FKs';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint c
+        WHERE c.conname = 'patrimonio_regiao_id_fkey'
+          AND c.conrelid = 'public.patrimonio'::regclass
+          AND c.confrelid = 'public.regioes_patrimonio'::regclass
+          AND c.contype = 'f'
+    ) THEN
+        RAISE EXCEPTION 'FK da região patrimonial não encontrada';
     END IF;
 
     IF NOT EXISTS (

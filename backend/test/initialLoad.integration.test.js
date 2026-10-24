@@ -1,3 +1,4 @@
+import { prepararLimpezaFixtures } from "./limpezaFixtures.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -13,6 +14,7 @@ test("PostgreSQL: carga, rollback, reexecução, edições, aliases e pesquisa p
     assertTestDatabase();
     const { PrismaClient } = await import("@prisma/client"), { PrismaPg } = await import("@prisma/adapter-pg");
     const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.TEST_DATABASE_URL }) });
+    const limparFixtures = await prepararLimpezaFixtures(prisma);
     const uploadDir = await fs.mkdtemp(path.join(os.tmpdir(), "initial-load-test-"));
     const email = randomUUID() + "@example.test";
     await prisma.user.create({ data: { email, name: "Responsável", passwordHash: "fixture-sem-login", role: "ADMIN" } });
@@ -72,7 +74,7 @@ test("PostgreSQL: carga, rollback, reexecução, edições, aliases e pesquisa p
             assert.deepEqual(await state(), snapshot);
         }
     } finally {
-        await prisma.$disconnect();
+        try { await limparFixtures(); } finally { await prisma.$disconnect(); }
         assert.equal(path.dirname(uploadDir), os.tmpdir()); assert.ok(path.basename(uploadDir).startsWith("initial-load-test-"));
         await fs.rm(uploadDir, { recursive: true, force: true });
     }

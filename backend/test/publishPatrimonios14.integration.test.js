@@ -42,6 +42,7 @@ test("PostgreSQL publicação dos 14: preflight, rollback integral, service admi
         for (let n = 0; n < 19; n++) await make("publicado-" + n, "PUBLICADO");
         for (let n = 0; n < 2; n++) await make("arquivado-" + n, "ARQUIVADO");
         const first = selected[0], last = selected.at(-1);
+        await prisma.patrimonio.update({ where: { id: first.id }, data: { numeroExibicao: 50, ordemExibicao: 70 } });
         await prisma.localizacao.create({ data: { patrimonioId: first.id, endereco: "Rua", bairro: "Centro", numero: "1", cep: "07010-000", latitude: -23.4, longitude: -46.5 } });
         await prisma.patrimonioImagem.create({ data: { patrimonioId: first.id, url: "/uploads/editorial.jpg", textoAlternativo: "Editorial", principal: true } });
         await prisma.patrimonioDetalhe.create({ data: { patrimonioId: first.id, titulo: "Nota", texto: "Preservar", ordem: 0 } });
@@ -101,14 +102,19 @@ test("PostgreSQL publicação dos 14: preflight, rollback integral, service admi
         assert.equal(result.aplicados, 14); assert.equal(writes, 14);
         assert.deepEqual(result.depois, { PUBLICADO: 33, RASCUNHO: 1, ARQUIVADO: 2 });
         const after = await snapshot();
-        const mutable = new Set(["status", "publicadoEm", "arquivadoEm", "updatedBy", "updatedAt"]);
+        const mutable = new Set(["status", "publicadoEm", "arquivadoEm", "updatedBy", "updatedAt", "numeroExibicao", "ordemExibicao"]);
         const preserved = p => Object.fromEntries(Object.entries(p).filter(([key]) => !mutable.has(key)));
+        const esperados = new Map(PUBLICATION_SLUGS.map((slug, i) => [slug, {
+            numeroExibicao: 50 + i, ordemExibicao: 70 + i,
+        }]));
         for (const current of after) {
             const old = restored.find(p => p.id === current.id);
             if (PUBLICATION_SLUGS.includes(current.slug)) {
                 assert.equal(current.status, "PUBLICADO"); assert.equal(current.updatedBy, author.id);
                 assert.ok(current.publicadoEm.getTime() >= start && current.publicadoEm.getTime() <= Date.now());
                 assert.equal(current.arquivadoEm, null);
+                assert.equal(current.numeroExibicao, esperados.get(current.slug).numeroExibicao);
+                assert.equal(current.ordemExibicao, esperados.get(current.slug).ordemExibicao);
                 assert.deepEqual(preserved(current), preserved(old));
             } else assert.deepEqual(current, old);
         }

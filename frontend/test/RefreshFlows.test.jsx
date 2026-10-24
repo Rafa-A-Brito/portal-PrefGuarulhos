@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { Blob as NodeBlob } from "node:buffer";
 import { ErroModalProvider } from "../src/context/ErroModalContext";
 import { ErroModalContext } from "../src/context/erroModalContextInstance";
 import { normalizarErro } from "../src/utils/erros";
@@ -23,6 +24,30 @@ beforeEach(()=>{sessionStorage.clear();vi.spyOn(console,"error").mockImplementat
 afterEach(()=>{cleanup();api.defaults.adapter=originalAdapter;sessionStorage.clear();vi.useRealTimers();vi.restoreAllMocks();});
 
 describe("renovacao central do cliente HTTP",()=>{
+ it.each(["ACCESS_TOKEN_EXPIRED", "UNAUTHORIZED"])("trata 401 JSON em Blob de mídia: %s", async code => {
+  vi.stubGlobal("Blob", NodeBlob);
+  try {
+   session();
+   const adapter = vi.fn(async config => {
+    if (config.url === "/auth/refresh") return renewed(config);
+    if (config.headers.Authorization === "Bearer old-access") {
+     throw { config, response: { status: 401, data: new Blob([JSON.stringify({ error: { code } })], { type: "application/json; charset=utf-8" }) } };
+    }
+    return ok(config, new Blob(["imagem"], { type: "image/png" }));
+   });
+   api.defaults.adapter = adapter;
+   const request = api.get("http://localhost:3333/uploads/exposicoes/teste.png", { responseType: "blob" });
+   if (code === "ACCESS_TOKEN_EXPIRED") {
+    expect((await request).data.type).toBe("image/png");
+    expect(stored().token).toBe("new-access");
+    expect(adapter).toHaveBeenCalledTimes(3);
+   } else {
+    await expect(request).rejects.toBeDefined();
+    expect(stored()).toBeNull();
+    expect(adapter).toHaveBeenCalledTimes(1);
+   }
+  } finally { vi.unstubAllGlobals(); }
+ });
  it("modal nao registra Authorization nem refresh bruto em erros Axios",async()=>{
   function Falhar(){const {mostrarErro}=useContext(ErroModalContext);return <button onClick={()=>mostrarErro({message:"offline",config:{headers:{Authorization:"Bearer access-secreto"},data:JSON.stringify({refreshToken:"refresh-secreto"})}})}>Falhar</button>;}
   render(<ErroModalProvider><Falhar/></ErroModalProvider>);await act(async()=>fireEvent.click(screen.getByText("Falhar")));

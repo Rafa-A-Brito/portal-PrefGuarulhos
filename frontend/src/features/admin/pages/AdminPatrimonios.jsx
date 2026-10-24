@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -40,9 +40,11 @@ export default function AdminPatrimonios() {
   const [editandoId, setEditandoId] = useState(null);
   const [editorOcupado, setEditorOcupado] = useState(false);
   const [acaoEmAndamento, setAcaoEmAndamento] = useState(null);
+  const [verificandoDestino, setVerificandoDestino] = useState(false);
+  const pedidoDestino = useRef(0);
   const [erroAcao, setErroAcao] = useState(null);
 
-  const ocupado = editorOcupado || acaoEmAndamento !== null;
+  const ocupado = editorOcupado || verificandoDestino || acaoEmAndamento !== null;
 
   const contagemPorCategoria = useMemo(
     () =>
@@ -78,10 +80,11 @@ export default function AdminPatrimonios() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function abrirEditor(idInicial) {
+  function abrirEditor(idInicial, detalheInicial = null) {
+    pedidoDestino.current++;
     setErroAcao(null);
     setEditandoId(idInicial);
-    setEditor((atual) => ({ chave: (atual?.chave ?? 0) + 1, idInicial }));
+    setEditor((atual) => ({ chave: (atual?.chave ?? 0) + 1, idInicial, detalheInicial }));
   }
 
   function abrirNovo() {
@@ -89,20 +92,49 @@ export default function AdminPatrimonios() {
     abrirEditor("novo");
   }
 
-  function abrirEdicao(resumo) {
+  async function abrirEdicao(resumo) {
     if (ocupado) return;
     if (resumo.status && !podeEditar(resumo)) {
       setErroAcao("Editores só podem editar patrimônios em rascunho.");
       return;
     }
-    abrirEditor(resumo.uuid);
+
+    // Ao mudar de patrimônio, não desmonte o formulário atual antes de
+    // confirmar que o outro detalhe pode ser carregado. Em falhas de rede,
+    // remoção ou permissão, preservamos inclusive edições e imagens locais.
+    let detalhePrecarregado = null;
+    if (editor && editandoId && editandoId !== resumo.uuid) {
+      const pedido = ++pedidoDestino.current;
+      setVerificandoDestino(true);
+      try {
+        const detalhe = await adminApi.buscarPatrimonioAdmin(resumo.uuid);
+        if (pedido !== pedidoDestino.current) return;
+        if (!podeEditar(detalhe)) {
+          setErroAcao("Este patrimônio não está mais em rascunho. Somente ADMIN pode editá-lo.");
+          return;
+        }
+        detalhePrecarregado = detalhe;
+      } catch (err) {
+        if (pedido !== pedidoDestino.current) return;
+        setErroAcao(adminApi.extrairMensagemDeErro(err));
+        mostrarErro(err, { origem: "AdminPatrimonios › abrir edição" });
+        return;
+      } finally {
+        if (pedido === pedidoDestino.current) setVerificandoDestino(false);
+      }
+    }
+    abrirEditor(resumo.uuid, detalhePrecarregado);
   }
 
   function fecharFormulario() {
+    pedidoDestino.current++;
+    setVerificandoDestino(false);
     setEditor(null);
     setEditandoId(null);
     setEditorOcupado(false);
   }
+
+  useEffect(() => () => { pedidoDestino.current++; }, []);
 
   // Gravação principal concluída. Criar mantém o editor aberto (para enviar
   // imagens); atualizar fecha. Nos dois casos a lista é recarregada.
@@ -172,15 +204,18 @@ export default function AdminPatrimonios() {
       )}
 
       {editor && (
-        <PatrimonioEditor
-          key={editor.chave}
-          idInicial={editor.idInicial}
-          categorias={categorias}
-          onSaved={aoSalvar}
-          onIdChange={setEditandoId}
-          onCancel={fecharFormulario}
-          onBusyChange={setEditorOcupado}
-        />
+        <div inert={verificandoDestino} aria-busy={verificandoDestino}>
+          <PatrimonioEditor
+            key={editor.chave}
+            idInicial={editor.idInicial}
+            detalheInicial={editor.detalheInicial}
+            categorias={categorias}
+            onSaved={aoSalvar}
+            onIdChange={setEditandoId}
+            onCancel={fecharFormulario}
+            onBusyChange={setEditorOcupado}
+          />
+        </div>
       )}
 
       {/* Legenda: cada categoria tem a sua cor (veja admin-extras.css) */}

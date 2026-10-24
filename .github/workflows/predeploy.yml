@@ -1,0 +1,117 @@
+name: Pre-deploy checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend / API / PostgreSQL isolado
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Nunca usar credenciais ou destino de produção neste job.
+      DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/portal_ci_test
+      JWT_SECRET: f84cb00bc332f7231a46dae8af9a9d0c336437550137418621ab0089e239bfd2
+      CORS_ORIGIN: http://localhost:5173
+      TEST_DATABASE_EXCLUSIVE: '1'
+      SECURITY_TEST_DATABASE_EXCLUSIVE: '1'
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run prisma:validate
+      - run: npm run prisma:generate
+      - run: npm run lint
+      - name: Gerar credenciais efêmeras para o compose de teste
+        run: |
+          node --input-type=module <<'NODE'
+          import { randomBytes } from 'node:crypto';
+          import { appendFileSync } from 'node:fs';
+          const password = randomBytes(24).toString('hex');
+          console.log('::add-mask::' + password);
+          const target = '127.0.0.1:5434/portal_test';
+          appendFileSync(process.env.GITHUB_ENV, [
+            `TEST_POSTGRES_PASSWORD=${password}`,
+            `TEST_JWT_SECRET=${process.env.JWT_SECRET}`,
+            `TEST_DATABASE_URL=postgresql://portal_test:${password}@${target}`,
+            `SECURITY_API_DATABASE_URL=postgresql://portal_api:${password}@${target}`,
+            `SECURITY_MIGRATION_DATABASE_URL=postgresql://portal_migrator:${password}@${target}`,
+            '',
+          ].join('\n'));
+          NODE
+      - name: Iniciar somente o PostgreSQL descartável
+        working-directory: .
+        run: docker compose -f compose.test.yml -p portal_ci up -d --wait db_test
+      - name: Conferir destino e preparar papéis restritos de teste
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import pg from 'pg';
+          import { assertTestDatabase } from './scripts/assert-test-db.js';
+          const target = assertTestDatabase();
+          assert.deepEqual(target, { hostname: 'loopback', port: 5434, database: 'portal_test' });
+          const db = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL });
+          try {
+            await db.connect();
+            await db.query('BEGIN');
+            const { rows: [identity] } = await db.query('SELECT current_database() AS db, current_user AS role');
+            assert.deepEqual(identity, { db: 'portal_test', role: 'portal_test' });
+            const { rows: [tables] } = await db.query("SELECT count(*)::int AS count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+            assert.equal(tables.count, 0, 'Exige banco de teste novo e vazio');
+            for (const role of ['portal_api', 'portal_migrator']) {
+              await db.query(`CREATE ROLE ${role} LOGIN PASSWORD ${pg.escapeLiteral(process.env.TEST_POSTGRES_PASSWORD)} NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`);
+            }
+            await db.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
+            await db.query('GRANT USAGE ON SCHEMA public TO portal_api, portal_migrator');
+            await db.query('GRANT CREATE ON SCHEMA public TO portal_migrator');
+            await db.query('ALTER DEFAULT PRIVILEGES FOR ROLE portal_migrator IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO portal_api');
+            await db.query('ALTER DEFAULT PRIVILEGES FOR ROLE portal_migrator IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO portal_api');
+            await db.query('COMMIT');
+          } catch (error) { await db.query('ROLLBACK'); throw error; }
+          finally { await db.end(); }
+          NODE
+      - run: npm run test:db:migrate
+      - run: npm test
+      - run: npm run test:db:integrity
+      - name: Auditar dependências de produção e desenvolvimento
+        run: npm audit --audit-level=high
+      - name: Encerrar somente o compose de teste
+        if: always()
+        working-directory: .
+        run: docker compose -f compose.test.yml -p portal_ci down
+
+  frontend:
+    name: Frontend / interface
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --maxWorkers=2
+      - run: npm run build
+      - name: Auditar dependências de produção e desenvolvimento
+        run: npm audit --audit-level=high
