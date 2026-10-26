@@ -12,6 +12,7 @@ import authenticateOpcional from "./middlewares/authenticateOpcional.js";
 import { validateParams } from "./middlewares/validate.js";
 import { arquivoLegadoParamsSchema, imagemEditorialParamsSchema } from "./schemas/midiaSchema.js";
 import securityHeaders from "./middlewares/securityHeaders.js";
+import metricasRoutes from "./routes/metricasRoute.js";
 
 const app = express();
 
@@ -24,6 +25,8 @@ app.use(["/api/auth", "/api/admin", "/api/admins"], (_req, res, next) => {
     res.setHeader("Cache-Control", "no-store");
     next();
 });
+// Ingestão pública isolada: origem/limites/parser de 2 KB antes do parser geral.
+app.use("/api/metricas", metricasRoutes);
 app.use(express.json({ limit: "100kb" }));
 // Exposições/novidades em rascunho não podem ser expostas por express.static.
 // A mídia só é pública quando há pelo menos um registro PUBLICADO vinculado.

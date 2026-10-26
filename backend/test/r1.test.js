@@ -36,6 +36,7 @@ test("R1: fonte C2 e migrations aplicadas permanecem preservadas; trilhas nao co
         "20261016120000_add_regioes_numero_ordem",
         "20261020190000_add_user_token_version",
         "20261021130000_add_auth_sessions",
+        "20261026120000_add_visualizacoes_metricas",
     ]);
     assert.equal(team.length, 11);
     assert.equal(team.includes("20261014010000_add_fatos_ligacoes"), false);

@@ -139,6 +139,8 @@ model Patrimonio {
   ligacoesRecebidas    PatrimonioLigacao[]   @relation("LigacaoDestino")
   categoriasAdicionais PatrimonioCategoria[]
   detalhes             PatrimonioDetalhe[]
+  visualizacoesUnicas   VisualizacaoUnicaDia[]
+  visualizacoesDiarias  VisualizacaoTotalDia[]
 
   @@index([categoriaId, status])
   @@index([regiaoId], map: "patrimonio_regiao_id_idx")
@@ -147,6 +149,45 @@ model Patrimonio {
   @@index([updatedBy])
   @@index([status])
   @@map("patrimonio")
+}
+
+model VisualizacaoUnicaDia {
+  dia            DateTime   @db.Date
+  patrimonioId   String     @map("patrimonio_id") @db.Uuid
+  chaveVisitante String     @map("chave_visitante") @db.Char(64)
+  patrimonio     Patrimonio @relation(fields: [patrimonioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([dia, patrimonioId, chaveVisitante])
+  @@index([patrimonioId, dia])
+  @@map("visualizacoes_unicas_dia")
+}
+
+model VisualizacaoTotalDia {
+  dia          DateTime   @db.Date
+  patrimonioId String     @map("patrimonio_id") @db.Uuid
+  quantidade   BigInt     @default(0)
+  patrimonio   Patrimonio @relation(fields: [patrimonioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([dia, patrimonioId])
+  @@index([patrimonioId, dia])
+  @@map("visualizacoes_totais_dia")
+}
+
+enum EstadoSondaMetricas {
+  DISPONIVEL
+  DESATIVADA
+  FALHA
+
+  @@map("estado_sonda_metricas")
+}
+
+model SondaMetricas {
+  janelaInicio DateTime           @id @map("janela_inicio") @db.Timestamptz(0)
+  observadoEm  DateTime           @map("observado_em") @db.Timestamptz(3)
+  estado       EstadoSondaMetricas
+  versaoRegra  Int                @map("versao_regra")
+
+  @@map("sondas_metricas")
 }
 
 model PatrimonioDetalhe {

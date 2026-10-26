@@ -51,6 +51,10 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "PATCH /api/admin/patrimonios/imagens/{imagemId}",
             "PATCH /api/admin/patrimonios/{id}/referencias/{referenciaId}",
             "GET /api/admin/dashboard",
+            "GET /api/admin/dashboard/metricas",
+            "POST /api/metricas/visualizacoes/sessao",
+            "DELETE /api/metricas/visualizacoes/sessao",
+            "POST /api/metricas/visualizacoes",
             ...["fatos", "ligacoes"].flatMap(recurso => [
                 `GET /api/admin/patrimonios/{id}/${recurso}`,
                 `POST /api/admin/patrimonios/{id}/${recurso}`,

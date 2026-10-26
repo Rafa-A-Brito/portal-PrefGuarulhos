@@ -1,5 +1,6 @@
 import { pathsMidia } from "./pathsMidia.js";
 import { pathsOrganizacaoEditorial } from "./organizacaoEditorial.js";
+import { pathsMetricas } from "./pathsMetricas.js";
 const schema = (name) => ({ $ref: `#/components/schemas/${name}` });
 const response = (description, name, example) => ({
     description,
@@ -481,6 +482,7 @@ for (const [recurso, nome, dto] of [["fatos", "Fato", "Fato"], ["ligacoes", "Lig
 }
 
 Object.assign(paths, pathsMidia);
+Object.assign(paths, pathsMetricas);
 // Campo arquivo é alternativa secundária; imagem mantém o contrato D1A.
 const uploadIntegrado = paths["/api/admin/patrimonios/{id}/imagens"].post;
 const multipart = uploadIntegrado.requestBody.content["multipart/form-data"];
