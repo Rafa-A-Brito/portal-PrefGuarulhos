@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import { mockSessionWrites } from "./authSessionFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -41,6 +42,9 @@ function adminRequest(token, body) {
 function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
     const originalFindUnique = prisma.user.findUnique;
     const originalCreate = prisma.user.create;
+    const originalTx = prisma.$transaction, originalAudit = prisma.auditLog.create;
+    prisma.$transaction = async cb => cb(prisma);
+    prisma.auditLog.create = mockAuditLog().create;
     const authenticatedUserId = randomUUID();
 
     prisma.user.findUnique = async ({ where }) => {
@@ -66,6 +70,7 @@ function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
         restore() {
             prisma.user.findUnique = originalFindUnique;
             prisma.user.create = originalCreate;
+            prisma.$transaction = originalTx; prisma.auditLog.create = originalAudit;
         },
     };
 }

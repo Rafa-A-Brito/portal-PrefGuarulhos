@@ -1,5 +1,7 @@
+import { mockPrismaAudit } from "./auditoriaFixture.js";
 import { randomUUID } from "node:crypto";
 export function mockSessionWrites(t, prisma) {
+    mockPrismaAudit(t, prisma);
     const replacements = [[prisma, "$transaction", async callback => callback(prisma)],
         [prisma, "$queryRaw", async () => []],
         [prisma.authSession, "create", async ({ data }) => ({ ...data, id: data.id || randomUUID() })],

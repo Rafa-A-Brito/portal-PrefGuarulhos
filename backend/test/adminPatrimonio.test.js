@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { before, after, test } from "node:test";
@@ -50,7 +51,7 @@ function database(t, initial = record()) {
     let state = initial;
     const writes = [];
     let locks = 0;
-    const tx = {
+    const tx = { auditLog: mockAuditLog(),
         $executeRaw: async (query) => {
             assert.match(query.join(""), /pg_advisory_xact_lock\(73033, 1\)/);
             return 1;

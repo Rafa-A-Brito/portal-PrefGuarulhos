@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { before, after, beforeEach, test } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -40,6 +41,7 @@ beforeEach(t => {
         const before = structuredClone({ imagens, documentos });
         const model = getRows => ({
             create: async ({ data }) => { const row = { id: randomUUID(), ...data }; getRows().push(row); return row; },
+            findMany: async ({ where }) => getRows().filter(r => r.patrimonioId === where.patrimonioId && (!where.principal || r.principal)),
             findUnique: async ({ where }) => getRows().find(r => r.id === where.id) ?? null,
             findFirst: async ({ where }) => getRows().find(r => r.id === where.id && r.patrimonioId === where.patrimonioId) ?? null,
             updateMany: async ({ where, data }) => { for (const row of getRows()) if (row.patrimonioId === where.patrimonioId && row.id !== where.id?.not) Object.assign(row, data); },
@@ -47,7 +49,7 @@ beforeEach(t => {
             delete: async ({ where }) => { if (failDelete) throw new Error("delete-falhou"); return getRows().splice(getRows().findIndex(r => r.id === where.id), 1)[0]; },
         });
         try {
-            const result = await callback({
+            const result = await callback({ auditLog: mockAuditLog(),
                 $queryRaw: async (sql, ...values) => sql.join("").includes("count(*)")
                     ? [{ total: [...imagens, ...documentos].filter(r => r.url === values[0]).length }] : [],
                 patrimonio: { findUnique: findParent },

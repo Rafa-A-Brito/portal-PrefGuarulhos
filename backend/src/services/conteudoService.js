@@ -6,8 +6,12 @@ import ForbiddenError from "../errors/ForbiddenError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import { slugify } from "../utils/slug.js";
 import { removerArquivoUpload } from "../utils/arquivoUpload.js";
+import { auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
+import { comQuarentenaUpload, uploadCompartilhado } from "../utils/quarentenaUpload.js";
 
 export function criarConteudoService({ model, tabela, schema, imagemObrigatoria, serializar, preparar, orderBy }) {
+    const entity = model === "exposicao" ? E.EXPOSICAO : E.NOVIDADE;
+    const prefix = model === "exposicao" ? "EXPOSICAO" : "NOVIDADE";
     const dto = (item, publico = false) => {
         const data = serializar(item);
         if (publico) {
@@ -65,14 +69,18 @@ export function criarConteudoService({ model, tabela, schema, imagemObrigatoria,
         // A restrição UNIQUE também protege criações concorrentes.
         for (let tentativa = 0; tentativa < 5; tentativa++) {
             try {
-                const item = await prisma[model].create({ data: {
-                    ...preparar(dados),
-                    slug: tentativa === 0 ? base : `${base}-${randomUUID()}`,
-                    imagemUrl: file?.url ?? null,
-                    status: dados.status ?? "RASCUNHO",
-                    ...statusFields(dados.status),
-                    createdBy: user.id,
-                } });
+                const item = await prisma.$transaction(async tx => {
+                    const created = await tx[model].create({ data: {
+                        ...preparar(dados),
+                        slug: tentativa === 0 ? base : `${base}-${randomUUID()}`,
+                        imagemUrl: file?.url ?? null,
+                        status: dados.status ?? "RASCUNHO",
+                        ...statusFields(dados.status),
+                        createdBy: user.id,
+                    } });
+                    await registrarAuditoria(tx, { userId: user.id, action: A[`${prefix}_CREATE`], entity, entityId: created.id, after: created });
+                    return created;
+                });
                 return dto(item);
             } catch (error) {
                 if (error.code !== "P2002" || tentativa === 4) throw error;
@@ -96,10 +104,14 @@ export function criarConteudoService({ model, tabela, schema, imagemObrigatoria,
             const dados = schema.parse({ ...campos, ...alteracoes });
             const imagemUrl = file?.url ?? (body.imagemUrl === null ? null : atual.imagemUrl);
             if (imagemObrigatoria && !imagemUrl) throw new BadRequestError("Exposição precisa ter imagem.");
+            const before = auditSnapshot(entity, atual);
             const item = await tx[model].update({ where: { id }, data: {
                 ...preparar(dados), imagemUrl, updatedBy: user.id, ...statusFields(dados.status, atual),
             } });
-            return { item, antiga: atual.imagemUrl };
+            const verb = item.status !== before.status && item.status === "PUBLICADO" ? "PUBLISH"
+                : item.status !== before.status && item.status === "ARQUIVADO" ? "ARCHIVE" : "UPDATE";
+            await registrarAuditoria(tx, { userId: user.id, action: A[`${prefix}_${verb}`], entity, entityId: id, before, after: item });
+            return { item, antiga: before.imagemUrl };
         });
         if (result.antiga !== result.item.imagemUrl) await removerArquivoUpload(result.antiga);
         return dto(result.item);
@@ -110,12 +122,13 @@ export function criarConteudoService({ model, tabela, schema, imagemObrigatoria,
     }
     async function remove(id, user) {
         validarPapel(user, true);
-        const atual = await prisma.$transaction(async (tx) => {
+        await comQuarentenaUpload(prepararArquivo => prisma.$transaction(async (tx) => {
             const item = await lock(tx, id);
+            if (item.imagemUrl && !await uploadCompartilhado(tx, item.imagemUrl)) await prepararArquivo(item.imagemUrl);
             await tx[model].delete({ where: { id } });
+            await registrarAuditoria(tx, { userId: user.id, action: A[`${prefix}_DELETE`], entity, entityId: id, before: item });
             return item;
-        });
-        await removerArquivoUpload(atual.imagemUrl);
+        }));
         return { id };
     }
     return { list, detail, create, update, changeStatus, remove };

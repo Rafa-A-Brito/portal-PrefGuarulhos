@@ -1,7 +1,7 @@
 import * as service from "../services/adminService.js";
 
 export async function createAdmin(req, res) {
-    res.status(201).json({ success: true, data: await service.createAdmin(req.body) });
+    res.status(201).json({ success: true, data: await service.createAdmin(req.body, req.user) });
 }
 
 export async function listAdmins(req, res) {

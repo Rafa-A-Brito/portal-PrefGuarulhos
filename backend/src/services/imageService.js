@@ -5,6 +5,7 @@ import BadRequestError from "../errors/BadRequestError.js";
 import ForbiddenError from "../errors/ForbiddenError.js";
 import { updateImagemSchema } from "../schemas/imagemSchema.js";
 import { comQuarentenaUpload, uploadCompartilhado } from "../utils/quarentenaUpload.js";
+import { imagensPrincipais, auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 
 // Limites das colunas em patrimonio_imagens (schema.prisma). Validar aqui
 // devolve 400 com mensagem clara em vez de estourar no banco como 500.
@@ -53,6 +54,7 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
 
         return await prisma.$transaction(async (tx) => {
             await tx.$queryRaw`SELECT id FROM patrimonio WHERE id = ${patrimonioId}::uuid FOR UPDATE`;
+            const principaisSubstituidas = principal ? await imagensPrincipais(tx, patrimonioId) : undefined;
             if (principal) {
                 await tx.patrimonioImagem.updateMany({
                     where: { patrimonioId },
@@ -60,7 +62,7 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
                 });
             }
 
-            return tx.patrimonioImagem.create({
+            const created = await tx.patrimonioImagem.create({
                 data: {
                     patrimonioId,
                     url: file.url,
@@ -72,6 +74,8 @@ export async function criarImagemPatrimonio(patrimonioId, file, data = {}, user)
                     principal,
                 },
             });
+            await registrarAuditoria(tx, { userId: user.id, action: A.IMAGEM_CREATE, entity: E.IMAGEM, entityId: created.id, after: { ...created, principaisSubstituidas } });
+            return created;
         });
     } catch (error) {
         await removerArquivoUpload(file.url);
@@ -103,13 +107,17 @@ export async function atualizarImagemPatrimonio(id, input, user) {
     const data = updateImagemSchema.parse(input);
     return prisma.$transaction(async (tx) => {
         const imagem = await bloquearImagem(tx, id);
+        const before = auditSnapshot(E.IMAGEM, imagem);
+        const principais = data.principal === true ? await imagensPrincipais(tx, imagem.patrimonioId) : undefined;
         if (data.principal === true) {
             await tx.patrimonioImagem.updateMany({
                 where: { patrimonioId: imagem.patrimonioId, id: { not: id } },
                 data: { principal: false },
             });
         }
-        return tx.patrimonioImagem.update({ where: { id }, data });
+        const updated = await tx.patrimonioImagem.update({ where: { id }, data });
+        await registrarAuditoria(tx, { userId: user.id, action: A.IMAGEM_UPDATE, entity: E.IMAGEM, entityId: id, before: { ...before, principais }, after: { ...updated, ...(principais && { principais: [id] }) } });
+        return updated;
     });
 }
 
@@ -123,6 +131,7 @@ export async function removerImagemPatrimonio(id, user) {
             )
                 await preparar(imagem.url);
             await tx.patrimonioImagem.delete({ where: { id } });
+            await registrarAuditoria(tx, { userId: user.id, action: A.IMAGEM_DELETE, entity: E.IMAGEM, entityId: id, before: imagem });
             return { id: imagem.id };
         })
     );

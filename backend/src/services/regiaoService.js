@@ -2,6 +2,7 @@ import prisma from "../config/prisma.js";
 import ConflictError from "../errors/ConflictError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import ForbiddenError from "../errors/ForbiddenError.js";
+import { auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 
 export const regiaoPublicSelect = { id: true, nome: true, slug: true };
 export const regiaoAdminSelect = { ...regiaoPublicSelect, ativo: true };
@@ -32,7 +33,6 @@ export async function validarAtribuicaoRegiao(tx, id) {
     if (!regiao.ativo) throw new ConflictError("A região está inativa. Selecione uma região ativa.");
 }
 
-const json = value => JSON.parse(JSON.stringify(value));
 export async function salvarRegiao(id, data, user) {
     if (user.role !== "ADMIN") throw new ForbiddenError("Somente ADMIN pode administrar regiões.");
     try {
@@ -43,13 +43,12 @@ export async function salvarRegiao(id, data, user) {
                 before = await tx.regiaoPatrimonio.findUnique({ where: { id } });
                 if (!before) throw new NotFoundError("Região não encontrada.");
             }
+            if (before) before = auditSnapshot(E.REGIAO, before);
             const row = id
                 ? await tx.regiaoPatrimonio.update({ where: { id }, data })
                 : await tx.regiaoPatrimonio.create({ data });
-            await tx.auditLog.create({ data: {
-                userId: user.id, action: id ? "REGIAO_UPDATE" : "REGIAO_CREATE", entity: "RegiaoPatrimonio", entityId: row.id,
-                ...(before && { oldValues: json(before) }), newValues: json(row),
-            } });
+            await registrarAuditoria(tx, { userId: user.id, action: id ? A.REGIAO_UPDATE : A.REGIAO_CREATE,
+                entity: E.REGIAO, entityId: row.id, before, after: row });
             return row;
         });
     } catch (error) {

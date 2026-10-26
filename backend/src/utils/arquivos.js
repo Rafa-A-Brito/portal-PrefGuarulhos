@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { UPLOAD_ROOT } from "../config/storage.js";
 import { UPLOAD_DIR } from "../config/uploadDir.js";
+import { logEvent } from "./logger.js";
 
 export const TIPOS_IMAGEM = {
     "image/jpeg": ".jpg",
@@ -89,9 +90,16 @@ async function validarCaminhoGerenciado(caminho) {
 }
 
 export function registrarPendenciaArquivo(acao, contexto, error) {
-    console.error("Pendência de arquivo de mídia; requer recuperação operacional.", {
-        acao, ...contexto, code: error.code, mensagem: error.message,
-    });
+    const original = contexto.caminhoOriginal ?? contexto.original;
+    const quarentena = contexto.caminhoQuarentena ?? contexto.quarentena;
+    logEvent("error", "FILE_RECOVERY_PENDING", {
+        operation: acao, origem: contexto.origem, entity: contexto.model, midiaId: contexto.midiaId, patrimonioId: contexto.patrimonioId,
+        registroExcluido: contexto.registroExcluido,
+        arquivo: typeof original === "string" ? path.basename(original) : undefined,
+        quarentena: typeof quarentena === "string" ? path.basename(quarentena) : undefined,
+        pasta: typeof original === "string" ? path.basename(path.dirname(original)) : undefined,
+        armazenamento: typeof original === "string" && dentroDaPasta(UPLOAD_ROOT, original) ? "midia" : "legado",
+    }, error);
 }
 
 // Falhas secundárias de limpeza não substituem o erro que motivou a limpeza.

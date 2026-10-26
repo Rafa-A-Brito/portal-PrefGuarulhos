@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
@@ -293,7 +294,7 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
     let createArguments;
     let slugSearches = 0;
 
-    prisma.$transaction = async (callback) => callback({
+    prisma.$transaction = async (callback) => callback({ auditLog: mockAuditLog(),
         $executeRaw: lockEditorial,
         categoria: {
             findUnique: async () => ({ id: categoriaId }),
@@ -346,7 +347,7 @@ test("prepara patrimônio e localização para criação atômica como rascunho"
 
 test("retorna erro quando a categoria não existe", async () => {
     const originalTransaction = prisma.$transaction;
-    prisma.$transaction = async (callback) => callback({
+    prisma.$transaction = async (callback) => callback({ auditLog: mockAuditLog(),
         $executeRaw: lockEditorial,
         categoria: { findUnique: async () => null },
         patrimonio: {},
@@ -420,7 +421,7 @@ test("ADMIN e EDITOR podem cadastrar patrimônio pela rota protegida", async () 
         role: currentRole,
         authSessions: [{ tokenVersion: 0, expiresAt: new Date("2037-01-01"), revokedAt: null }], tokenVersion: 0, isActive: true,
     });
-    prisma.$transaction = async (callback) => callback({
+    prisma.$transaction = async (callback) => callback({ auditLog: mockAuditLog(),
         $executeRaw: lockEditorial,
         categoria: { findUnique: async ({ where }) => ({ id: where.id }) },
         patrimonio: {
@@ -492,7 +493,7 @@ test("cria patrimônio com categorias adicionais e rejeita adicional inexistente
     let createArguments;
     let encontradas = [{ id: adicional }];
 
-    prisma.$transaction = async (callback) => callback({
+    prisma.$transaction = async (callback) => callback({ auditLog: mockAuditLog(),
         $executeRaw: lockEditorial,
         categoria: {
             findUnique: async () => ({ id: categoriaId }),

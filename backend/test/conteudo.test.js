@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { test, before, after } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -47,9 +48,10 @@ function stub(t, target, method, implementation) {
 }
 function banco(t, model, initial, fail = false) {
     let state = initial;
-    const tx = {
+    const tx = { auditLog: mockAuditLog(),
         $queryRaw: async () => [],
         [model]: {
+            create: (...args) => prisma[model].create(...args),
             findUnique: async () => state,
             update: async ({ data }) => {
                 if (fail) throw new Error("Falha simulada no banco");
@@ -116,6 +118,9 @@ test("API pública não exige autenticação e força PUBLICADO", async (t) => {
 
 test("PATCH JSON mantém imagem/slug; bloco e CTA são aninhados na API", async (t) => {
     auth(t);
+    const originalTx = prisma.$transaction;
+    prisma.$transaction = async cb => cb({ auditLog: mockAuditLog(), novidade: prisma.novidade, exposicao: prisma.exposicao });
+    t.after(() => { prisma.$transaction = originalTx; });
     const inicial = registro({ imagemUrl: "/uploads/novidades/antiga.png" });
     const state = banco(t, "novidade", inicial);
     const result = await request(`/admin/novidades/${inicial.id}`, { user: editor, method: "PATCH", body: { titulo: "Novo título", bloco: { dia: "06", mes: "OUT" }, cta: { rotulo: "Leia", url: "https://example.com" } } });
@@ -157,6 +162,9 @@ test("ADMIN publica/arquiva com timestamps e bloqueio do registro", async (t) =>
 
 test("Exposição exige upload no POST; novidade aceita POST JSON sem imagem", async (t) => {
     auth(t);
+    const originalTx = prisma.$transaction;
+    prisma.$transaction = async cb => cb({ auditLog: mockAuditLog(), novidade: prisma.novidade, exposicao: prisma.exposicao });
+    t.after(() => { prisma.$transaction = originalTx; });
     assert.equal((await request("/admin/exposicoes", { user: editor, method: "POST", body: dadosExpo })).status, 400);
     stub(t, prisma.novidade, "create", async ({ data }) => registro(data));
     const result = await request("/admin/novidades", { user: editor, method: "POST", body: dadosNovidade });
@@ -167,6 +175,9 @@ test("Exposição exige upload no POST; novidade aceita POST JSON sem imagem", a
 
 test("PATCH multipart sem arquivo mantém a imagem da exposição e recusa remoção", async (t) => {
     auth(t);
+    const originalTx = prisma.$transaction;
+    prisma.$transaction = async cb => cb({ auditLog: mockAuditLog(), novidade: prisma.novidade, exposicao: prisma.exposicao });
+    t.after(() => { prisma.$transaction = originalTx; });
     const inicial = expo();
     banco(t, "exposicao", inicial);
     const result = await request(`/admin/exposicoes/${inicial.id}`, { user: editor, method: "PATCH", body: multipart({ titulo: "Outra mostra" }, false) });
@@ -178,6 +189,9 @@ test("PATCH multipart sem arquivo mantém a imagem da exposição e recusa remo�
 
 test("Upload inválido após gravação e falha de banco limpam somente a imagem nova", async (t) => {
     auth(t);
+    const originalTx = prisma.$transaction;
+    prisma.$transaction = async cb => cb({ auditLog: mockAuditLog(), novidade: prisma.novidade, exposicao: prisma.exposicao });
+    t.after(() => { prisma.$transaction = originalTx; });
     const antiga = await arquivo("exposicoes");
     const inicial = expo({ imagemUrl: antiga });
     banco(t, "exposicao", inicial, true);
@@ -223,6 +237,9 @@ test("Limpeza recusa traversal, URLs externas e pastas fora do lote", async () =
 
 test("upload de exposição exige sessão até publicar e volta a ser privado ao arquivar", async (t) => {
     auth(t);
+    const originalTx = prisma.$transaction;
+    prisma.$transaction = async cb => cb({ auditLog: mockAuditLog(), novidade: prisma.novidade, exposicao: prisma.exposicao });
+    t.after(() => { prisma.$transaction = originalTx; });
     let criada;
     stub(t, prisma.exposicao, "create", async ({ data }) => (criada = { id: randomUUID(), ...data }));
     stub(t, prisma.exposicao, "findMany", async ({ where }) => where.imagemUrl === criada.imagemUrl ? [{ status: criada.status }] : []);
@@ -244,6 +261,9 @@ test("upload de exposição exige sessão até publicar e volta a ser privado ao
 
 test("Novidade aceita multipart sem arquivo; upload recusado por permissão não deixa órfão", async (t) => {
     auth(t);
+    const originalTx = prisma.$transaction;
+    prisma.$transaction = async cb => cb({ auditLog: mockAuditLog(), novidade: prisma.novidade, exposicao: prisma.exposicao });
+    t.after(() => { prisma.$transaction = originalTx; });
     stub(t, prisma.novidade, "create", async ({ data }) => registro(data));
     const criada = await request("/admin/novidades", { user: editor, method: "POST", body: multipart(dadosNovidade, false) });
     assert.equal(criada.status, 201);

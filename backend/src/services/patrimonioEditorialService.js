@@ -5,6 +5,7 @@ import ConflictError from "../errors/ConflictError.js";
 import ForbiddenError from "../errors/ForbiddenError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import { createFatoSchema, updateFatoSchema, createLigacaoSchema, updateLigacaoSchema, ordenarEditorialSchema } from "../schemas/patrimonioEditorialSchema.js";
+import { auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 import { legadoEditorial } from "../utils/identidadeEditorial.js";
 
 export const ordemEditorial = [{ ordem: "asc" }, { id: "asc" }];
@@ -35,7 +36,7 @@ async function bloquear(tx, ids) {
     // Ordem global evita deadlock entre duas ligações em sentidos opostos.
     await tx.$queryRaw`SELECT id FROM patrimonio WHERE id IN (${Prisma.join([...new Set(ids)].map(id => Prisma.sql`${id}::uuid`))}) ORDER BY id FOR UPDATE`;
 }
-async function escrever(tipo, id, user, destinoId, operacao) {
+async function escrever(tipo, id, user, destinoId, operation, operacao, itemId) {
     autenticar(user);
     const config = tipoDe(tipo);
     return prisma.$transaction(async tx => {
@@ -48,7 +49,17 @@ async function escrever(tipo, id, user, destinoId, operacao) {
             exigirCanonico(destino);
             if (origem.id === destino.id) throw new BadRequestError("O patrimônio não pode ter ligação consigo mesmo.");
         }
-        const result = await operacao(tx[config.model], config);
+        const model = tx[config.model];
+        const before = operation === "CREATE" ? undefined : operation === "REORDER"
+            ? { itens: await model.findMany({ where: { [config.parent]: id }, select: { id: true, ordem: true } }) }
+            : await item(model, { [config.parent]: id }, itemId);
+        const snapshot = before ? auditSnapshot(tipo === "fatos" ? E.FATO : E.LIGACAO, before) : undefined;
+        const result = await operacao(model, config);
+        const prefix = tipo === "fatos" ? "FATO" : "LIGACAO";
+        await registrarAuditoria(tx, { userId: user.id, action: A[prefix + "_" + operation],
+            entity: tipo === "fatos" ? E.FATO : E.LIGACAO,
+            entityId: operation === "REORDER" ? id : result.id, before: snapshot,
+            after: operation === "DELETE" ? undefined : operation === "REORDER" ? { itens: result } : { ...result, [config.parent]: id } });
         await tx.patrimonio.update({ where: { id }, data: { updatedBy: user.id } });
         return result;
     });
@@ -64,7 +75,7 @@ export async function listarEditorial(tipo, id, user) {
 }
 export async function criarEditorial(tipo, id, input, user) {
     const data = tipoDe(tipo).create.parse(input);
-    return escrever(tipo, id, user, data.patrimonioDestinoId, async (model, c) => {
+    return escrever(tipo, id, user, data.patrimonioDestinoId, "CREATE", async (model, c) => {
         const where = { [c.parent]: id };
         if (data.ordem === undefined) {
             const last = await model.findFirst({ where, orderBy: { ordem: "desc" }, select: { ordem: true } });
@@ -90,23 +101,23 @@ async function validarColisoes(model, where, data, itemId) {
 }
 export async function atualizarEditorial(tipo, id, itemId, input, user) {
     const data = tipoDe(tipo).update.parse(input);
-    return escrever(tipo, id, user, data.patrimonioDestinoId, async (model, c) => {
+    return escrever(tipo, id, user, data.patrimonioDestinoId, "UPDATE", async (model, c) => {
         const where = { [c.parent]: id };
         await item(model, where, itemId);
         await validarColisoes(model, where, data, itemId);
         return model.update({ where: { id: itemId }, data, select: c.select });
-    });
+    }, itemId);
 }
 export async function excluirEditorial(tipo, id, itemId, user) {
-    return escrever(tipo, id, user, null, async (model, c) => {
+    return escrever(tipo, id, user, null, "DELETE", async (model, c) => {
         await item(model, { [c.parent]: id }, itemId);
         await model.delete({ where: { id: itemId } });
         return { id: itemId };
-    });
+    }, itemId);
 }
 export async function ordenarEditorial(tipo, id, input, user) {
     const { ids } = ordenarEditorialSchema.parse(input);
-    return escrever(tipo, id, user, null, async (model, c) => {
+    return escrever(tipo, id, user, null, "REORDER", async (model, c) => {
         const where = { [c.parent]: id };
         const rows = await model.findMany({ where, select: { id: true, ordem: true } });
         const existentes = new Set(rows.map(r => r.id));

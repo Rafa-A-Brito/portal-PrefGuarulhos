@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 
 import { UPLOAD_DIR as raizUpload, UPLOAD_FOLDERS } from "../config/uploadDir.js";
 import { PASTAS, URL_PREFIXO, UPLOAD_ROOT } from "../config/storage.js";
+import { logEvent } from "./logger.js";
 const referenciaPattern = /^\/uploads\/referencias\/[a-zA-Z0-9_-]+\.(pdf|doc|docx|odt|txt|md)$/;
 const uploadPattern = new RegExp("^/uploads/(" + UPLOAD_FOLDERS.filter(pasta => pasta !== "referencias").join("|") + ")/[a-zA-Z0-9_-]+\\.(jpg|jpeg|png|webp|gif)$");
 
@@ -38,7 +39,10 @@ export async function removerArquivoUpload(url) {
         await fs.unlink(destino);
         return true;
     } catch (error) {
-        if (error.code !== "ENOENT") console.error("Falha ao limpar arquivo de upload.", { code: error.code });
+        if (error.code !== "ENOENT") logEvent("error", "UPLOAD_CLEANUP_FAILED", {
+            operation: "limpar_upload", arquivo: path.basename(destino), pasta: path.basename(path.dirname(destino)),
+            armazenamento: url.startsWith("/api/uploads/") ? "midia" : "legado",
+        }, error);
         // Uma falha de filesystem após COMMIT não pode invalidar o registro salvo.
         return false;
     }

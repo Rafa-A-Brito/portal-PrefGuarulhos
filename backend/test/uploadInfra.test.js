@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { mockAuditLog, mockPrismaAudit } from "./auditoriaFixture.js";
 import { test, before, after } from "node:test";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
@@ -49,6 +50,7 @@ function stub(t, target, method, implementation) {
     };
 }
 function auth(t, role = "ADMIN") {
+    mockPrismaAudit(t, prisma);
     stub(t, prisma.user, "findUnique", async () => ({ ...admin, role }));
     stub(t, prisma.patrimonio, "findUnique", async () => ({
         id: patrimonioId,
@@ -160,7 +162,7 @@ test("upload de rascunho exige token para leitura, DELETE remove registro e arqu
     let record;
     stub(t, prisma.patrimonio, "findUnique", async () => ({ id: patrimonioId }));
     stub(t, prisma, "$transaction", async (callback) =>
-        callback({
+        callback({ auditLog: mockAuditLog(),
             $queryRaw: async () => [],
             patrimonioImagem: {
                 create: async ({ data }) => (record = { id: randomUUID(), ...data }),
@@ -262,7 +264,7 @@ test("imagem legada conserva GIF e texto derivado permitindo EDITOR após public
     const before = await list();
     stub(t, prisma.user, "findUnique", async () => ({ ...admin, role: "EDITOR" }));
     let locked = false;
-    const tx = {
+    const tx = { auditLog: mockAuditLog(),
         $queryRaw: async () => {
             locked = true;
         },

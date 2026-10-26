@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -14,7 +15,7 @@ process.env.JWT_SECRET = "security-deletion-fixture-with-32-characters";
 const { default: prisma } = await import("../src/config/prisma.js");
 const { removerImagemPatrimonio } = await import("../src/services/imageService.js");
 const { deleteImagem } = await import("../src/services/midiaService.js");
-const admin = { role: "ADMIN" };
+const admin = { id: randomUUID(), role: "ADMIN" };
 after(async () => {
     await prisma.$disconnect();
     assert.equal(path.dirname(root), os.tmpdir());
@@ -24,7 +25,7 @@ after(async () => {
 
 for (const prefix of ["/api/uploads/imagens", "/uploads/patrimonios"]) {
     for (const route of ["alternativa", "aninhada"]) {
-        for (const scenario of ["excluir", "compartilhado", "rollback"]) {
+        for (const scenario of ["excluir", "compartilhado", "rollback", "auditoria"]) {
             test(`${route}: ${prefix} ${scenario}`, async t => {
                 const storageRoot = prefix.startsWith("/api/") ? newRoot : legacyRoot;
                 const folder = path.join(storageRoot, path.basename(prefix));
@@ -32,10 +33,14 @@ for (const prefix of ["/api/uploads/imagens", "/uploads/patrimonios"]) {
                 const name = randomUUID() + ".png", file = path.join(folder, name);
                 await fs.writeFile(file, "bytes originais");
                 const row = { id: randomUUID(), patrimonioId: randomUUID(), url: prefix + "/" + name };
-                const tx = {
+                const tx = { auditLog: mockAuditLog(),
                     $queryRaw: async () => [{ total: scenario === "compartilhado" ? 2 : 1 }],
                     patrimonio: { findUnique: async () => ({ id: row.patrimonioId, status: "RASCUNHO" }) },
                     patrimonioImagem: { findUnique: async () => row, findFirst: async () => row, delete: async () => row },
+                };
+                if (scenario === "auditoria") tx.auditLog.create = async () => {
+                    await assert.rejects(fs.stat(file), { code: "ENOENT" });
+                    throw new Error("auditoria recusada");
                 };
                 const originalTx = prisma.$transaction, originalFind = prisma.patrimonio.findUnique;
                 prisma.patrimonio.findUnique = tx.patrimonio.findUnique;
@@ -48,6 +53,7 @@ for (const prefix of ["/api/uploads/imagens", "/uploads/patrimonios"]) {
                 t.after(() => { prisma.$transaction = originalTx; prisma.patrimonio.findUnique = originalFind; });
                 const run = () => route === "alternativa" ? removerImagemPatrimonio(row.id, admin) : deleteImagem(row.patrimonioId, row.id, admin);
                 if (scenario === "rollback") await assert.rejects(run(), /commit recusado/);
+                else if (scenario === "auditoria") await assert.rejects(run(), /auditoria recusada/);
                 else await run();
                 if (scenario === "excluir") await assert.rejects(fs.stat(file), { code: "ENOENT" });
                 else assert.equal(await fs.readFile(file, "utf8"), "bytes originais");
