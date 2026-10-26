@@ -92,6 +92,8 @@ test("PostgreSQL D1A: busca/detalhes, mídia transacional, LINK, null/null e fot
         assert.equal(dashboard.RASCUNHO + dashboard.PUBLICADO + dashboard.ARQUIVADO, beforeTotal);
         assert.equal(dashboard.porCategoria.reduce((n, c) => n + c.quantidade, 0), beforeTotal);
         assert.equal(dashboard.porBairro.reduce((n, b) => n + b.quantidade, 0), beforeTotal);
+        assert.equal(dashboard.porSituacao.reduce((n, s) => n + s.quantidade, 0), beforeTotal);
+        assert.equal(dashboard.porRegiao.reduce((n, r) => n + r.quantidade, dashboard.semRegiao), beforeTotal);
         assert.equal(await prisma.patrimonio.count(), beforeTotal + 1);
     } finally {
         prisma.$transaction = transaction;

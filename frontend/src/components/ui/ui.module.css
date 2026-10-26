@@ -1,0 +1,11 @@
+.card { min-width: 0; background: #fff; color: var(--ink, #202638); border: 1px solid var(--line, #e0e4ec); border-radius: 16px; box-shadow: 0 3px 16px #18234406; overflow: hidden; }
+.header { padding: 22px 22px 0; }
+.title { margin: 0; font-size: 1.05rem; font-weight: 650; line-height: 1.4; }
+.description { margin: 6px 0 0; color: var(--ink-soft, #596174); font-size: .85rem; line-height: 1.6; }
+.content { padding: 18px 22px 22px; min-width: 0; }
+.chart { height: 280px; width: 100%; min-width: 0; font-size: 12px; }
+.chart :global(.recharts-cartesian-axis-tick text), .chart :global(.recharts-polar-angle-axis-tick text) { fill: #525d70; }
+.chart :global(.recharts-surface):focus-visible { outline: 2px solid var(--navy, #2b255c); outline-offset: -2px; border-radius: 4px; }
+.tooltip { background: #fff; border: 1px solid #dce1eb; border-radius: 8px; box-shadow: 0 4px 16px #18234420; padding: 10px 14px; color: #202638; font-size: 12px; max-width: 250px; }
+.tooltip > div { display: flex; justify-content: space-between; gap: 18px; margin-top: 4px; }
+@media (max-width: 480px) { .header { padding: 16px 14px 0; } .content { padding: 12px 14px 16px; } }

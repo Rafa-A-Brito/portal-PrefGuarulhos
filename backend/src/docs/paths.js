@@ -440,15 +440,22 @@ paths["/api/admin/patrimonios/{id}/referencias/{referenciaId}"].patch = {
 };
 paths["/api/admin/dashboard"] = { get: {
     tags: ["Patrimônios administrativos"], summary: "Obtém fotografia agregada dos patrimônios",
-    description: "ADMIN/EDITOR. Transação RepeatableRead somente leitura. Total, categorias principais e bairros incluem TODOS_OS_STATUS; PUBLICADO e meta.publicados contam apenas publicados. Bens sem localização/bairro entram em Não informado. Não altera as listagens existentes.",
+    description: "ADMIN/EDITOR. Transação RepeatableRead somente leitura. Todas as distribuições incluem TODOS_OS_STATUS e os legados. Categorias incluem zeros; quantidade conta apenas a principal, quantidadeSecundaria informa vínculos adicionais sem somá-los ao total. Regiões usam regiaoId (inclusive inativas vinculadas); semRegiao é separado, nunca uma região fictícia. Bairros são preservados em porBairro. PUBLICADO e meta.publicados contam apenas publicados.",
     security: bearerAuth,
     responses: { 200: { description: "Contagens consistentes na mesma fotografia.", content: { "application/json": { schema: {
         type: "object", required: ["success", "data"], properties: {
             success: { type: "boolean", enum: [true] },
-            data: { type: "object", required: ["total", "RASCUNHO", "PUBLICADO", "ARQUIVADO", "porCategoria", "porBairro", "meta"], properties: {
+            data: { type: "object", required: ["total", "RASCUNHO", "PUBLICADO", "ARQUIVADO", "porCategoria", "porBairro", "porSituacao", "porRegiao", "semRegiao", "legados", "meta"], properties: {
                 ...Object.fromEntries(["total", "RASCUNHO", "PUBLICADO", "ARQUIVADO"].map(key => [key, { type: "integer", minimum: 0 }])),
-                porCategoria: { type: "array", items: { type: "object", properties: { id: { type: "string", format: "uuid" }, nome: { type: "string" }, slug: { type: "string" }, quantidade: { type: "integer" } } } },
+                porCategoria: { type: "array", items: { type: "object", properties: { id: { type: "string", format: "uuid" }, nome: { type: "string" }, slug: { type: "string" }, quantidade: { type: "integer", minimum: 0 }, quantidadeSecundaria: { type: "integer", minimum: 0 } } } },
                 porBairro: { type: "array", items: { type: "object", properties: { bairro: { type: "string" }, quantidade: { type: "integer" } } } },
+                porSituacao: { type: "array", items: { type: "object", properties: { situacao: { type: "string", enum: ["PRESERVADO", "DEMOLIDO", "EM_RESTAURACAO", "NECESSITA_RESTAURACAO", "EM_RUINAS", "NAO_INFORMADO"] }, quantidade: { type: "integer", minimum: 0 } } } },
+                porRegiao: { type: "array", items: { type: "object", properties: { id: { type: "string", format: "uuid" }, nome: { type: "string" }, slug: { type: "string" }, ativo: { type: "boolean" }, quantidade: { type: "integer", minimum: 0 } } } },
+                semRegiao: { type: "integer", minimum: 0 },
+                legados: { type: "object", properties: {
+                    total: { type: "integer", minimum: 0 }, arquivados: { type: "integer", minimum: 0 },
+                    itens: { type: "array", items: { type: "object", properties: { id: { type: "string", format: "uuid" }, nome: { type: "string" }, slug: { type: "string" }, status: { type: "string", enum: ["PUBLICADO", "RASCUNHO", "ARQUIVADO"] }, canonico: { type: "string" } } } },
+                } },
                 meta: { type: "object", properties: { baseContagem: { type: "string", enum: ["TODOS_OS_STATUS"] }, categoria: { type: "string", enum: ["PRINCIPAL"] }, publicados: { type: "integer" } } },
             } },
         },

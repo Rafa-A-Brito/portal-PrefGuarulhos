@@ -1,37 +1,47 @@
-import { useEffect, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { UsersIcon, BuildingLibraryIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
-import { useErroModal } from "../../../hooks/useErroModal";
-import { listarPatrimoniosAdmin } from "../../../services/adminApi";
+import { extrairMensagemDeErro } from "../../../services/adminApi";
+import { buscarDashboard } from "../../../services/dashboardApi";
+import styles from "./AdminDashboard.module.css";
+
+const GraficosDashboard = lazy(() => import("../components/GraficosDashboard"));
+
+class ErroGraficos extends Component {
+  state = { erro: false };
+  static getDerivedStateFromError() { return { erro: true }; }
+  render() {
+    if (this.state.erro) return <div role="alert" className={styles.message}>
+      <p>Não foi possível carregar os gráficos.</p>
+      <button type="button" className="btn-outline" onClick={() => window.location.reload()}>Recarregar página</button>
+    </div>;
+    return this.props.children;
+  }
+}
 
 /**
- * Página inicial do painel: quantos patrimônios existem (por status) e
- * atalhos. O backend não tem endpoint para listar/contar usuários, por isso
- * não há contador de usuários; ADMIN só vê o atalho para cadastrar novos.
+ * Agregações da mesma fotografia da API; não carrega o catálogo inteiro.
+ * Recharts só entra quando este painel tem dados para apresentar.
  */
 export default function AdminDashboard() {
   const { usuario } = useAuth();
-  const { mostrarErro } = useErroModal();
   const [contagem, setContagem] = useState(null);
+  const [erro, setErro] = useState(null);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     let cancelado = false;
+    const controller = new AbortController();
 
     async function carregar() {
       try {
-        const lista = await listarPatrimoniosAdmin();
+        const dados = await buscarDashboard(controller.signal);
         if (cancelado) return;
-
-        setContagem({
-          total: lista.length,
-          RASCUNHO: lista.filter((p) => p.status === "RASCUNHO").length,
-          PUBLICADO: lista.filter((p) => p.status === "PUBLICADO").length,
-          ARQUIVADO: lista.filter((p) => p.status === "ARQUIVADO").length,
-        });
+        setContagem(dados);
       } catch (err) {
         if (!cancelado) {
-          mostrarErro(err, { origem: "AdminDashboard › carregar" });
+          setErro(extrairMensagemDeErro(err));
         }
       }
     }
@@ -39,21 +49,23 @@ export default function AdminDashboard() {
     carregar();
     return () => {
       cancelado = true;
+      controller.abort();
     };
-  }, [mostrarErro]);
+  }, [tentativa]);
 
   const eAdmin = usuario?.perfil === "ADMIN";
 
   return (
-    <div>
+    <div className={styles.dashboard}>
       <div className="admin-page-head">
-        <h1>Olá, {usuario?.nome?.split(" ")[0] || "administrador"}</h1>
-        <p>
-          {eAdmin
-            ? "Aqui você gerencia os patrimônios e cadastra novos usuários."
-            : "Aqui você cadastra e edita rascunhos de patrimônios. A publicação é feita por um administrador."}
-        </p>
+        <span className={styles.eyebrow}>PORTAL DO PATRIMÔNIO CULTURAL</span>
+        <h1>Visão geral do acervo</h1>
+        <p>Olá, {usuario?.nome?.split(" ")[0] || "administrador"}. Acompanhe a conservação, a distribuição e a publicação dos patrimônios.</p>
       </div>
+
+      {erro ? <div role="alert" className={styles.message}>
+        <p>{erro}</p><button type="button" className="btn-outline" onClick={() => { setErro(null); setTentativa(t => t + 1); }}>Tentar novamente</button>
+      </div> : !contagem && <div role="status" className={styles.loading}>Carregando dados do acervo…</div>}
 
       <div className="admin-dashboard-grid">
         <Link to="/admin/patrimonios" className="admin-dashboard-card">
@@ -61,7 +73,7 @@ export default function AdminDashboard() {
             <BuildingLibraryIcon width={22} height={22} />
           </span>
           <div>
-            <strong>{contagem?.total ?? "..."}</strong>
+            <strong>{contagem?.total ?? "—"}</strong>
             <span>Patrimônios cadastrados</span>
             {contagem && (
               <small>
@@ -84,6 +96,20 @@ export default function AdminDashboard() {
           </Link>
         )}
       </div>
+      {contagem && <>
+        <p className={styles.base}>Base administrativa: <strong>{contagem.total} registros · todos os status</strong>. Os legados permanecem incluídos nas contagens.</p>
+        {contagem.legados.total > 0 && <details className={styles.legacy}>
+          <summary>{contagem.legados.total} registros legados identificados · {contagem.legados.arquivados} arquivados</summary>
+          <ul>{contagem.legados.itens.map(item => <li key={item.id}>
+            <strong>{item.nome}</strong> — {item.status === "ARQUIVADO" ? "Arquivado" : item.status}. Identidade canônica: <Link to={`/patrimonios/${item.canonico}`}>{item.canonico}</Link>
+          </li>)}</ul>
+        </details>}
+        {contagem.total === 0 ? <div role="status" className={styles.empty}>
+          <h2>Nenhum patrimônio cadastrado</h2><p>Os gráficos aparecerão quando houver registros no acervo.</p>
+        </div> : <ErroGraficos><Suspense fallback={<p role="status" className={styles.loading}>Carregando gráficos…</p>}>
+          <GraficosDashboard dados={contagem} />
+        </Suspense></ErroGraficos>}
+      </>}
     </div>
   );
 }
