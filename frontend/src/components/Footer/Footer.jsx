@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ParticipacaoMetricas from "../../features/metricas/ParticipacaoMetricas";
 import {
   MapPinIcon,
   PhoneIcon,
@@ -65,6 +66,7 @@ export default function Footer() {
         </div>
       </div>
 
+      <ParticipacaoMetricas />
       <div className="footer-bottom">
         <p>
           © {new Date().getFullYear()} Patrimônio Cultural de Guarulhos. Projeto

@@ -13,6 +13,14 @@ export async function registrarVisualizacao({ patrimonioId, dia, chaveVisitante 
         await db.$transaction(async tx => {
             await tx.$executeRawUnsafe("SET LOCAL lock_timeout = '200ms'");
             await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '750ms'");
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(21402,1)`;
+            // Lock por dia: coleta compartilha; manutenção fecha somente dias antigos.
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(21401, to_char(${dia}::date, 'YYYYMMDD')::int)`;
+            const [fechado] = await tx.$queryRaw`SELECT EXISTS (
+                SELECT 1 FROM dias_metricas_conferidos WHERE dia=${dia}::date
+                UNION ALL SELECT 1 FROM operacao_metricas WHERE recibos_antes_de > ${dia}::date
+            ) AS fechado`;
+            if (fechado.fechado) throw indisponivel();
             const rows = await tx.$queryRaw`SELECT id, slug, status FROM patrimonio WHERE id = ${patrimonioId}::uuid FOR SHARE`;
             if (!rows[0] || rows[0].status !== "PUBLICADO" || legadoEditorial(rows[0])) {
                 throw erroMetricas(404, "NOT_FOUND", "Patrimônio indisponível.");

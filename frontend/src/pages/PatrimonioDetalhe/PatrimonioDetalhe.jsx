@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
+import { useVisualizacaoPatrimonio } from "../../hooks/useVisualizacaoPatrimonio";
 import {
   ArrowLeftIcon,
   MapPinIcon,
@@ -29,6 +30,7 @@ export default function PatrimonioDetalhe() {
 
 function DetalhePorSlug({ slug }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     patrimonios = [],
     setSelecionado,
@@ -44,6 +46,10 @@ function DetalhePorSlug({ slug }) {
     useContext(AuthContext) ?? {};
   const [editando, setEditando] = useState(false);
   const [erroSincronizacao, setErroSincronizacao] = useState(false);
+  useVisualizacaoPatrimonio(estado.detalhe?.uuid,
+    !estado.carregando && !estado.erro && !verificandoSessao && !editando &&
+    !["ADMIN", "EDITOR"].includes(usuario?.perfil) && !estado.detalhe?.mock &&
+    !new URLSearchParams(location.search).has("preview"));
 
   useEffect(() => {
     let ativo = true;

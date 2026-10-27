@@ -1,0 +1,31 @@
+.secao { margin-top: 32px; padding-top: 24px; border-top: 1px solid #d9deea; min-width: 0; color: #283247; line-height: 1.6; }
+.secao h2 { font-size: 1.15rem; }
+.secao p { overflow-wrap: anywhere; }
+.secao button, .conteudo button { min-height: 44px; padding: .55rem .9rem; border: 1px solid #8b91a5; border-radius: 8px; background: #fff; color: #29384f; cursor: pointer; font: inherit; }
+.secao button:disabled, .conteudo button:disabled { opacity: .55; cursor: default; }
+.secao :is(button, input, select, summary):focus-visible, .tabelaWrap:focus-visible { outline: 3px solid #4862a5; outline-offset: 3px; }
+.conteudo { margin-top: 18px; min-width: 0; font-size: .875rem; }
+.formulario { padding: 18px; border-radius: 12px; background: #f6f7fb; border: 1px solid #e0e4ec; }
+.datas, .filtros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.conteudo label { display: flex; flex-direction: column; gap: 5px; font-weight: 600; }
+.conteudo input, .conteudo select { min-width: 0; width: 100%; min-height: 44px; padding: 8px; border: 1px solid #969fb1; border-radius: 6px; background: #fff; color: #283247; font: inherit; box-sizing: border-box; }
+.opcionais { margin: 14px 0; }
+.opcionais summary { cursor: pointer; font-weight: 600; margin-bottom: 12px; }
+.filtroCadastro { min-width: 0; display: grid; align-content: start; gap: 8px; }
+.busca { display: flex; flex-wrap: wrap; gap: 6px; }
+.busca input { flex: 1 1 140px; }
+.indicadores { border-left: 4px solid #5269a8; padding: 8px 16px; margin: 20px 0; background: #f5f7fb; }
+.indicadores strong { font-variant-numeric: tabular-nums; }
+.grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.grafico { height: 360px; }
+.tabelaWrap { overflow: auto; max-height: 330px; margin-top: 16px; }
+.tabelaWrap table { border-collapse: collapse; width: 100%; font-size: .8rem; table-layout: fixed; }
+.tabelaWrap caption { text-align: left; padding: 8px 0; }
+.tabelaWrap th, .tabelaWrap td { padding: 9px 5px; text-align: left; border-bottom: 1px solid #e1e5ed; overflow-wrap: anywhere; }
+.tabelaWrap tbody th { font-weight: 500; }
+.tabelaWrap td { font-variant-numeric: tabular-nums; }
+.tabelaWrap small { display: block; }
+.aviso { border-radius: 8px; padding: 12px; background: #f5f6f9; }
+.paginacao { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 1050px) { .grade { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .datas, .filtros { grid-template-columns: minmax(0, 1fr); } .formulario { padding: 12px; } }

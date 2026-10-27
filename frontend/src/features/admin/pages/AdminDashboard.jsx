@@ -5,6 +5,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { extrairMensagemDeErro } from "../../../services/adminApi";
 import { buscarDashboard } from "../../../services/dashboardApi";
 import styles from "./AdminDashboard.module.css";
+import SecaoMetricas from "../components/SecaoMetricas";
 
 const GraficosDashboard = lazy(() => import("../components/GraficosDashboard"));
 
@@ -110,6 +111,7 @@ export default function AdminDashboard() {
           <GraficosDashboard dados={contagem} />
         </Suspense></ErroGraficos>}
       </>}
+      <SecaoMetricas />
     </div>
   );
 }

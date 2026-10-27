@@ -3,11 +3,13 @@ import prisma from "../config/prisma.js";
 import { diaSaoPaulo } from "../utils/dataMetricas.js";
 import { consultaMetricasSchema } from "../schemas/metricasSchema.js";
 import { erroMetricas, indisponivel } from "./metricasService.js";
+import { consultarCobertura } from "./coberturaMetricasService.js";
 
 export async function consultarMetricas(query, db = prisma, agora = new Date()) {
     const q = consultaMetricasSchema.parse(query);
     if (q.fim > diaSaoPaulo(agora)) throw erroMetricas(400, "BAD_REQUEST", "Período futuro não permitido.");
     const filtro = Prisma.sql`v.dia >= ${q.inicio}::date AND v.dia <= ${q.fim}::date
+        AND v.dia >= COALESCE((SELECT agregados_antes_de FROM operacao_metricas WHERE id=1),v.dia)
         ${q.patrimonioId ? Prisma.sql`AND p.id = ${q.patrimonioId}::uuid` : Prisma.empty}
         ${q.regiaoId ? Prisma.sql`AND p.regiao_id = ${q.regiaoId}::uuid` : Prisma.empty}
         ${q.semRegiao ? Prisma.sql`AND p.regiao_id IS NULL` : Prisma.empty}`;
@@ -27,9 +29,12 @@ export async function consultarMetricas(query, db = prisma, agora = new Date()) 
             const serie = await tx.$queryRaw`SELECT v.dia::text data, sum(v.quantidade)::text quantidade
                 FROM visualizacoes_totais_dia v JOIN patrimonio p ON p.id=v.patrimonio_id WHERE ${filtro}
                 GROUP BY v.dia ORDER BY v.dia`;
+            const observacao = await consultarCobertura(tx, q.inicio, q.fim, agora);
             return { disponivel: true, meta: { versaoRegra: 1, fuso: "America/Sao_Paulo", inicio: q.inicio, fim: q.fim,
                 geradoEm: agora.toISOString(), unidade: "IDENTIDADE_PATRIMONIO_DIA", elegibilidade: "PUBLICADO_CANONICO_NA_ACEITACAO",
-                regiaoReferencia: "CADASTRO_ATUAL", cobertura: "NAO_INSTRUMENTADA", granularidade: "dia" },
+                regiaoReferencia: "CADASTRO_ATUAL", cobertura: observacao.tipo, granularidade: "dia",
+                inicioColeta: observacao.inicioColeta, inicioObservacao: observacao.inicioObservacao,
+                inicioDisponivel: observacao.inicioDisponivel, observacao },
             visualizacoes: { totalRegistrado: total.quantidade,
                 porPatrimonio: { itens, paginacao: { pagina: q.pagina, limite: q.limite, total: total.bens } },
                 porRegiao: regioes.filter(r => r.id !== null), semRegiao: regioes.find(r => r.id === null)?.quantidade ?? "0", serie },

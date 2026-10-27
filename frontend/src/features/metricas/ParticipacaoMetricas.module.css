@@ -1,0 +1,34 @@
+.painel {
+  max-width: 72rem;
+  margin: 1rem auto;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  color: #243244;
+  background: #f8fafc;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.painel summary { cursor: pointer; font-weight: 600; }
+.painel p { margin: 0.75rem 0; color: inherit; }
+.acoes { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.acoes button {
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border: 1px solid #476078;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #243244;
+  font: inherit;
+  cursor: pointer;
+}
+.acoes button:disabled { opacity: 0.6; cursor: default; }
+.painel summary:focus-visible, .acoes button:focus-visible {
+  outline: 3px solid #075985;
+  outline-offset: 3px;
+}
+.painel .nota { font-size: 0.8rem; }
+@media (max-width: 480px) {
+  .acoes { flex-direction: column; }
+  .acoes button { width: 100%; }
+}

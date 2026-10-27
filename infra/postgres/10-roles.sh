@@ -12,6 +12,9 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO portal_migrator;
 GRANT USAGE ON SCHEMA public TO portal_api;
 SELECT format('GRANT CONNECT ON DATABASE %I TO portal_api, portal_migrator', current_database()) \gexec
+-- CREATE SCHEMA IF NOT EXISTS da migration inicial exige CREATE no banco,
+-- mesmo quando public já existe. Nunca conceder este privilégio à API.
+SELECT format('GRANT CREATE ON DATABASE %I TO portal_migrator', current_database()) \gexec
 ALTER DEFAULT PRIVILEGES FOR ROLE portal_migrator IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO portal_api;
 ALTER DEFAULT PRIVILEGES FOR ROLE portal_migrator IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO portal_api;
 SQL

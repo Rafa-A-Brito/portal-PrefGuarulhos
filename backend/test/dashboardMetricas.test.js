@@ -13,7 +13,7 @@ test("consulta habilitada: contrato HTTP, BigInt decimal, filtros e transação 
     const oldTransaction = db.$transaction, oldUser = db.user.findUnique;
     t.after(() => { db.$transaction = oldTransaction; db.user.findUnique = oldUser; });
     const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-    let falhar = false, chamadas = 0, ativo = true;
+    let falhar = false, chamadas = 0, ativo = true, sondas = false;
     db.user.findUnique = async () => ({ id, role: "EDITOR", isActive: ativo, tokenVersion: 0,
         authSessions: [{ tokenVersion: 0, expiresAt: new Date(Date.now() + 60000), revokedAt: null }] });
     db.$transaction = async (fn, options) => {
@@ -25,10 +25,12 @@ test("consulta habilitada: contrato HTTP, BigInt decimal, filtros e transação 
             [{ id, nome: "Fixture", slug: "fixture", status: "ARQUIVADO", quantidade: "9007199254740993" }],
             [{ id: null, nome: null, slug: null, ativo: null, quantidade: "9007199254740993" }],
             [{ data: "2026-01-01", quantidade: "9007199254740993" }],
+            sondas ? [{ inicio_observacao: new Date("2026-01-01T03:00:00Z"), inicio_disponivel: "2025-01-01", ultima_retencao_em: null }] : [],
+            sondas ? [{ data: "2026-01-01", esperadas: 288, disponiveis: 1, falhas: 0, desativadas: 0, desconhecidas: 287 }] : [],
         ];
         const data = await fn({ $executeRawUnsafe: async sql => { commands.push(sql); }, $queryRaw: async (strings, ...values) => {
             assert.match(strings.join("?"), /SELECT/);
-            assert.ok(values.flatMap(v => v.values ?? [v]).includes("2026-01-01")); return results.shift();
+            if (results.length !== 2) assert.ok(values.flatMap(v => v?.values ?? [v]).includes("2026-01-01")); return results.shift();
         } });
         assert.equal(commands[0], "SET TRANSACTION READ ONLY");
         assert.equal(results.length, 0);
@@ -45,11 +47,18 @@ test("consulta habilitada: contrato HTTP, BigInt decimal, filtros e transação 
         assert.equal(data.visualizacoes.semRegiao, data.visualizacoes.totalRegistrado);
         assert.deepEqual(data.visualizacoes.porRegiao, []); assert.equal(data.visualizacoes.porPatrimonio.paginacao.total, 1);
         assert.equal(data.meta.cobertura, "NAO_INSTRUMENTADA"); assert.equal(data.favoritos.disponivel, false);
+        sondas = true;
+        const observado = await (await fetch(base + "?inicio=2026-01-01&fim=2026-01-01", { headers })).json();
+        assert.equal(observado.data.meta.cobertura, "SONDAGEM_5_MIN");
+        assert.equal(observado.data.meta.inicioDisponivel, "2025-01-01");
+        assert.equal(observado.data.meta.inicioColeta, null);
+        assert.equal(observado.data.meta.observacao.resumo.desconhecidas, 287);
+        assert.equal(observado.data.meta.observacao.porDia[0].estado, "PARCIAL");
         for (const query of ["", "?inicio=2026-02-30&fim=2026-03-01", "?inicio=2024-01-01&fim=2026-01-01", "?inicio=2999-01-01&fim=2999-01-01",
             "?inicio=2026-01-01&fim=2026-01-01&regiaoId=" + id + "&semRegiao=true", "?inicio=2026-01-01&fim=2026-01-01&granularidade=mes"]) {
             assert.equal((await fetch(base + query, { headers })).status, 400);
         }
-        assert.equal(chamadas, 1); // Falhas de contrato recusadas antes do banco.
+        assert.equal(chamadas, 2); // Falhas de contrato recusadas antes do banco.
         falhar = true;
         assert.equal((await fetch(base + "?inicio=2026-01-01&fim=2026-01-01", { headers })).status, 503);
         ativo = false;

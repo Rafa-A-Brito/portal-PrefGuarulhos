@@ -181,6 +181,23 @@ enum EstadoSondaMetricas {
   @@map("estado_sonda_metricas")
 }
 
+model OperacaoMetricas {
+  id               Int       @id @default(1)
+  inicioObservacao DateTime? @map("inicio_observacao") @db.Timestamptz(3)
+  recibosAntesDe   DateTime? @map("recibos_antes_de") @db.Date
+  agregadosAntesDe DateTime? @map("agregados_antes_de") @db.Date
+  ultimaRetencaoEm DateTime? @map("ultima_retencao_em") @db.Timestamptz(3)
+
+  @@map("operacao_metricas")
+}
+
+model DiaMetricasConferido {
+  dia         DateTime @id @db.Date
+  conferidoEm DateTime @map("conferido_em") @db.Timestamptz(3)
+
+  @@map("dias_metricas_conferidos")
+}
+
 model SondaMetricas {
   janelaInicio DateTime           @id @map("janela_inicio") @db.Timestamptz(0)
   observadoEm  DateTime           @map("observado_em") @db.Timestamptz(3)
