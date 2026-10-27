@@ -1,5 +1,6 @@
 import { paths } from "./paths.js";
 import { schemas } from "./schemas.js";
+import { pathsAuditoria } from "./auditoria.js";
 
 const openapi = {
     openapi: "3.0.3",
@@ -11,6 +12,7 @@ const openapi = {
     servers: [{ url: "/" }],
     tags: [
         { name: "Dashboard" },
+        { name: "Auditoria" },
         { name: "Regiões" },
         { name: "Sistema" },
         { name: "Autenticação" },
@@ -20,7 +22,7 @@ const openapi = {
         { name: "Exposições" },
         { name: "Novidades" },
     ],
-    paths,
+    paths: { ...paths, ...pathsAuditoria },
     components: {
         securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
         schemas,

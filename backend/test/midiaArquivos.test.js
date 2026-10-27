@@ -1,3 +1,5 @@
+import { logOutput } from "../src/utils/logger.js";
+import { mockAuditLog, mockPrismaAudit } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
@@ -36,7 +38,7 @@ const erroDisco = () => Object.assign(new Error("Falha simulada de disco"), { co
 const ausente = async (file) => assert.rejects(fs.stat(file), { code: "ENOENT" });
 function logs(t) {
     const entries = [];
-    t.mock.method(console, "error", (...args) => entries.push(args));
+    t.mock.method(logOutput, "write", (_level, line) => entries.push(JSON.parse(line)));
     return entries;
 }
 async function arquivo(caso, gravar = true) {
@@ -50,6 +52,7 @@ function stub(t, target, method, implementation) {
     t.after(() => { target[method] = original; });
 }
 function banco(t, caso, file, onDelete) {
+    mockPrismaAudit(t, prisma);
     stub(t, prisma, "$transaction", async (callback) => callback(prisma));
     stub(t, prisma, "$queryRaw", async () => []);
     const midia = { id: randomUUID(), patrimonioId: randomUUID(), url: `${URL_PREFIXO[caso.tipo]}/${path.basename(file.path)}` };
@@ -65,14 +68,16 @@ function banco(t, caso, file, onDelete) {
     return midia;
 }
 function conferirPendencia(entry, acao, midia, file) {
-    const [message, details] = entry;
-    assert.match(message, /Pendência/);
-    assert.equal(details.acao, acao);
+    const details = entry;
+    assert.equal(details.event, "FILE_RECOVERY_PENDING");
+    assert.equal(details.operation, acao);
     assert.equal(details.midiaId, midia.id);
     assert.equal(details.patrimonioId, midia.patrimonioId);
-    assert.equal(details.caminhoOriginal, file.path);
-    assert.equal(path.dirname(details.caminhoQuarentena), arquivos.QUARENTENA_ROOT);
-    assert.equal(details.code, "EACCES");
+    assert.equal(details.arquivo, path.basename(file.path));
+    assert.doesNotMatch(JSON.stringify(details), /caminhoOriginal|caminhoQuarentena|mensagem|password/);
+    assert.equal(JSON.stringify(details).includes(root), false);
+    assert.match(details.quarentena, /^[a-f0-9-]+\.[a-z]+$/);
+    assert.equal(details.errorCode, "EACCES");
     return details;
 }
 
@@ -113,17 +118,17 @@ for (const caso of casos) {
         const file = await arquivo(caso);
         stub(t, prisma.patrimonio, "findUnique", async () => ({ status: "RASCUNHO" }));
         let locked = false;
-        const tx = {
+        const tx = { auditLog: mockAuditLog(),
             $queryRaw: async (sql, id) => { assert.match(sql.join("?"), /FOR UPDATE/); assert.equal(id, "patrimonio"); locked = true; },
             patrimonio: { findUnique: async () => { assert.equal(locked, true); return { status: "PUBLICADO" }; } },
-            [caso.model]: { create: async ({ data }) => { assert.equal(caso.tipo, "imagem"); return data; } },
+            [caso.model]: { create: async ({ data }) => { assert.equal(caso.tipo, "imagem"); return { id: randomUUID(), ...data }; } },
         };
         stub(t, prisma, "$transaction", async (callback) => callback(tx));
         if (caso.tipo === "documento") {
-            await assert.rejects(caso.criar("patrimonio", caso.metadados, file, { role: "EDITOR" }), { statusCode: 403 });
+            await assert.rejects(caso.criar("patrimonio", caso.metadados, file, { id: user.id, role: "EDITOR" }), { statusCode: 403 });
             await ausente(file.path);
         } else {
-            await caso.criar("patrimonio", caso.metadados, file, { role: "EDITOR" });
+            await caso.criar("patrimonio", caso.metadados, file, { id: user.id, role: "EDITOR" });
             assert.deepEqual(await fs.readFile(file.path), caso.bytes);
         }
     });
@@ -134,26 +139,27 @@ for (const caso of casos) {
                 const file = await arquivo(caso);
                 stub(t, prisma.patrimonio, "findUnique", async () => ({ status: "RASCUNHO" }));
                 let locked = false, authorized = false, unmarked = false;
-                const tx = {
+                const tx = { auditLog: mockAuditLog(),
                     $queryRaw: async () => { locked = true; return []; },
                     patrimonio: { findUnique: async () => { assert.equal(locked, true); authorized = true; return { status }; } },
                     [caso.model]: {
+                        findMany: async () => [],
                         updateMany: async ({ data }) => { assert.equal(authorized, true); assert.deepEqual(data, { principal: false }); unmarked = true; },
                         create: async ({ data }) => {
                             assert.equal(authorized, true);
                             if (caso.tipo === "imagem") assert.equal(unmarked, true);
-                            return data;
+                            return { id: randomUUID(), ...data };
                         },
                     },
                 };
                 stub(t, prisma, "$transaction", async (callback) => callback(tx));
                 const metadados = { ...caso.metadados, ...(caso.tipo === "imagem" ? { principal: true } : {}) };
                 if (caso.tipo === "documento" && role === "EDITOR" && status !== "RASCUNHO") {
-                    await assert.rejects(caso.criar("patrimonio", metadados, file, { role }), { statusCode: 403 });
+                    await assert.rejects(caso.criar("patrimonio", metadados, file, { id: user.id, role }), { statusCode: 403 });
                     assert.equal(unmarked, false);
                     await ausente(file.path);
                 } else {
-                    const result = await caso.criar("patrimonio", metadados, file, { role });
+                    const result = await caso.criar("patrimonio", metadados, file, { id: user.id, role });
                     assert.equal(result.patrimonioId, "patrimonio");
                     assert.equal(result.url, `${URL_PREFIXO[caso.tipo]}/${path.basename(file.path)}`);
                     assert.deepEqual(await fs.readFile(file.path), caso.bytes);
@@ -169,7 +175,7 @@ for (const caso of casos) {
                     ? { titulo: "Original", credito: "Autor", fonte: "Fonte", textoAlternativo: "Alt" }
                     : { titulo: "Original", descricao: "Descrição", fonte: "Fonte", dataDocumento: new Date("2024-02-29") };
                 let locked;
-                const tx = {
+                const tx = { auditLog: mockAuditLog(),
                     $queryRaw: async () => { locked = true; return []; },
                     patrimonio: { findUnique: async () => { assert.equal(locked, true); return { status }; } },
                     [caso.model]: {
@@ -180,24 +186,24 @@ for (const caso of casos) {
                 };
                 stub(t, prisma, "$transaction", async (callback) => { locked = false; return callback(tx); });
                 if (caso.tipo === "documento" && role === "EDITOR" && status !== "RASCUNHO") {
-                    await assert.rejects(atualizar(midia.patrimonioId, midia.id, { fonte: null }, { role }), { statusCode: 403 });
-                    await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, { role }), { statusCode: 403 });
+                    await assert.rejects(atualizar(midia.patrimonioId, midia.id, { fonte: null }, { id: user.id, role }), { statusCode: 403 });
+                    await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, { id: user.id, role }), { statusCode: 403 });
                     assert.deepEqual(await fs.readFile(file.path), caso.bytes);
                 } else {
-                    const first = await atualizar(midia.patrimonioId, midia.id, schema.parse({ fonte: null }), { role });
+                    const first = await atualizar(midia.patrimonioId, midia.id, schema.parse({ fonte: null }), { id: user.id, role });
                     assert.equal(first.fonte, null);
                     assert.equal(first.titulo, "Original");
                     const fields = caso.tipo === "imagem" ? ["titulo", "credito"] : ["descricao", "dataDocumento"];
                     for (const field of fields) {
-                        assert.equal((await atualizar(midia.patrimonioId, midia.id, schema.parse({ [field]: null }), { role }))[field], null);
+                        assert.equal((await atualizar(midia.patrimonioId, midia.id, schema.parse({ [field]: null }), { id: user.id, role }))[field], null);
                     }
                     if (caso.tipo === "documento") {
-                        const result = await atualizar(midia.patrimonioId, midia.id, schema.parse({ dataDocumento: "2026-10-13" }), { role });
+                        const result = await atualizar(midia.patrimonioId, midia.id, schema.parse({ dataDocumento: "2026-10-13" }), { id: user.id, role });
                         assert.equal(result.dataDocumento.toISOString(), "2026-10-13T00:00:00.000Z");
                     }
-                    if (role === "ADMIN") assert.equal((await caso.excluir(midia.patrimonioId, midia.id, { role })).arquivoRemovido, true);
+                    if (role === "ADMIN") assert.equal((await caso.excluir(midia.patrimonioId, midia.id, { id: user.id, role })).arquivoRemovido, true);
                     else {
-                        await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, { role }), { statusCode: 403 });
+                        await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, { id: user.id, role }), { statusCode: 403 });
                         assert.deepEqual(await fs.readFile(file.path), caso.bytes);
                     }
                 }
@@ -223,13 +229,13 @@ for (const caso of casos) {
         const original = new Error("Erro de validação original");
         t.mock.method(fs, "unlink", async () => { throw erroDisco(); });
         let forwarded;
-        await validateComLimpezaDeArquivo({ parse() { throw original; } })({ body: {}, file, validatedParams: { id: "patrimonio" } }, {}, (error) => { forwarded = error; });
+        await validateComLimpezaDeArquivo({ parse() { throw original; } })({ body: {}, file, validatedParams: { id: user.id } }, {}, (error) => { forwarded = error; });
         assert.strictEqual(forwarded, original);
         assert.equal(entries.length, 1);
-        assert.equal(entries[0][1].acao, "limpar_upload");
-        assert.equal(entries[0][1].caminhoOriginal, file.path);
-        assert.equal(entries[0][1].patrimonioId, "patrimonio");
-        assert.equal(entries[0][1].code, "EACCES");
+        assert.equal(entries[0].operation, "limpar_upload");
+        assert.equal(entries[0].arquivo, path.basename(file.path));
+        assert.equal(entries[0].patrimonioId, user.id);
+        assert.equal(entries[0].errorCode, "EACCES");
         assert.deepEqual(await fs.readFile(file.path), caso.bytes);
     });
 
@@ -246,9 +252,9 @@ for (const caso of casos) {
             await assert.rejects(caso.criar("patrimonio", caso.metadados, file, user), (error) => error === original);
             if (falharLimpeza) {
                 assert.equal(entries.length, 1);
-                assert.equal(entries[0][1].caminhoOriginal, file.path);
-                assert.equal(entries[0][1].origem, `criar_${caso.tipo}`);
-                assert.equal(entries[0][1].code, "EACCES");
+                assert.equal(entries[0].arquivo, path.basename(file.path));
+                assert.equal(entries[0].origem, `criar_${caso.tipo}`);
+                assert.equal(entries[0].errorCode, "EACCES");
                 assert.deepEqual(await fs.readFile(file.path), caso.bytes);
             } else {
                 assert.equal(entries.length, 0);
@@ -318,7 +324,7 @@ for (const caso of casos) {
         const details = conferirPendencia(entries[0], "restaurar_quarentena", midia, file);
         assert.equal(details.registroExcluido, false);
         await ausente(file.path);
-        assert.deepEqual(await fs.readFile(details.caminhoQuarentena), caso.bytes);
+        assert.deepEqual(await fs.readFile(path.join(arquivos.QUARENTENA_ROOT, details.quarentena)), caso.bytes);
     });
 
     test(`${caso.tipo}: limpeza final falha após DELETE, sinaliza e registra pendência`, async (t) => {
@@ -334,7 +340,7 @@ for (const caso of casos) {
         const details = conferirPendencia(entries[0], "limpar_quarentena", midia, file);
         assert.equal(details.registroExcluido, true);
         await ausente(file.path);
-        assert.deepEqual(await fs.readFile(details.caminhoQuarentena), caso.bytes);
+        assert.deepEqual(await fs.readFile(path.join(arquivos.QUARENTENA_ROOT, details.quarentena)), caso.bytes);
     });
 
     test(`${caso.tipo}: restauração não sobrescreve arquivo existente`, async (t) => {
@@ -348,15 +354,15 @@ for (const caso of casos) {
         });
         await assert.rejects(caso.excluir(midia.patrimonioId, midia.id, user), (error) => error === original);
         assert.equal(entries.length, 1);
-        const details = entries[0][1];
-        assert.equal(details.acao, "restaurar_quarentena");
-        assert.equal(details.code, "EEXIST");
+        const details = entries[0];
+        assert.equal(details.operation, "restaurar_quarentena");
+        assert.equal(details.errorCode, "EEXIST");
         assert.equal(details.midiaId, midia.id);
         assert.deepEqual(await fs.readFile(file.path), novoConteudo);
-        assert.deepEqual(await fs.readFile(details.caminhoQuarentena), caso.bytes);
+        assert.deepEqual(await fs.readFile(path.join(arquivos.QUARENTENA_ROOT, details.quarentena)), caso.bytes);
     });
 
-    test(`${caso.tipo}: restauração copia arquivo mas falha na limpeza, registra ambos os caminhos`, async (t) => {
+    test(`${caso.tipo}: restauração copia arquivo mas falha na limpeza, registra identificadores relativos`, async (t) => {
         const file = await arquivo(caso);
         const original = new Error("DELETE falhou");
         const entries = logs(t);
@@ -366,7 +372,7 @@ for (const caso of casos) {
         assert.equal(entries.length, 1);
         const details = conferirPendencia(entries[0], "restaurar_quarentena", midia, file);
         assert.deepEqual(await fs.readFile(file.path), caso.bytes);
-        assert.deepEqual(await fs.readFile(details.caminhoQuarentena), caso.bytes);
+        assert.deepEqual(await fs.readFile(path.join(arquivos.QUARENTENA_ROOT, details.quarentena)), caso.bytes);
     });
 
     test(`${caso.tipo}: URL externa não move nem apaga arquivo`, async (t) => {
@@ -393,10 +399,11 @@ for (const caso of casos) {
 test("troca de imagem principal preserva desmarcação e edição na mesma transação", async (t) => {
     stub(t, prisma.patrimonio, "findUnique", async () => ({ status: "RASCUNHO" }));
     const calls = [];
-    const tx = {
+    const tx = { auditLog: mockAuditLog(),
         $queryRaw: async () => calls.push("lock"),
         patrimonio: { findUnique: async () => { calls.push("status"); return { status: "RASCUNHO" }; } },
         patrimonioImagem: {
+            findMany: async () => [],
             findFirst: async ({ where }) => { calls.push("midia"); assert.deepEqual(where, { id: "imagem", patrimonioId: "patrimonio" }); return { id: "imagem" }; },
             updateMany: async ({ where }) => { calls.push("desmarcar"); assert.deepEqual(where, { patrimonioId: "patrimonio", principal: true, id: { not: "imagem" } }); },
             update: async ({ data }) => { calls.push("editar"); return data; },

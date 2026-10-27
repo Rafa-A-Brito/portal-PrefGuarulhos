@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { test, before, after, beforeEach } from "node:test";
 import { randomUUID } from "node:crypto";
@@ -45,7 +46,7 @@ beforeEach(t => {
     stub(t, prisma, "$transaction", async callback => {
         const snapshot = [...documentos];
         try {
-            return await callback({
+            return await callback({ auditLog: mockAuditLog(),
                 $queryRaw: async () => [],
                 patrimonio: { findUnique: async ({ where }) => where.id === id ? patrimonio : null },
                 patrimonioDocumento: {

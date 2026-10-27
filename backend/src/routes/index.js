@@ -1,5 +1,6 @@
 import { Router } from "express";
 import authRoutes from "./authRoute.js";
+import auditoriaRoutes from "./auditoriaRoute.js";
 import adminRoutes from "./adminRoute.js";
 import adminReferenciaRoutes from "./adminReferenciaRoute.js";
 import adminImageRoutes from "./adminImageRoute.js";
@@ -20,6 +21,7 @@ import { validateParams } from "../middlewares/validate.js";
 import { arquivoParamsSchema } from "../schemas/midiaSchema.js";
 
 const router = Router();
+router.use("/admin/auditoria", auditoriaRoutes);
 router.use("/exposicoes", exposicaoRoutes);
 router.use("/novidades", novidadeRoutes);
 router.use("/admin/exposicoes", adminExposicaoRoutes);

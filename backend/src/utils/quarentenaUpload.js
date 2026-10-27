@@ -1,8 +1,8 @@
 import { caminhoArquivoUpload } from "./arquivoUpload.js";
-import { moverParaQuarentena, restaurarDaQuarentena, apagarArquivoGerenciado } from "./arquivos.js";
+import { moverParaQuarentena, restaurarDaQuarentena, apagarArquivoGerenciado, registrarPendenciaArquivo } from "./arquivos.js";
 
 function pendencia(acao, arquivo, error) {
-    console.error("Pendência de recuperação de mídia.", { acao, ...arquivo, code: error.code });
+    registrarPendenciaArquivo(acao, arquivo, error);
 }
 
 // A função recebida abre a transação, obtém os locks e só então chama preparar.
@@ -11,18 +11,22 @@ export async function comQuarentenaUpload(operacao) {
     let arquivo;
     let result;
     try {
-        result = await operacao(async url => { arquivo = await moverParaQuarentena(caminhoArquivoUpload(url)); });
+        result = await operacao(async url => {
+            const original = caminhoArquivoUpload(url);
+            try { arquivo = await moverParaQuarentena(original); }
+            catch (error) { pendencia("mover_quarentena", { original, registroExcluido: false }, error); throw error; }
+        });
     } catch (error) {
         if (arquivo) {
             try { await restaurarDaQuarentena(arquivo); }
-            catch (restoreError) { pendencia("restaurar", arquivo, restoreError); }
+            catch (restoreError) { pendencia("restaurar", { ...arquivo, registroExcluido: false }, restoreError); }
         }
         throw error;
     }
     if (arquivo) {
         try {
             await apagarArquivoGerenciado(arquivo.quarentena);
-        } catch (error) { pendencia("limpar_apos_commit", arquivo, error); }
+        } catch (error) { pendencia("limpar_apos_commit", { ...arquivo, registroExcluido: true }, error); }
     }
     return result;
 }

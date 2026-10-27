@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
+import { logEvent } from "../utils/logger.js";
 
 const invalido = () => new BadRequestError("Multipart inválido ou com campos duplicados.");
 const grande = () => Object.assign(new BaseError("Arquivo ou corpo multipart excede o tamanho máximo permitido.", 413), { code: "FILE_TOO_LARGE" });
@@ -101,7 +102,9 @@ export default function multipart({ maxFileSize, fields = 24, fieldSize = 256 * 
         } catch (error) {
             for (const destino of created) {
                 try { await fs.unlink(destino); }
-                catch (cleanup) { if (cleanup.code !== "ENOENT") console.error("Falha ao limpar tentativa de upload.", { caminho: destino, code: cleanup.code }); }
+                catch (cleanup) { if (cleanup.code !== "ENOENT") logEvent("error", "UPLOAD_CLEANUP_FAILED", {
+                    operation: "limpar_upload", arquivo: path.basename(destino), pasta: path.basename(path.dirname(destino)),
+                }, cleanup); }
             }
             delete req.file;
             next(error);

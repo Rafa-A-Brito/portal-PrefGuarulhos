@@ -9,6 +9,7 @@ import { slugify } from "../utils/slug.js";
 import { destinoPublicoWhere } from "../utils/identidadeEditorial.js";
 import { fatoSelect, ligacaoSelect, ordemEditorial } from "./patrimonioEditorialService.js";
 import { validarAtribuicaoRegiao, regiaoPublicSelect, regiaoAdminSelect } from "./regiaoService.js";
+import { auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 
 const MAX_SLUG_ATTEMPTS = 1000;
 
@@ -360,6 +361,7 @@ export async function updatePatrimonio(id, data, user) {
                 ? { update: localizacao }
                 : { create: finalLocation };
         }
+        const before = auditSnapshot(E.PATRIMONIO, current);
         const updated = await transaction.patrimonio.update({
             where: { id },
             data: {
@@ -375,7 +377,10 @@ export async function updatePatrimonio(id, data, user) {
             },
             include: adminInclude,
         });
-        return achatarCategorias(updated);
+        const after = achatarCategorias(updated);
+        await registrarAuditoria(transaction, { userId: user.id, action: A.PATRIMONIO_UPDATE,
+            entity: E.PATRIMONIO, entityId: id, before, after });
+        return after;
     }, { isolationLevel: "ReadCommitted" }).catch(rethrowNumeroConflict);
 }
 
@@ -413,6 +418,7 @@ export async function changePatrimonioStatus(id, status, user, { transaction, dr
         const numeracao = status === StatusPublicacao.PUBLICADO
             ? await completarNumeracaoEditorial(transaction, current)
             : {};
+        const before = auditSnapshot(E.PATRIMONIO, current);
         const updated = await transaction.patrimonio.update({
             where: { id },
             data: {
@@ -425,7 +431,11 @@ export async function changePatrimonioStatus(id, status, user, { transaction, dr
             },
             include: adminInclude,
         });
-        return achatarCategorias(updated);
+        const after = achatarCategorias(updated);
+        await registrarAuditoria(transaction, { userId: user.id,
+            action: status === StatusPublicacao.PUBLICADO ? A.PATRIMONIO_PUBLISH : A.PATRIMONIO_ARCHIVE,
+            entity: E.PATRIMONIO, entityId: id, before, after });
+        return after;
     };
     // A API mantém sua transação; operações em lote reutilizam a transação recebida.
     return (transaction ? change(transaction) : prisma.$transaction(change, {
@@ -517,7 +527,10 @@ export async function createPatrimonio(data, createdBy) {
                 },
             });
 
-            return achatarCategorias(criado);
+            const after = achatarCategorias(criado);
+            await registrarAuditoria(transaction, { userId: createdBy, action: A.PATRIMONIO_CREATE,
+                entity: E.PATRIMONIO, entityId: criado.id, after });
+            return after;
         }, { isolationLevel: "ReadCommitted" });
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

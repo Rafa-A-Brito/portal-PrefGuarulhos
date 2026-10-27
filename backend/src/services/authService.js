@@ -5,6 +5,8 @@ import UnauthorizedError from "../errors/UnauthorizedError.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import { generateToken } from "../utils/token.js";
+import { registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
+import { logEvent, logFailure } from "../utils/logger.js";
 
 const DUMMY_HASH = "$2b$12$Z/juidp1FLKNPXCpp9Zf9exflW34B7DM3r1JJgR/YeID/BuxgwhGG";
 const hash = value => createHash("sha256").update(value).digest("hex");
@@ -21,8 +23,12 @@ function credentials(user, session, refreshToken, now) {
 export async function login({ email, password }, { now = Date.now } = {}) {
     const candidate = await prisma.user.findUnique({ where: { email } });
     const valid = await verifyPassword(password, candidate?.isActive ? candidate.passwordHash : DUMMY_HASH);
-    if (!candidate || !candidate.isActive || !valid) throw new UnauthorizedError("E-mail ou senha incorretos.");
-    return prisma.$transaction(async tx => {
+    if (!candidate || !candidate.isActive || !valid) {
+        const error = new UnauthorizedError("E-mail ou senha incorretos.");
+        logFailure("warn", "LOGIN_REJECTED", { status: 401, reason: "credentials" }, error);
+        throw error;
+    }
+    const result = await prisma.$transaction(async tx => {
         await lockUser(tx, candidate.id);
         const user = await tx.user.findUnique({ where: { id: candidate.id } });
         if (!user?.isActive || user.passwordHash !== candidate.passwordHash || user.tokenVersion !== candidate.tokenVersion) throw denied();
@@ -32,6 +38,8 @@ export async function login({ email, password }, { now = Date.now } = {}) {
             refreshTokens: { create: { tokenHash: hash(refreshToken), createdAt: new Date(time) } } } });
         return credentials(user, session, refreshToken, time);
     });
+    logEvent("info", "LOGIN_SUCCEEDED", { status: 200, userId: result.user.id });
+    return result;
 }
 
 export async function refresh(refreshToken, { now = Date.now } = {}) {
@@ -46,8 +54,8 @@ export async function refresh(refreshToken, { now = Date.now } = {}) {
         const session = stored.session, time = now();
         if (stored.usedAt) {
             // Não lançar dentro da transação: a revogação deve ser confirmada.
-            await tx.authSession.updateMany({ where: { id: session.id, revokedAt: null }, data: { revokedAt: new Date(time) } });
-            return null;
+            const revoked = await tx.authSession.updateMany({ where: { id: session.id, revokedAt: null }, data: { revokedAt: new Date(time) } });
+            return { reused: true, userId: session.userId, revokedCount: revoked.count };
         }
         const user = await tx.user.findUnique({ where: { id: session.userId } });
         if (!user?.isActive || session.revokedAt || session.expiresAt.getTime() <= time || session.tokenVersion !== user.tokenVersion) return null;
@@ -57,6 +65,11 @@ export async function refresh(refreshToken, { now = Date.now } = {}) {
         await tx.refreshToken.create({ data: { sessionId: session.id, tokenHash: hash(nextToken), createdAt: new Date(time) } });
         return credentials(user, session, nextToken, time);
     });
+    if (result?.reused) {
+        const error = denied();
+        logFailure("warn", "REFRESH_TOKEN_REUSED", { status: 401, userId: result.userId, reason: "refresh_reuse", revokedCount: result.revokedCount }, error);
+        throw error;
+    }
     if (!result) throw denied();
     return result;
 }
@@ -65,10 +78,11 @@ export async function logout(refreshToken, { now = Date.now } = {}) {
     if (!validRefresh(refreshToken)) return;
     const candidate = await prisma.refreshToken.findUnique({ where: { tokenHash: hash(refreshToken) }, include: { session: true } });
     if (!candidate) return;
-    await prisma.$transaction(async tx => {
+    const revoked = await prisma.$transaction(async tx => {
         await lockUser(tx, candidate.session.userId);
-        await tx.authSession.updateMany({ where: { id: candidate.sessionId, revokedAt: null }, data: { revokedAt: new Date(now()) } });
+        return tx.authSession.updateMany({ where: { id: candidate.sessionId, revokedAt: null }, data: { revokedAt: new Date(now()) } });
     });
+    if (revoked.count > 0) logEvent("info", "LOGOUT_SESSION_REVOKED", { status: 200, userId: candidate.session.userId, revokedCount: revoked.count });
 }
 
 export async function changePassword(userId, { senhaAtual, novaSenha }) {
@@ -77,11 +91,14 @@ export async function changePassword(userId, { senhaAtual, novaSenha }) {
     if (!(await verifyPassword(senhaAtual, user.passwordHash))) throw new BadRequestError("Senha atual incorreta.");
     if (senhaAtual === novaSenha) throw new BadRequestError("A nova senha deve ser diferente da atual.");
     const passwordHash = await hashPassword(novaSenha);
-    await prisma.$transaction(async tx => {
+    const revoked = await prisma.$transaction(async tx => {
         await lockUser(tx, userId);
         const result = await tx.user.updateMany({ where: { id: userId, isActive: true, passwordHash: user.passwordHash, tokenVersion: user.tokenVersion },
             data: { passwordHash, tokenVersion: { increment: 1 } } });
         if (result.count !== 1) throw new BadRequestError("Senha atual incorreta ou conta indisponível.");
-        await tx.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+        const revoked = await tx.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+        await registrarAuditoria(tx, { userId, action: A.USER_PASSWORD_CHANGE, entity: E.USER, entityId: userId });
+        return revoked;
     });
+    if (revoked.count > 0) logEvent("info", "SESSIONS_REVOKED", { status: 200, userId, reason: "password_change", revokedCount: revoked.count });
 }

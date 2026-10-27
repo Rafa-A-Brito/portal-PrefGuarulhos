@@ -5,6 +5,7 @@ import NotFoundError from "../errors/NotFoundError.js";
 import { referenciaBodySchema, updateReferenciaSchema } from "../schemas/referenciaSchema.js";
 import { removerArquivoUpload } from "../utils/arquivoUpload.js";
 import { comQuarentenaUpload, uploadCompartilhado } from "../utils/quarentenaUpload.js";
+import { auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 
 export function referenciaDTO(documento) {
     return {
@@ -42,6 +43,7 @@ export async function criarReferenciaPatrimonio(id, file, input, user) {
                 mimeType: file?.mimetype ?? null,
                 fonte: !file && data.url.length <= 500 ? data.url : null,
             } });
+            await registrarAuditoria(tx, { userId: user.id, action: A.DOCUMENTO_CREATE, entity: E.DOCUMENTO, entityId: documento.id, after: documento });
             return referenciaDTO(documento);
         });
     } catch (error) {
@@ -58,6 +60,7 @@ export async function removerReferenciaPatrimonio(id, referenciaId, user) {
         if (!current) throw new NotFoundError("Referência não encontrada neste patrimônio.");
         if (current.url.startsWith("/uploads/referencias/") && !await uploadCompartilhado(tx, current.url)) await preparar(current.url);
         await tx.patrimonioDocumento.delete({ where: { id: current.id } });
+        await registrarAuditoria(tx, { userId: user.id, action: A.DOCUMENTO_DELETE, entity: E.DOCUMENTO, entityId: current.id, before: current });
         return { id: current.id };
     }));
 }
@@ -71,7 +74,9 @@ export async function atualizarReferenciaPatrimonio(id, referenciaId, input, use
         }
         const current = await tx.patrimonioDocumento.findFirst({ where: { id: referenciaId, patrimonioId: id } });
         if (!current) throw new NotFoundError("Referência não encontrada neste patrimônio.");
+        const before = auditSnapshot(E.DOCUMENTO, current);
         const updated = await tx.patrimonioDocumento.update({ where: { id: current.id }, data });
+        await registrarAuditoria(tx, { userId: user.id, action: A.DOCUMENTO_UPDATE, entity: E.DOCUMENTO, entityId: current.id, before, after: updated });
         return referenciaDTO(updated);
     });
 }

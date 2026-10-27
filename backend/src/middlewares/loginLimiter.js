@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import BaseError from "../errors/BaseError.js";
 import env from "../config/env.js";
+import { rememberLogRoute, logFailure } from "../utils/logger.js";
 
 function ipKey(ip = "unknown") {
     if (ip.startsWith("::ffff:") && ip.includes(".")) return ip.slice(7);
@@ -18,6 +19,7 @@ export function criarLimitadorLogin({ windowMs = env.LOGIN_RATE_WINDOW_MS,
     const ips = new Map(), accounts = new Map();
     let nextSweep = 0;
     return (req, res, next) => {
+        rememberLogRoute(req);
         const time = now();
         if (time >= nextSweep) {
             for (const map of [ips, accounts]) for (const [key, entry] of map) if (entry.until <= time) map.delete(key);
@@ -39,6 +41,9 @@ export function criarLimitadorLogin({ windowMs = env.LOGIN_RATE_WINDOW_MS,
         res.setHeader("Cache-Control", "no-store");
         const error = new BaseError("Muitas tentativas de login. Aguarde e tente novamente.", 429);
         error.code = "TOO_MANY_REQUESTS";
+        logFailure("warn", req.route?.path === "/refresh" ? "AUTH_RATE_LIMITED" : "LOGIN_RATE_LIMITED", {
+            status: 429, reason: "rate_limit", retryAfter: Math.max(1, Math.ceil(retry / 1000)),
+        }, error);
         next(error);
     };
 }

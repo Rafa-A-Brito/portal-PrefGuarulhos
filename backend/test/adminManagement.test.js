@@ -1,3 +1,4 @@
+import { mockAuditLog } from "./auditoriaFixture.js";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, test } from "node:test";
@@ -67,7 +68,7 @@ function setup(t, { actorRole = "ADMIN", otherRole = "EDITOR", otherActive = tru
             .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
             .slice(args.skip, args.skip + args.take);
     });
-    const tx = { user: {
+    const tx = { auditLog: mockAuditLog(), user: {
         findUnique: async (args) => { assert.ok(locked); if (args.select) assert.deepEqual(args.select, selection); return find(args); },
         count: async (args) => { assert.ok(locked); return prisma.user.count(args); },
         update: async ({ where, data, select }) => {

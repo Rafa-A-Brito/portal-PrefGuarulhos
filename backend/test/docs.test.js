@@ -18,6 +18,8 @@ test("especificação OpenAPI válida, com referências, rotas e autenticação 
             "GET /api/health",
             "GET /api/regioes",
             "GET /api/admin/regioes",
+            "GET /api/admin/auditoria",
+            "GET /api/admin/auditoria/{id}",
             "POST /api/admin/regioes",
             "PATCH /api/admin/regioes/{id}",
             "PATCH /api/admin/patrimonios/{id}/imagens/{imagemId}",

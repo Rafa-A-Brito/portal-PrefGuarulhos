@@ -1,8 +1,10 @@
 import prisma from "../config/prisma.js";
 import UnauthorizedError from "../errors/UnauthorizedError.js";
 import { verifyToken } from "../utils/token.js";
+import { identifyLogUser, rememberLogRoute } from "../utils/logger.js";
 
 export default async function authenticate(req, _res, next) {
+    rememberLogRoute(req);
     const authorization = req.get("authorization");
     const match = authorization?.match(/^Bearer ([^\s]+)$/i);
     if (!match) throw new UnauthorizedError();
@@ -32,5 +34,6 @@ export default async function authenticate(req, _res, next) {
     }
 
     req.user = { id: user.id, name: user.name, email: user.email, role: user.role, isActive: user.isActive, tokenVersion: user.tokenVersion };
+    identifyLogUser(user.id);
     next();
 }

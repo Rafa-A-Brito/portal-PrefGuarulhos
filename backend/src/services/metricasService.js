@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import BaseError from "../errors/BaseError.js";
 import { legadoEditorial } from "../utils/identidadeEditorial.js";
+import { logFailure } from "../utils/logger.js";
 
 export function erroMetricas(status, code, message) {
     return Object.assign(new BaseError(message, status), { code });
@@ -39,6 +40,7 @@ export async function registrarVisualizacao({ patrimonioId, dia, chaveVisitante 
         }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 500, timeout: 2000 });
     } catch (error) {
         if (error instanceof BaseError) throw error;
+        logFailure("error", "DATABASE_OPERATION_FAILED", { status: 503 }, error);
         // Não vazar SQL, parâmetros ou credenciais e não repetir transação implicitamente.
         throw indisponivel();
     }

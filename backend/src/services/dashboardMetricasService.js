@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { logFailure } from "../utils/logger.js";
 import prisma from "../config/prisma.js";
 import { diaSaoPaulo } from "../utils/dataMetricas.js";
 import { consultaMetricasSchema } from "../schemas/metricasSchema.js";
@@ -40,5 +41,5 @@ export async function consultarMetricas(query, db = prisma, agora = new Date()) 
                 porRegiao: regioes.filter(r => r.id !== null), semRegiao: regioes.find(r => r.id === null)?.quantidade ?? "0", serie },
             favoritos: { disponivel: false } };
         }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, maxWait: 500, timeout: 3000 });
-    } catch { throw indisponivel(); }
+    } catch (error) { logFailure("error", "DATABASE_OPERATION_FAILED", { status: 503 }, error); throw indisponivel(); }
 }

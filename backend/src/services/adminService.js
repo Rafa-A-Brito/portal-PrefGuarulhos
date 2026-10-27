@@ -3,6 +3,7 @@ import prisma from "../config/prisma.js";
 import ConflictError from "../errors/ConflictError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import { hashPassword } from "../utils/password.js";
+import { registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 
 const userSelect = {
     id: true, name: true, email: true, role: true, isActive: true,
@@ -35,14 +36,19 @@ async function findUser(id, client = prisma) {
     return user;
 }
 
-export async function createAdmin({ nome, email, role, password }) {
+export async function createAdmin({ nome, email, role, password }, actor) {
     try {
-        const user = await prisma.user.create({
-            data: {
-                name: nome, email, role,
-                passwordHash: await hashPassword(password), isActive: true,
-            },
-            select: userSelect,
+        const passwordHash = await hashPassword(password);
+        const user = await prisma.$transaction(async tx => {
+            const created = await tx.user.create({
+                data: {
+                    name: nome, email, role,
+                    passwordHash, isActive: true,
+                },
+                select: userSelect,
+            });
+            await registrarAuditoria(tx, { userId: actor.id, action: A.USER_CREATE, entity: E.USER, entityId: created.id, after: created });
+            return created;
         });
         return toAdmin(user);
     } catch (error) {
@@ -107,6 +113,8 @@ export async function updateAdmin(id, { nome, email, role }, actor) {
                 throw conflict("ADMIN_CANNOT_DEMOTE_SELF", "Você não pode rebaixar a própria conta.");
             }
             if (role === "EDITOR") await ensureAnotherAdmin(transaction, current);
+            // Cópia explícita antes da escrita (também evita referências mutáveis nos testes).
+            const before = { name: current.name, email: current.email, role: current.role, isActive: current.isActive };
             const updated = await transaction.user.update({
                 where: { id },
                 data: {
@@ -116,6 +124,7 @@ export async function updateAdmin(id, { nome, email, role }, actor) {
                 },
                 select: userSelect,
             });
+            await registrarAuditoria(transaction, { userId: actor.id, action: A.USER_UPDATE, entity: E.USER, entityId: id, before, after: updated });
             return toAdmin(updated);
         }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
     } catch (error) {
@@ -131,8 +140,11 @@ export async function changeAdminStatus(id, ativo, actor) {
         }
         if (current.isActive === ativo) return toAdmin(current);
         if (!ativo) await ensureAnotherAdmin(transaction, current);
-        return toAdmin(await transaction.user.update({
+        const updated = await transaction.user.update({
             where: { id }, data: { isActive: ativo }, select: userSelect,
-        }));
+        });
+        await registrarAuditoria(transaction, { userId: actor.id, action: ativo ? A.USER_ACTIVATE : A.USER_DEACTIVATE,
+            entity: E.USER, entityId: id, before: { isActive: !ativo }, after: { isActive: ativo } });
+        return toAdmin(updated);
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 }

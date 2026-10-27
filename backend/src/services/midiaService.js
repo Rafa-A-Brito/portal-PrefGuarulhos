@@ -1,6 +1,7 @@
 import path from "node:path";
 import { uploadCompartilhado } from "../utils/quarentenaUpload.js";
 import prisma from "../config/prisma.js";
+import { imagensPrincipais, auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
 import { URL_PREFIXO } from "../config/storage.js";
 import BadRequestError from "../errors/BadRequestError.js";
 import BaseError from "../errors/BaseError.js";
@@ -9,12 +10,6 @@ import NotFoundError from "../errors/NotFoundError.js";
 import { caminhoArquivoUpload } from "../utils/arquivoUpload.js";
 import { TIPOS_DOCUMENTO, TIPOS_IMAGEM, apagarArquivoGerenciado, detectarMimeReal, lerCabecalho,
     limparUploadAposFalha, moverParaQuarentena, restaurarDaQuarentena, registrarPendenciaArquivo } from "../utils/arquivos.js";
-
-const SELECT_MIDIA = {
-    id: true,
-    patrimonioId: true,
-    url: true,
-};
 
 async function exigirPatrimonio(client, id) {
     const patrimonio = await client.patrimonio.findUnique({
@@ -68,7 +63,7 @@ function urlPublica(tipo, arquivo) {
 }
 
 async function exigirMidia(client, model, where, mensagem, codigo) {
-    const midia = await client[model].findFirst({ where, select: SELECT_MIDIA });
+    const midia = await client[model].findFirst({ where });
     if (!midia) {
         const erro = new NotFoundError(mensagem);
         erro.code = codigo;
@@ -91,6 +86,7 @@ export async function createImagem(patrimonioId, metadados, arquivo, user) {
             await bloquearEAutorizar(transaction, patrimonioId, user, true);
             // Desmarcar a principal anterior e marcar a nova na mesma transação
             // evita o estado intermediário com duas principais.
+            const principaisSubstituidas = metadados.principal ? await imagensPrincipais(transaction, patrimonioId) : undefined;
             if (metadados.principal) {
                 await transaction.patrimonioImagem.updateMany({
                     where: { patrimonioId, principal: true },
@@ -98,9 +94,11 @@ export async function createImagem(patrimonioId, metadados, arquivo, user) {
                 });
             }
 
-            return transaction.patrimonioImagem.create({
+            const created = await transaction.patrimonioImagem.create({
                 data: { ...metadados, patrimonioId, url: urlPublica("imagem", arquivo) },
             });
+            await registrarAuditoria(transaction, { userId: user.id, action: A.IMAGEM_CREATE, entity: E.IMAGEM, entityId: created.id, after: { ...created, principaisSubstituidas } });
+            return created;
         });
     } catch (error) {
         // Se a gravação falhar, o arquivo recém-criado ficaria órfão no disco.
@@ -116,8 +114,9 @@ export async function updateImagem(patrimonioId, imagemId, metadados, user) {
     return prisma.$transaction(async (transaction) => {
         await bloquearEAutorizar(transaction, patrimonioId, user, true);
         // O filtro por patrimonioId garante que a mídia pertence ao patrimônio da URL.
-        await exigirMidia(transaction, "patrimonioImagem", { id: imagemId, patrimonioId }, "Imagem não encontrada.", "IMAGEM_NOT_FOUND");
+        const before = auditSnapshot(E.IMAGEM, await exigirMidia(transaction, "patrimonioImagem", { id: imagemId, patrimonioId }, "Imagem não encontrada.", "IMAGEM_NOT_FOUND"));
 
+        const principais = metadados.principal === true ? await imagensPrincipais(transaction, patrimonioId) : undefined;
         if (metadados.principal === true) {
             await transaction.patrimonioImagem.updateMany({
                 where: { patrimonioId, principal: true, id: { not: imagemId } },
@@ -125,7 +124,9 @@ export async function updateImagem(patrimonioId, imagemId, metadados, user) {
             });
         }
 
-        return transaction.patrimonioImagem.update({ where: { id: imagemId }, data: metadados });
+        const updated = await transaction.patrimonioImagem.update({ where: { id: imagemId }, data: metadados });
+        await registrarAuditoria(transaction, { userId: user.id, action: A.IMAGEM_UPDATE, entity: E.IMAGEM, entityId: imagemId, before: { ...before, principais }, after: { ...updated, ...(principais && { principais: [imagemId] }) } });
+        return updated;
     });
 }
 
@@ -149,7 +150,7 @@ export async function createDocumento(patrimonioId, metadados, arquivo, user) {
 
         return await prisma.$transaction(async (transaction) => {
             await bloquearEAutorizar(transaction, patrimonioId, user);
-            return transaction.patrimonioDocumento.create({
+            const created = await transaction.patrimonioDocumento.create({
                 data: {
                     ...metadados,
                     patrimonioId,
@@ -157,6 +158,8 @@ export async function createDocumento(patrimonioId, metadados, arquivo, user) {
                     mimeType: mimeReal,
                 },
             });
+            await registrarAuditoria(transaction, { userId: user.id, action: A.DOCUMENTO_CREATE, entity: E.DOCUMENTO, entityId: created.id, after: created });
+            return created;
         });
     } catch (error) {
         await limparUploadAposFalha(arquivo.path, { origem: "criar_documento", patrimonioId });
@@ -171,8 +174,10 @@ export async function updateDocumento(patrimonioId, documentoId, metadados, user
 
     return prisma.$transaction(async (transaction) => {
         await bloquearEAutorizar(transaction, patrimonioId, user);
-        await exigirMidia(transaction, "patrimonioDocumento", { id: documentoId, patrimonioId }, "Documento não encontrado.", "DOCUMENTO_NOT_FOUND");
-        return transaction.patrimonioDocumento.update({ where: { id: documentoId }, data: metadados });
+        const before = auditSnapshot(E.DOCUMENTO, await exigirMidia(transaction, "patrimonioDocumento", { id: documentoId, patrimonioId }, "Documento não encontrado.", "DOCUMENTO_NOT_FOUND"));
+        const updated = await transaction.patrimonioDocumento.update({ where: { id: documentoId }, data: metadados });
+        await registrarAuditoria(transaction, { userId: user.id, action: A.DOCUMENTO_UPDATE, entity: E.DOCUMENTO, entityId: documentoId, before, after: updated });
+        return updated;
     });
 }
 
@@ -200,9 +205,12 @@ async function excluirMidiaComQuarentena(patrimonioId, midiaId, user, model, men
                 registrarPendenciaArquivo("mover_quarentena", { ...contexto, registroExcluido: false }, error);
                 const erro = new BaseError("Não foi possível preparar a exclusão do arquivo da mídia.", 500);
                 erro.code = "ARQUIVO_NAO_REMOVIDO";
+                erro.cause = error;
                 throw erro;
             }
             await transaction[model].delete({ where: { id: midiaId } });
+            await registrarAuditoria(transaction, { userId: user.id, action: model === "patrimonioImagem" ? A.IMAGEM_DELETE : A.DOCUMENTO_DELETE,
+                entity: model === "patrimonioImagem" ? E.IMAGEM : E.DOCUMENTO, entityId: midiaId, before: atual });
             return atual;
         });
     } catch (error) {
