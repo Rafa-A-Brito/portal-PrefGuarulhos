@@ -1,0 +1,25 @@
+# AUTÔNOMO. Apenas PostgreSQL de testes; nunca combinar com o Compose normal.
+# Projeto/volume devem ser novos e conferidos antes de iniciar.
+services:
+  db_test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: portal_test
+      POSTGRES_DB: portal_test
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:?senha exclusiva de teste}
+      API_DB_PASSWORD: ${TEST_API_PASSWORD:?senha exclusiva de teste}
+      MIGRATION_DB_PASSWORD: ${TEST_MIGRATION_PASSWORD:?senha exclusiva de teste}
+      METRICAS_DB_PASSWORD: ${TEST_METRICAS_PASSWORD:?senha exclusiva de teste}
+    ports:
+      - "127.0.0.1:${TEST_POSTGRES_PORT:-5437}:5432"
+    volumes:
+      - pg_test:/var/lib/postgresql/data
+      - ./infra/postgres/10-roles.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+      - ./infra/postgres/20-metricas-role.sh:/docker-entrypoint-initdb.d/20-metricas-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal_test -d portal_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+volumes:
+  pg_test:

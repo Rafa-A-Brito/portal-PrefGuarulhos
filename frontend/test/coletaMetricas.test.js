@@ -39,6 +39,19 @@ test("fallback sem Web Locks ainda reutiliza prazo; sem storage funciona em mem�
   await coleta.coletar("a"); await coleta.coletar("b");
   expect(api.emitir).toHaveBeenCalledTimes(1);
 });
+test("Web Locks negado por política usa fila local sem perder o modo em memória", async () => {
+  const locks = { request: vi.fn(async () => { throw new DOMException("Bloqueado", "SecurityError"); }) };
+  const { coleta, api } = criar({ locks, storage: () => null });
+  await Promise.all([coleta.coletar("a"), coleta.coletar("b")]);
+  expect(api.emitir).toHaveBeenCalledTimes(1); expect(api.registrar).toHaveBeenCalledTimes(2);
+});
+test("SecurityError depois de iniciar callback não repete emissão", async () => {
+  const locks = { request: (_name, _opts, fn) => fn() };
+  const { coleta, api } = criar({ locks });
+  api.emitir.mockRejectedValue(new DOMException("Bloqueado", "SecurityError"));
+  await expect(coleta.coletar("a")).rejects.toMatchObject({ name: "SecurityError" });
+  expect(api.emitir).toHaveBeenCalledTimes(1);
+});
 test("falha de gravação não ressuscita metadata antiga em cada ficha", async () => {
   const s = { getItem: () => '{"geracao":"antiga","expiraLocal":0}', setItem: () => { throw new Error("quota"); } };
   const { coleta, api } = criar({ storage: () => s });

@@ -36,7 +36,7 @@ const consulta = objeto({ success: { type: "boolean" }, data: { oneOf: [
 export const pathsMetricas = {
     "/api/metricas/visualizacoes/sessao": {
         post: { ...publico, summary: "Emite/reutiliza credencial diária opcional, sem contar visualização",
-            description: "Flag METRICAS_COLETA_ATIVA=false por padrão. Cookie HttpOnly/SameSite=Lax, expiração fixa na virada de São Paulo; Secure e __Host- em HTTPS. Não usa JWT. Cliente futuro chama somente após adesão e detalhe confirmado.",
+            description: "Flag METRICAS_COLETA_ATIVA=false por padrão. Exige Host da origem configurada e transporte correspondente ao modo. Cookie HttpOnly/SameSite=Lax, expiração fixa na virada de São Paulo; Secure e __Host- em HTTPS. Não usa JWT. Chamadas após adesão/detalhe confirmado. Tentativas de nova emissão: 120/h e 60/min por rede; cookie validado dispensa a quota de criação, mas compartilha 30/min por credencial e 600/min por rede. Limites locais a uma instância, além da borda.",
             requestBody: json({ type: "object", additionalProperties: false }), responses: { ...falhas,
                 200: resposta("Set-Cookie; Cache-Control: no-store.", objeto({ success: { type: "boolean" }, data: objeto({ dia: { type: "string", format: "date" }, expiraEm: { type: "string", format: "date-time" } }) })) } },
         delete: { ...publico, summary: "Expira o cookie, inclusive com coleta desligada", description: "Sem corpo. Não remove agregados nem revoga cópias do token. Com flag desligada a origem esperada é CORS_ORIGIN.",

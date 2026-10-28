@@ -15,8 +15,12 @@ export function criarRotasMetricas({ configuracao = config, registrar = registra
         if (req.get("Origin") !== (configuracao.origem ?? env.CORS_ORIGIN) || req.get("X-Portal-Metricas") !== "1" || req.get("Sec-Fetch-Site") === "cross-site") {
             throw erroMetricas(403, "ORIGEM_INVALIDA", "Origem não autorizada.");
         }
+        if (configuracao.coleta && (req.get("Host") !== new URL(configuracao.origem).host || req.secure !== configuracao.seguro)) {
+            throw erroMetricas(403, "TRANSPORTE_INVALIDO", "Host ou transporte não autorizado.");
+        }
         if (!retirada && !req.is("application/json")) throw erroMetricas(415, "JSON_OBRIGATORIO", "Envie application/json.");
         req.metricasToken = lerCookieMetricas(req.get("Cookie"), configuracao);
+        req.metricasIdentidade = configuracao.coleta ? validarCookieMetricas(req.metricasToken, configuracao, now()) : null;
         next();
     });
     router.delete("/visualizacoes/sessao", (_req, res) => {

@@ -96,6 +96,7 @@ test("PostgreSQL publicação dos 14: preflight, rollback integral, service admi
         writes = 0; failAt = 8;
         await assert.rejects(run(), /falha-injetada-publicacao/);
         assert.equal(writes, 8); assert.deepEqual(await snapshot(), restored);
+        assert.equal(await prisma.auditLog.count({ where: { userId: author.id } }), 0, "Rollback também desfaz os eventos de auditoria");
         failAt = 0; writes = 0;
         const start = Date.now();
         const result = await run();
@@ -119,9 +120,13 @@ test("PostgreSQL publicação dos 14: preflight, rollback integral, service admi
             } else assert.deepEqual(current, old);
         }
         assert.equal(after.find(p => p.id === poco.id).status, "RASCUNHO");
-        assert.equal(await prisma.auditLog.count({ where: { userId: author.id } }), 0, "Service atual não gera AuditLog de publicação");
+        const eventos = await prisma.auditLog.findMany({ where: { userId: author.id } });
+        assert.equal(eventos.length, 14, "Service atual audita cada publicação confirmada");
+        assert.deepEqual(eventos.map(e => e.entityId).sort(), selected.map(p => p.id).sort());
+        assert.ok(eventos.every(e => e.entity === "Patrimonio" && e.action === "PATRIMONIO_PUBLISH"));
         await blocked(/RASCUNHO/); // Segunda execução não republica nem renova datas.
     } finally {
+        if (author) await prisma.auditLog.deleteMany({ where: { userId: author.id } });
         if (route) await prisma.rota.delete({ where: { id: route.id } });
         if (creator) await prisma.patrimonio.deleteMany({ where: { createdBy: creator.id } });
         if (extraCategory) await prisma.categoria.delete({ where: { id: extraCategory.id } });

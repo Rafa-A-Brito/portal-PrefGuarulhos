@@ -76,6 +76,16 @@ describe("Retry-After no fluxo real de login", () => {
 });
 
 describe("sessão e troca de senha", () => {
+  it("storage bloqueado na leitura e limpeza não impede navegação pública", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new DOMException("Bloqueado", "SecurityError"); });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => { throw new DOMException("Bloqueado", "SecurityError"); });
+    function Publico() {
+      const { carregando, autenticado } = useAuth();
+      return <span>{carregando ? "Verificando" : autenticado ? "Autenticado" : "Navegação pública disponível"}</span>;
+    }
+    render(<AuthProvider><Publico /></AuthProvider>);
+    expect(await screen.findByText("Navegação pública disponível")).toBeDefined();
+  });
   it("troca de senha apos renovar conserva logout e confirmacao no guard real", async () => {
     session();
     api.defaults.adapter = async config => {

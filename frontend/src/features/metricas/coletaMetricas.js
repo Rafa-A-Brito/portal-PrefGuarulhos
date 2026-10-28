@@ -36,9 +36,19 @@ export function criarColetaMetricas({ preferencia = participacao, storage = arma
     } catch { soMemoria = true; }
   }
   function serializar(fn, signal) {
-    const executar = () => {
+    const executar = async () => {
       if (signal?.aborted) throw abortar();
-      return locks?.request ? locks.request(LOCK, { ...(signal && { signal }) }, fn) : fn();
+      if (!locks?.request) return fn();
+      let iniciou = false;
+      try {
+        return await locks.request(LOCK, { ...(signal && { signal }) }, () => { iniciou = true; return fn(); });
+      } catch (error) {
+        // Bloquear armazenamento também pode negar Web Locks. Só usar a fila
+        // local se o callback nunca começou; nunca repetir uma emissão falha.
+        if (error.name !== "SecurityError" || iniciou) throw error;
+        if (signal?.aborted) throw abortar();
+        return fn();
+      }
     };
     const pedido = fila.then(executar, executar);
     fila = pedido.catch(() => {});

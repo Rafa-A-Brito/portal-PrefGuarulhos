@@ -1,0 +1,9 @@
+ARG BASE=node:24-bookworm-slim
+FROM ${BASE}
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends chromium libnss3-tools systemd docker.io openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+USER node
+WORKDIR /ensaio
+ENTRYPOINT []
+CMD ["node", "--version"]

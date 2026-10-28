@@ -1,6 +1,6 @@
 # Operação das métricas V2 — proposta pronta para homologação
 
-Fase 1.4A, 27/10/2026. Os scripts estão implementados, mas **nenhum agendamento ou coleta pública foi ativado**. Aplicação de migrations, privilégios, segredos e tarefas no ambiente final exige revisão e autorização próprias. V1 e favoritos locais continuam independentes.
+Revisado na Fase 1.4C, 28/10/2026. Os scripts estão implementados e foram homologados em ambiente descartável, mas **nenhum agendamento ou coleta pública foi ativado**. Aplicação de migrations, privilégios, segredos e tarefas no ambiente final exige revisão e autorização próprias. V1 e favoritos locais continuam independentes.
 
 ## Destino, migration e papéis
 
@@ -63,6 +63,12 @@ docker exec --env-file /etc/portal/metricas-operacao.env NOME_BACKEND node scrip
 docker exec --env-file /etc/portal/metricas-operacao.env NOME_BACKEND node scripts/reter_metricas.js
 ```
 
+Os exemplos completos estão em [`infra/systemd/`](../../infra/systemd/): `portal-metricas-sonda.service/.timer` e `portal-metricas-retencao.service/.timer`. São arquivos para revisão, não unidades instaladas. Substituir `NOME_BACKEND` somente após conferir o container efetivo. Os serviços usam root no host para acessar Docker; esse acesso equivale a privilégio administrativo, mesmo que limitado a uma conta do grupo docker. Dentro do container, executam como `node`, em `/app`, com filesystem read_only preservado.
+
+As unidades usam `LoadCredential` para ler um arquivo 0600 administrado fora do repositório e passar seu caminho temporário a `docker exec --env-file`. Senhas não entram no argv nem no processo HTTP já em execução. Preparar `/etc/portal/docker` como diretório de configuração Docker vazio e protegido. Não usar credenciais administrativas de registry nas tarefas locais. Usuários com acesso administrativo ao Docker ainda conseguem inspecionar processos/env; não tratar LoadCredential como proteção contra o administrador do host.
+
+Cada exec contém `timeout` **dentro do container**: 20 s para sonda; 840 s, mais 10 s para término forçado, na retenção. O timeout externo do systemd é maior. Matar apenas o cliente `docker exec` não é garantia de encerrar seu processo remoto; o limite interno evita esse problema. Sonda não recupera horários perdidos (`Persistent=false`); retenção recupera uma execução perdida (`Persistent=true`). Não há Restart automático, Compose, início de container ou migrations nessas unidades.
+
 `--env-file` afeta apenas o processo exec, conforme [Docker exec](https://docs.docker.com/reference/cli/docker/container/exec/); não adicionar segredos à linha de comando ou ao repositório. O arquivo deve manter as flags desligadas até autorização e configuração válidas. Restringir acesso ao socket Docker, que equivale a privilégio elevado no host.
 
 - Sonda: calendário `*:0/5`, precisão de segundos; não disparar várias execuções retroativas ao retomar. Alertar após duas janelas encerradas ausentes ou qualquer FALHA persistente.
@@ -78,4 +84,60 @@ Manter ingestão e consulta desligadas durante restauração. Conferir destino/c
 
 Não regenerar sondas do intervalo de indisponibilidade. Expiração de cookie e deduplicação diária continuam sendo validadas pela API; descartar cookies antigos e preservar a política de rotação das chaves. Rotação/expurgo de backups e segredos exigem política própria: o script não apaga backups nem altera arquivos de ambiente.
 
-Antes da Fase 1.4B: homologar a rota real de proxy/HTTPS/cookies, rate limiting/NAT e múltiplas réplicas; testar adesão até gráficos; medir planos/latência com volume; confirmar papel operacional e tarefas no ambiente final; verificar leitores de tela e estados de indisponibilidade. Nenhuma verificação isolada deste guia autoriza ativação pública.
+Antes da implantação: definir e homologar a terminação HTTPS real, calibrar limites em redes compartilhadas, medir o endpoint completo sob carga e confirmar papel operacional, alertas e tarefas no ambiente final; verificar leitores de tela e aparelhos reais. A 1.4C validou adesão até gráficos, indisponibilidade e planos SQL no descartável, conforme relatório. Nenhuma verificação isolada deste guia autoriza ativação pública.
+
+## Proxy e limites preparados na 1.4B
+
+`infra/nginx.conf` (montagem Compose) e `frontend/nginx.conf` (imagem sem montagem) agora têm as mesmas regras. O servidor versionado continua HTTP/80; **o responsável informou que a terminação HTTPS ainda não foi definida**. Não foram criados certificado de produção, listener 443 ou confiança em proxy externo. O ensaio isolado usa uma cópia com TLS e certificado temporário, não altera a configuração publicada.
+
+- `/api/metricas/`: corpo máximo 2 KB, leitura do corpo 5 s, conexão upstream 2 s e envio/leitura upstream 5 s. `/api/` conserva 12 MB, incluindo uploads. Prefixos `^~` impedem que uma extensão de arquivo desvie o caminho da API para a regra de assets.
+- Nginx sobrescreve XFF/X-Real-IP pelo peer efetivo, protocolo por `$scheme` e host por `$http_host` (preserva porta). Apaga `Forwarded`. Não usa `$proxy_add_x_forwarded_for` nem protocolo fornecido pelo visitante.
+- No Compose, Express continua confiando **somente em 172.30.87.2**, o Nginx. Conexão direta ao backend não herda confiança. A coleta exige Host igual ao da origem configurada e `req.secure` coerente com o modo. HTTPS configurado sobre HTTP sem proxy confiável retorna 403, não emite credencial. Isso impede ativar acidentalmente uma cadeia TLS ainda indefinida.
+- Desenvolvimento HTTP permanece somente em `http-local`, fora de NODE_ENV=production, com origem loopback e proxy Vite `changeOrigin:false`. Não alterar CORS global ou interceptadores JWT para contornar erro de origem/Host.
+- Se TLS terminar no próprio Nginx, adicionar futuramente certificado/listener verificados e manter sobrescrita pelo `$scheme`. Se houver proxy anterior, identificar seus IPs, restringir acesso direto e revisar Real-IP/protocolo/limites **por esse peer**. Não aceitar XFF/XFP arbitrário, confiar em toda a rede ou fixar https para esconder uma cadeia incorreta.
+
+| Camada | Política inicial |
+| --- | --- |
+| API, tentativa de nova emissão | 120/hora e 60/minuto por IPv4 ou prefixo IPv6 /64 |
+| API, cookie válido reutilizado | Não consome nova emissão; assinatura, finalidade e dia precisam ser válidos |
+| API, credencial validada | 30 chamadas/minuto, somando eventos e sessões reutilizadas |
+| API, rede | 600 chamadas/minuto; capacidade total de 10 mil buckets, falha fechada |
+| Nginx, peer | 10 requisições/s, burst 60 sem espera, até 20 conexões em processamento |
+| Nginx, instância | 100 requisições/s, burst 120; memória compartilhada entre seus workers |
+
+Requisições recusadas e retries também consomem quotas. Cookie inventado/adulterado/expirado não dispensa emissão; apagar cookie não contorna o limite por rede. Retirada da participação continua possível na API sem gastar quota de emissão; a borda limita qualquer rajada, inclusive DELETE. Todos os limites são proteções operacionais, não contadores de audiência.
+
+A simulação de NAT cobriu quatro turmas de 30 participantes em uma hora, com reutilizações, seguida de bloqueio da 121ª tentativa nova. Bibliotecas maiores, NATs intensos e virada diária de cookies podem atingir o teto: definir tolerância com dados operacionais antes da ativação. A navegação e favoritos locais não dependem da coleta. Ampliar o limite antigo de 10 para 120 permite mais participantes e também aumenta o orçamento de abuso de um atacante na mesma rede; não há prova de humanidade.
+
+Map da API é **local ao processo** e perde estado no reinício. Zonas Nginx são compartilhadas entre workers da mesma instância, não entre hosts. Antes de múltiplas réplicas, escolher limitação compartilhada. Um proxy TLS externo ainda não identificado também faria todos parecerem a mesma rede se a cadeia Real-IP não fosse configurada corretamente.
+
+Respostas 429 da borda têm Retry-After: 1 e no-store; a API mantém Retry-After da sua janela. Logs de acesso do caminho de métricas guardam somente horário, status e duração, sem IP, URI, cookie ou JWT. Logs de erro do Nginx podem conter endereço/URI em falhas; sua retenção e tratamento precisam de revisão operacional própria.
+
+## Volumes existentes e CI
+
+O bootstrap corrigido e o novo `infra/postgres/20-metricas-role.sh` foram ensaiados num **volume novo de teste** por `compose.metricas.test.yml`. O segundo arquivo cria somente o operador, com senha obrigatória passada pelo ambiente, CONNECT e leitura de identidade do cluster. Grants das tabelas são aplicados pelo proprietário depois das 11 migrations. Esse script não foi montado no Compose normal.
+
+Para um volume existente, não recriá-lo nem esperar que docker-entrypoint-initdb.d rode novamente. Em uma intervenção futura autorizada: conferir conexão/cluster/papéis e backup; o DBA concede `CREATE ON DATABASE <banco_confirmado> TO portal_migrator`, preservando a API sem CREATE; cria `portal_metricas_operador` sem superuser/CREATEDB/CREATEROLE/REPLICATION/BYPASSRLS ou membership privilegiado, define senha fora do histórico e concede CONNECT e EXECUTE em pg_control_system. O migrator executa a trilha aprovada e depois `scripts/sql/permissoes_metricas.sql`. Comparar grants efetivos e revalidar. Não aplicar essas instruções automaticamente neste trabalho.
+
+O workflow de pré-deploy usa projeto/volume exclusivos por execução, quatro senhas efêmeras mascaradas e `scripts/validar_metricas_test.js`. O script identifica banco/porta/cluster/usuários e exclusividade, exige schema vazio e papéis já criados pelo bootstrap, executa deploy/repetição pelo migrator, confere 11 checksums sem tentativas revertidas, aplica grants e executa suíte completa e integridades. Qualquer falha interrompe; não existe reset, resolve ou reparo automático. A limpeza só alcança o projeto criado pela própria execução.
+
+O CI também foi preparado para `systemd-analyze verify` sem instalação e `scripts/testar_proxy_metricas.js` com fixtures Docker. Esse ensaio não lê .env nem consulta PostgreSQL, publica somente loopback, verifica CA temporária dentro da rede dedicada e remove apenas seus containers/rede ao terminar. A execução no GitHub Actions e o comportamento dos timers no Linux final ainda precisam de confirmação autorizada; nenhum push foi realizado.
+
+## Homologação integrada 1.4C
+
+Evidências e limites estão no [relatório 1.4C](../reports/dashboard_v2_fase_1_4c.md). O navegador Chromium, Express e os três papéis SQL foram exercitados com PostgreSQL real **de teste**, incluindo HTTPS verificado, login ADMIN/EDITOR, coleta e gráficos. `systemd-analyze verify` passou em container Debian; isso não equivale à execução dos timers no host final.
+
+O trilho opt-in é `backend/scripts/homologar_metricas.js`, executado da raiz com `HOMOLOGACAO_METRICAS_EXCLUSIVA=1`. Ele usa exclusivamente o projeto `portal_v214c_test`, porta loopback 5438 e `.cache/v214c/`, recusando preparação se já existir estado/volume. Não apaga nem reconstrói banco automaticamente. A imagem de navegador usa `backend/test/fixtures/Dockerfile.metricas` (Debian/Node 24); a imagem local usada nesta execução foi construída com `BASE=integration_backend_frontend-backend:latest`. Em outra máquina, informar `TEST_BACKEND_IMAGE` e `TEST_NGINX_IMAGE` compatíveis, já disponíveis.
+
+Sequência para **uma nova homologação autorizada**, não para repetir sobre o volume preservado:
+
+1. Construir a imagem `portal-v214c-navegador:test`; executar `preparar` para criar e identificar o descartável.
+2. Executar `validar`: exige schema vazio, aplica/reexecuta as 11 migrations, confere checksums/grants e executa suíte backend/integridade.
+3. Executar `fixtures` uma vez; depois `iniciar`, que gera CA/leaf de dois dias, build isolado com V2 habilitada somente no ensaio e containers próprios. A API recebe apenas a credencial da API; senhas de manutenção não entram no processo HTTP.
+4. Executar `linux` e `navegador`. O último usa resposta e persistência reais, sem interceptação HTTP. `navegador-retomar`/`navegador-admin` são retomadas explícitas dos checkpoints de um e três eventos, respectivamente, para revisão de um ensaio interrompido; não são retries automáticos.
+5. `navegador-bloqueado`, `falhas`, `operacao` e `banco-indisponivel` exercitam cenários adicionais. O último para e reinicia **somente** o container descartável identificado, sem reenviar a gravação recusada. `operacao` compara EXPLAIN em massa sintética terminada por ROLLBACK. `rebuild` atualiza apenas o build de ensaio.
+6. `encerrar` remove somente Nginx/backend/rede E2E, preservando o PostgreSQL e seu volume de inspeção. Remoção/reconstrução desse volume exige decisão própria.
+
+Os scripts de navegador e operação ficam em `backend/test/fixtures/` e não são rotas do servidor. Certificados são confiados apenas no HOME efêmero do container Chromium e em clientes Node explicitamente configurados com a CA. Não usar `--ignore-certificate-errors`, desabilitar TLS ou instalar a CA no host. Chromium roda headless sem sandbox **dentro do container de testes**, sem segredos reais; isso não é configuração de navegador para visitantes.
+
+`.cache/v214c/` contém credenciais, perfis, cookies e chaves temporárias: não publicar essa pasta ou usá-la como contexto indiscriminado de build. As capturas e JSON sanitizados são evidência local, não um pacote pronto para upload. Defaults versionados continuam desligados. O CI remoto e a topologia TLS final continuam pendentes; o teste local não autoriza ativação.

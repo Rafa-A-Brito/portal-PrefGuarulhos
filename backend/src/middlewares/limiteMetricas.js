@@ -10,18 +10,22 @@ function rede(ip = "unknown") {
 }
 export function criarLimiteMetricas({ now = Date.now, maxEntries = 10000 } = {}) {
     const entries = new Map();
-    let segredo = randomBytes(32), rotacao = now(), sweep = 0;
+    // Segredo efêmero por processo; buckets expiram sem zerar quotas na virada da hora.
+    const segredo = randomBytes(32);
+    let sweep = 0;
     return (req, res, next) => {
         const time = now();
-        if (time - rotacao >= 3600000) { segredo = randomBytes(32); entries.clear(); rotacao = time; }
         if (time >= sweep) {
             for (const [key, entry] of entries) if (entry.until <= time) entries.delete(key);
             sweep = time + 1000;
         }
         const sessao = req.path.endsWith("/sessao");
-        const quotas = [["rede", rede(req.ip), 300, 60000]];
-        if (sessao) quotas.push(["emissao", rede(req.ip), 10, 3600000]);
-        else if (req.metricasToken) quotas.push(["cookie", req.metricasToken, 30, 60000]);
+        const quotas = [["rede", rede(req.ip), 600, 60000]];
+        // Só assinatura/dia validados pelo servidor permitem reutilização.
+        if (sessao && !req.metricasIdentidade) {
+            quotas.push(["emissao_hora", rede(req.ip), 120, 3600000], ["emissao_minuto", rede(req.ip), 60, 60000]);
+        }
+        if (req.metricasIdentidade) quotas.push(["cookie", req.metricasToken, 30, 60000]);
         for (const [tipo, valor, max, janela] of quotas) {
             const key = createHmac("sha256", segredo).update(tipo + "\0" + valor).digest("hex");
             let e = entries.get(key);

@@ -17,7 +17,7 @@ const { indisponivel } = await import("../src/services/metricasService.js");
 after(() => prisma.$disconnect());
 const config = configurarMetricas({ METRICAS_COLETA_ATIVA: "true", METRICAS_ORIGEM: "http://localhost:5173", METRICAS_COOKIE_MODO: "http-local",
     METRICAS_CHAVES_JSON: JSON.stringify([{ id: "teste", desde: "2026-01-01", segredo: "af31509c86de2470b8f19d65c02e3a74b82f061c7a4d9352e610cf892dba4706" }]) });
-const headers = { "Content-Type": "application/json", Origin: config.origem, "X-Portal-Metricas": "1" };
+const headers = { "Content-Type": "application/json", Origin: config.origem, Host: new URL(config.origem).host, "X-Portal-Metricas": "1" };
 async function servidor(app, fn) {
     const server = app.listen(0, "127.0.0.1"); await new Promise(r => server.once("listening", r));
     try { await fn("http://127.0.0.1:" + server.address().port); }
@@ -25,19 +25,24 @@ async function servidor(app, fn) {
 }
 test("HTTP: sessão não escreve, cookie obrigatório, origem, schemas, parser 2 KB e falha sem 204", async () => {
     const eventos = []; let falhar = false;
+    const configuracao = { ...config };
     const app = express();
-    app.use("/api/metricas", criarRotasMetricas({ configuracao: config, registrar: async evento => {
+    app.use("/api/metricas", criarRotasMetricas({ configuracao, registrar: async evento => {
         if (falhar) throw indisponivel(); eventos.push(evento);
     } }));
     app.use(express.json({ limit: "100kb" }));
     app.post("/fora", (req, res) => res.json({ tamanho: req.body.texto.length }));
     app.use(errorHandler);
     await servidor(app, async base => {
+        configuracao.origem = base;
+        const headers = { "Content-Type": "application/json", Origin: base, "X-Portal-Metricas": "1" };
         const send = (path, body, extra = {}) => fetch(base + path, { method: "POST", headers: { ...headers, ...extra }, body: JSON.stringify(body) });
         const sessao = await send("/api/metricas/visualizacoes/sessao", {});
         assert.equal(sessao.status, 200); assert.equal(eventos.length, 0);
         assert.match(sessao.headers.get("set-cookie"), /HttpOnly/);
         assert.match(sessao.headers.get("set-cookie"), /SameSite=Lax/);
+        assert.match(sessao.headers.get("set-cookie"), /^portal_metricas_local=/);
+        assert.doesNotMatch(sessao.headers.get("set-cookie"), /; Secure|__Host-|Domain=/);
         const Cookie = sessao.headers.get("set-cookie").split(";")[0];
         const evento = { patrimonioId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" };
         assert.equal((await send("/api/metricas/visualizacoes", evento)).status, 401);
@@ -83,8 +88,9 @@ test("aplicação real inicia com flags off, V1 intacta e consulta V2 exige ADMI
     });
 });
 test("limite de emissão, Retry-After e teto de cardinalidade", () => {
-    const limit = criarLimiteMetricas({ now: () => 1000 }); const res = { setHeader: (k, v) => { assert.equal(k, "Retry-After"); assert.ok(v > 0); } };
-    for (let i = 0; i < 10; i++) limit({ path: "/visualizacoes/sessao", ip: "127.0.0.1" }, res, () => {});
+    let agora = 1000;
+    const limit = criarLimiteMetricas({ now: () => agora }); const res = { setHeader: (k, v) => { assert.equal(k, "Retry-After"); assert.ok(v > 0); } };
+    for (let i = 0; i < 120; i++) { if (i === 60) agora += 60001; limit({ path: "/visualizacoes/sessao", ip: "127.0.0.1" }, res, () => {}); }
     assert.throws(() => limit({ path: "/visualizacoes/sessao", ip: "127.0.0.1" }, res, () => {}), e => e.statusCode === 429);
     assert.throws(() => criarLimiteMetricas({ maxEntries: 0 })({ path: "/visualizacoes", ip: "::1" }, res, () => {}), e => e.statusCode === 429);
 });

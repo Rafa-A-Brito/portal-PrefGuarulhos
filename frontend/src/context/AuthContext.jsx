@@ -57,7 +57,8 @@ export function AuthProvider({ children }) {
       }
     } catch {
       // JSON corrompido / storage bloqueado: trata como deslogado.
-      sessionStorage.removeItem(CHAVE_SESSAO_MOCK);
+      try { sessionStorage.removeItem(CHAVE_SESSAO_MOCK); }
+      catch { /* O navegador pode bloquear também a limpeza do storage. */ }
       setUsuario(null);
     } finally {
       setCarregando(false);

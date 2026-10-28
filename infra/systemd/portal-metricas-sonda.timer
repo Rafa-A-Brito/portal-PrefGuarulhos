@@ -1,0 +1,11 @@
+[Unit]
+Description=Sonda de cinco minutos do Portal (exemplo, não habilitado)
+
+[Timer]
+OnCalendar=*-*-* *:0/5:00 UTC
+AccuracySec=1s
+Persistent=false
+Unit=portal-metricas-sonda.service
+
+[Install]
+WantedBy=timers.target

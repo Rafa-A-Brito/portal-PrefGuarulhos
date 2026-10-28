@@ -1,0 +1,11 @@
+[Unit]
+Description=Retenção diária do Portal (exemplo, não habilitado)
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 America/Sao_Paulo
+AccuracySec=1min
+Persistent=true
+Unit=portal-metricas-retencao.service
+
+[Install]
+WantedBy=timers.target
