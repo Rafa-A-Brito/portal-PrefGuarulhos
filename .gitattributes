@@ -2,6 +2,7 @@
 infra/postgres/*.sh text eol=lf
 # Fontes/artefatos de curadoria usam hashes de bytes revisados e precisam de LF.
 backend/prisma/patrimonioSeedData.js text eol=lf
+backend/prisma/data/patrimonios.js text eol=lf
 backend/prisma/data/patrimonioEditorialCurado.js text eol=lf
 backend/reports/D1C-auditoria-editorial.json text eol=lf
 backend/reports/D1C-excluidos-editoriais.json text eol=lf

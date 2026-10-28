@@ -9,6 +9,8 @@ import { REVISAO_FATOS, REVISAO_LIGACOES, REJEICOES_LIGACOES } from '../prisma/d
 const root = new URL('../', import.meta.url);
 export const CANONICAL_SHA = 'c9f003c7017a045e731785e9f0eb8e8eb7ea4e2e651620c3421e6d26a981f8e8';
 const digest = path => createHash('sha256').update(readFileSync(new URL(path, root))).digest('hex');
+// A fonte da equipe identifica conteúdo textual, independentemente do checkout.
+export const hashFonteEquipe = texto => createHash('sha256').update(texto.replace(/\r\n/g, '\n')).digest('hex');
 const decisions = { D: 'DUPLICADO_DE_DETALHE', C: 'CONTRADIZ_C1_C2', P: 'SEM_SUPORTE_SUFFICIENTE', R: 'REJEITAR' };
 const missing = 'primitiva-igreja-de-nossa-senhora-do-rosario-dos-homens-pretos-1717';
 
@@ -75,7 +77,7 @@ export function gerarCuradoria() {
     })) };
     const contar = rows => rows.reduce((acc, row) => ({ ...acc, [row.decisao]: (acc[row.decisao] ?? 0) + 1 }), {});
     const auditoria = { versao: 'D1C-v1', fonteCanonicaSha256: CANONICAL_SHA,
-        fonteEquipeSha256: digest('prisma/data/patrimonios.js'),
+        fonteEquipeSha256: hashFonteEquipe(readFileSync(new URL('prisma/data/patrimonios.js', root), 'utf8')),
         criterio: 'Reuso documental da fonte canônica C1/C2; não é nova certificação externa. Informação nova ou divergente não foi aprovada.',
         cobertura: [...map.values()].map(x => ({ ...x, fatos: fatos.filter(f => f.idEquipe === x.idEquipe).length, ligacoes: ligacoes.filter(l => l.origemEquipe === x.idEquipe).length })),
         canonicoAusenteNaEquipePreservado: missing, contagens: { fatos: contar(fatos), ligacoes: contar(ligacoes) }, fatos, ligacoes };

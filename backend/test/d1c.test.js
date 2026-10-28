@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { artefatos, gerarCuradoria } from '../scripts/gerar-curadoria-editorial.js';
+import { artefatos, gerarCuradoria, hashFonteEquipe } from '../scripts/gerar-curadoria-editorial.js';
 import { EDITORIAL_CURADO, SLUGS_CANONICOS } from '../prisma/data/patrimonioEditorialCurado.js';
 import { validarManifesto, planejarEditorial, parseEditorialArgs, importarEditorial } from '../prisma/import-editorial-curado.js';
 
@@ -29,6 +29,14 @@ test('D1C: 83 fatos e 27 ligações têm decisão, apoio e cobertura integral', 
     assert.deepEqual(auditoria.ligacoes.filter(l => l.decisao === 'REJEITAR_AUTORRELACAO').map(l => l.auditoriaId), ['L-9>13', 'L-13>9']);
     assert.deepEqual(auditoria.ligacoes.filter(l => l.decisao === 'REJEITAR_DUPLICATA').map(l => l.auditoriaId), ['L-13>11']);
     for (const l of manifesto.ligacoes) assert.ok(auditoria.ligacoes.some(a => a.auditoriaId === l.auditoriaId && a.decisao.startsWith('APROVAR')));
+});
+
+test('D1C: hash da equipe independe de LF/CRLF sem ignorar mudanças textuais', () => {
+    const lf = readFileSync(new URL('../prisma/data/patrimonios.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+    const hash = hashFonteEquipe(lf);
+    assert.equal(hashFonteEquipe(lf.replace(/\n/g, '\r\n')), hash);
+    assert.equal(gerarCuradoria().auditoria.fonteEquipeSha256, hash);
+    assert.notEqual(hashFonteEquipe(lf + ' '), hash);
 });
 
 test('D1C: geração determinística, sem identidade duplicada, artefatos versionados íntegros', () => {
