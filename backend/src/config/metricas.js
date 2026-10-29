@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { diaSaoPaulo } from "../utils/dataMetricas.js";
+import { MOCK_DATA, mockRuntime } from "./runtime.js";
 
 // Configuração independente: desligada não exige nem interpreta segredos V2.
 export function configurarMetricas(env = process.env, agora = new Date()) {
@@ -34,4 +35,8 @@ export function configurarMetricas(env = process.env, agora = new Date()) {
     }
 }
 
-export default configurarMetricas();
+export default configurarMetricas(MOCK_DATA ? { ...process.env,
+    METRICAS_COLETA_ATIVA: "true", METRICAS_CONSULTA_ATIVA: "true",
+    METRICAS_ORIGEM: process.env.CORS_ORIGIN ?? "http://localhost:5173", METRICAS_COOKIE_MODO: "http-local",
+    METRICAS_CHAVES_JSON: JSON.stringify([{ id: "demo", desde: "2020-01-01", segredo: mockRuntime.metricsSecret }]),
+} : process.env);

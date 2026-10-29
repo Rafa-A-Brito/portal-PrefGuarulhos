@@ -1,8 +1,9 @@
-import {
+import { image } from "../services/index.js";
+const {
     criarImagemPatrimonio,
     removerImagemPatrimonio,
     atualizarImagemPatrimonio,
-} from "../services/imageService.js";
+} = image;
 
 export async function upload(req, res) {
     const imagem = await criarImagemPatrimonio(

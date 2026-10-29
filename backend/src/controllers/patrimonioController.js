@@ -1,8 +1,9 @@
-import {
-    createPatrimonio as createPatrimonioService,
-    getPatrimonioBySlug as getPatrimonioBySlugService,
-    listPatrimonios as listPatrimoniosService,
-} from "../services/patrimonioService.js";
+import { patrimonio } from "../services/index.js";
+const {
+    createPatrimonio: createPatrimonioService,
+    getPatrimonioBySlug: getPatrimonioBySlugService,
+    listPatrimonios: listPatrimoniosService,
+} = patrimonio;
 
 export async function listPatrimonios(req, res) {
     const resultado = await listPatrimoniosService(req.validatedQuery);

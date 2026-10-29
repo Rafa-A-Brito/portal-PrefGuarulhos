@@ -2,6 +2,30 @@
 
 # 🏛️ Patrimônio Histórico de Guarulhos — Portal Cultural & Mapeamento
 
+## Demonstração local sem banco
+
+No PowerShell, a partir da raiz do repositório:
+
+```powershell
+cd backend
+npm.cmd ci
+$env:MOCK_DATA="true"
+npm.cmd start
+```
+
+A API fica em `http://localhost:3333/api`. Não exige `.env` completo, PostgreSQL,
+migrations, seeds ou credenciais externas. ADMIN: `admin@demo.invalid` /
+`AdminDemo!2026`; EDITOR: `editor@demo.invalid` / `EditorDemo!2026`.
+São contas fictícias. Alterações e sessões desaparecem ao reiniciar.
+`MOCK_DATA=true` é bloqueado em produção; ausência ou `false` mantém o ambiente real.
+
+Em outro terminal: `cd frontend`, `npm.cmd ci`, `npm.cmd run dev`.
+O frontend já usa a API local; se necessário configure somente
+`VITE_API_BASE_URL=http://localhost:3333/api`. Não foi alterado nesta entrega.
+
+Consulte o [guia de demonstração](docs/MODO_DEMONSTRACAO.md) para endpoints,
+permissões, uploads, testes, limitações e retorno ao ambiente real.
+
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=white)
 ![Google Maps API](https://img.shields.io/badge/Google%20Maps%20API-3.64-4285F4?style=flat&logo=googlemaps&logoColor=red)
 ![CSS3](https://img.shields.io/badge/CSS-3-1572B6?style=flat&logo=css3&logoColor=white)

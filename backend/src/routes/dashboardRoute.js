@@ -1,9 +1,11 @@
 import { Router } from "express";
 import authenticate from "../middlewares/authenticate.js";
 import authorize from "../middlewares/authorize.js";
-import { getDashboard } from "../services/dashboardService.js";
+import { dashboard, dashboardMetricas } from "../services/index.js";
 import metricas from "../config/metricas.js";
-import { consultarMetricas } from "../services/dashboardMetricasService.js";
+
+const { getDashboard } = dashboard;
+const { consultarMetricas } = dashboardMetricas;
 
 const router = Router();
 router.get("/metricas", authenticate, authorize("ADMIN", "EDITOR"), async (req, res) => {

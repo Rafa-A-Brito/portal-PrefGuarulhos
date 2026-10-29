@@ -1,4 +1,5 @@
-import { novidadeService as service } from "../services/novidadeService.js";
+import { novidade } from "../services/index.js";
+const { novidadeService: service } = novidade;
 
 export async function list(req, res) {
     res.json({ success: true, data: await service.list(req.validatedQuery) });

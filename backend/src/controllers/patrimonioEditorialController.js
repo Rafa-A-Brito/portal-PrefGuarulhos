@@ -1,4 +1,5 @@
-import { listarEditorial, criarEditorial, atualizarEditorial, excluirEditorial, ordenarEditorial } from "../services/patrimonioEditorialService.js";
+import { patrimonioEditorial } from "../services/index.js";
+const { listarEditorial, criarEditorial, atualizarEditorial, excluirEditorial, ordenarEditorial } = patrimonioEditorial;
 
 export function editorialController(tipo) {
     return {

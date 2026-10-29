@@ -1,4 +1,5 @@
-import { getDashboard as getDashboardService } from "../services/dashboardService.js";
+import { dashboard } from "../services/index.js";
+const { getDashboard: getDashboardService } = dashboard;
 
 export async function getDashboard(_req, res) {
     const resultado = await getDashboardService();

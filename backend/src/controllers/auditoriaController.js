@@ -1,4 +1,5 @@
-import { listarAuditoria, detalharAuditoria } from "../services/auditoriaService.js";
+import { auditoria } from "../services/index.js";
+const { listarAuditoria, detalharAuditoria } = auditoria;
 
 export async function list(req, res) {
     res.json({ success: true, data: await listarAuditoria(req.validatedQuery) });

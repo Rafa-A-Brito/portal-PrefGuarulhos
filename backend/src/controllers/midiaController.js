@@ -1,4 +1,4 @@
-import * as service from "../services/midiaService.js";
+import { midia as service } from "../services/index.js";
 
 
 export async function createImagem(req, res) {

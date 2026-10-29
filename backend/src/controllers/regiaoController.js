@@ -1,4 +1,4 @@
-import * as service from "../services/regiaoService.js";
+import { regiao as service } from "../services/index.js";
 
 export async function publicList(_req, res) {
     res.json({ success: true, data: await service.listarRegioesPublicas() });

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { UPLOAD_DIR } from "./uploadDir.js";
 import { z } from "zod";
 import { isIP } from "node:net";
+import { MOCK_DATA, mockRuntime } from "./runtime.js";
 
 export function segredoJwtValido(value) {
     const normal = value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -19,7 +20,7 @@ function proxiesValidos(value) {
 
 const result = z.object({
     PORT: z.coerce.number().int().min(1).max(65535).default(3333),
-    DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    DATABASE_URL: MOCK_DATA ? z.undefined() : z.url({ protocol: /^postgres(ql)?$/ }),
     CORS_ORIGIN: z.url().default("http://localhost:5173"),
     JWT_SECRET: z.string().min(32).refine(segredoJwtValido),
     TRUST_PROXY_IPS: z.string().trim().default("").refine(proxiesValidos),
@@ -31,11 +32,12 @@ const result = z.object({
     UPLOAD_ROOT: z.string().trim().min(1).default(UPLOAD_DIR),
     UPLOAD_MAX_IMAGE_BYTES: z.coerce.number().int().min(1).default(5 * 1024 * 1024),
     UPLOAD_MAX_DOCUMENT_BYTES: z.coerce.number().int().min(1).default(10 * 1024 * 1024),
-}).safeParse(process.env);
+}).safeParse(MOCK_DATA ? { ...process.env, DATABASE_URL: undefined,
+    JWT_SECRET: mockRuntime.secret, UPLOAD_ROOT: mockRuntime.uploadRoot } : process.env);
 
 if (!result.success) {
     const fields = result.error.issues.map((issue) => issue.path.join("."));
     throw new Error(`Variáveis de ambiente inválidas: ${fields.join(", ")}.`);
 }
 
-export default { ...result.data, UPLOAD_DIR };
+export default { ...result.data, UPLOAD_DIR, MOCK_DATA };

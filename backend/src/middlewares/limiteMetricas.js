@@ -1,5 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
-import { erroMetricas } from "../services/metricasService.js";
+import { metricas } from "../services/index.js";
+const { erroMetricas } = metricas;
 
 function rede(ip = "unknown") {
     if (ip.startsWith("::ffff:") && ip.includes(".")) return ip.slice(7);

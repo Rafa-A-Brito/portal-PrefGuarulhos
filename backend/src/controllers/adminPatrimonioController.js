@@ -1,4 +1,4 @@
-import * as service from "../services/patrimonioService.js";
+import { patrimonio as service } from "../services/index.js";
 
 export async function list(req, res) {
     res.json({ success: true, data: await service.listAdminPatrimonios(req.validatedQuery) });

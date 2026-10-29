@@ -1,4 +1,5 @@
-import { criarReferenciaPatrimonio, removerReferenciaPatrimonio, atualizarReferenciaPatrimonio } from "../services/referenciaService.js";
+import { referencia } from "../services/index.js";
+const { criarReferenciaPatrimonio, removerReferenciaPatrimonio, atualizarReferenciaPatrimonio } = referencia;
 
 export async function create(req, res) {
     const referencia = await criarReferenciaPatrimonio(req.validatedParams.id, req.file, req.body, req.user);

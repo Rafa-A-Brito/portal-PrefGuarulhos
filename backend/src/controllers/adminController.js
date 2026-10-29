@@ -1,4 +1,4 @@
-import * as service from "../services/adminService.js";
+import { admin as service } from "../services/index.js";
 
 export async function createAdmin(req, res) {
     res.status(201).json({ success: true, data: await service.createAdmin(req.body, req.user) });

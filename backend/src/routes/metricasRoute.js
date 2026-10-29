@@ -3,8 +3,10 @@ import config from "../config/metricas.js";
 import env from "../config/env.js";
 import { criarLimiteMetricas } from "../middlewares/limiteMetricas.js";
 import { emitirCookieMetricas, lerCookieMetricas, validarCookieMetricas, chaveVisualizacao, opcoesCookie } from "../services/cookieMetricasService.js";
-import { registrarVisualizacao, erroMetricas, indisponivel } from "../services/metricasService.js";
+import { metricas } from "../services/index.js";
 import { sessaoMetricasSchema, visualizacaoSchema } from "../schemas/metricasSchema.js";
+
+const { registrarVisualizacao, erroMetricas, indisponivel } = metricas;
 
 export function criarRotasMetricas({ configuracao = config, registrar = registrarVisualizacao, now = () => new Date(), limitar = criarLimiteMetricas() } = {}) {
     const router = Router();
