@@ -1,4 +1,4 @@
-import prisma from "../config/prisma.js";
+import { access } from "../services/index.js";
 import UnauthorizedError from "../errors/UnauthorizedError.js";
 import { verifyToken } from "../utils/token.js";
 import { identifyLogUser, rememberLogRoute } from "../utils/logger.js";
@@ -13,11 +13,7 @@ export default async function authenticate(req, _res, next) {
     // Nenhum handler de negócio ou multipart executa antes desta decisão.
     const payload = verifyToken(match[1], { allowExpired: true });
     // A consulta fica fora do tratamento de erros do JWT.
-    const user = await prisma.user.findUnique({
-        where: { id: payload.sub },
-        select: { id: true, name: true, email: true, role: true, isActive: true, tokenVersion: true,
-            authSessions: { where: { id: payload.sid }, select: { tokenVersion: true, expiresAt: true, revokedAt: true } } },
-    });
+    const user = await access.getAuthenticationUser(payload.sub, payload.sid);
 
     if (!user || !user.isActive || user.tokenVersion !== payload.tokenVersion) {
         throw new UnauthorizedError("Usuário indisponível.");

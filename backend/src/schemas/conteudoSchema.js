@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { StatusPublicacao } from "@prisma/client";
+import { StatusPublicacao } from "../config/prismaTypes.js";
 
 export const texto = (max = 20000) => z.string().trim().min(1).max(max);
 export const textoOpcional = (max = 20000) => z.string().trim().max(max).nullable().optional();

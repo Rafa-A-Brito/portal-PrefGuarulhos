@@ -1,5 +1,9 @@
 # 🏛️ Portal Cultural - Patrimônio Histórico de Guarulhos
 
+Para apresentar o sistema sem banco ou credenciais externas, consulte o
+[modo de demonstração com `MOCK_DATA=true`](backend/docs/MODO_DEMONSTRACAO.md).
+Os dados são fictícios e as alterações desaparecem ao reiniciar a API.
+
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=white)
 ![Google Maps API](https://img.shields.io/badge/Google%20Maps%20API-3.64-4285F4?style=flat&logo=googlemaps&logoColor=red)
 ![CSS3](https://img.shields.io/badge/CSS-3-1572B6?style=flat&logo=css3&logoColor=white)

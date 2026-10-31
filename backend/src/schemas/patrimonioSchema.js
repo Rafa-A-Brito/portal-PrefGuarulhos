@@ -1,4 +1,4 @@
-import { SituacaoPatrimonio, StatusPublicacao } from "@prisma/client";
+import { SituacaoPatrimonio, StatusPublicacao } from "../config/prismaTypes.js";
 import { z } from "zod";
 import { regiaoSlugSchema } from "./regiaoSchema.js";
 

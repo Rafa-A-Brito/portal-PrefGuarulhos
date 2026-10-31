@@ -1,4 +1,5 @@
-import { login as loginService, changePassword as changePasswordService, refresh as refreshService, logout as logoutService } from "../services/authService.js";
+import { auth } from "../services/index.js";
+const { login: loginService, changePassword: changePasswordService, refresh: refreshService, logout: logoutService } = auth;
 
 export async function login(req, res) {
     const data = await loginService(req.body);

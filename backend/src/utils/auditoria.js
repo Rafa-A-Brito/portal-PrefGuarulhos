@@ -119,17 +119,25 @@ export async function imagensPrincipais(tx, patrimonioId) {
     return rows.map(row => row.id).sort();
 }
 
-// Não abre transação e não absorve falhas: o chamador deve passar o client da
-// transação da própria escrita. Erros do log operacional são isolados pelo logger.
-export async function registrarAuditoria(tx, { userId, action, entity, entityId, before, after }) {
-    if (!Object.hasOwn(AUDIT_ACTIONS, action) || !Object.values(AUDIT_ENTITIES).includes(entity)) throw new TypeError("Evento de auditoria inválido.");
-    if (!userId || !entityId) throw new TypeError("Responsável e entidade são obrigatórios.");
+// Sanitização e diferenças compartilhadas pelas persistências real e em memória.
+export function prepararValoresAuditoria(entity, before, after) {
     const oldValues = auditValues(entity, before), newValues = auditValues(entity, after);
     if (before && after) {
         const oldSnapshot = auditSnapshot(entity, before), newSnapshot = auditSnapshot(entity, after);
         if (isDeepStrictEqual(oldSnapshot, newSnapshot)) return null;
         removeUnchanged(oldValues, newValues, oldSnapshot, newSnapshot);
     }
+    return { oldValues, newValues };
+}
+
+// Não abre transação e não absorve falhas: o chamador deve passar o client da
+// transação da própria escrita. Erros do log operacional são isolados pelo logger.
+export async function registrarAuditoria(tx, { userId, action, entity, entityId, before, after }) {
+    if (!Object.hasOwn(AUDIT_ACTIONS, action) || !Object.values(AUDIT_ENTITIES).includes(entity)) throw new TypeError("Evento de auditoria inválido.");
+    if (!userId || !entityId) throw new TypeError("Responsável e entidade são obrigatórios.");
+    const values = prepararValoresAuditoria(entity, before, after);
+    if (!values) return null;
+    const { oldValues, newValues } = values;
     try {
         return await tx.auditLog.create({ data: {
             userId, action, entity, entityId,

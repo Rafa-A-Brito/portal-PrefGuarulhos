@@ -1,7 +1,7 @@
 import { constants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import prisma from "../config/prisma.js";
+import { access } from "../services/index.js";
 import { PASTAS, URL_PREFIXO, UPLOAD_ROOT } from "../config/storage.js";
 import { UPLOAD_DIR } from "../config/uploadDir.js";
 import NotFoundError from "../errors/NotFoundError.js";
@@ -55,10 +55,7 @@ async function abrirArquivo(raiz, pasta, nome) {
 
 async function entregar(req, res, next, { raiz, pasta, url, model, attachment, editorial = false }) {
     const { arquivo } = req.validatedParams;
-    const registros = await prisma[model].findMany({
-        where: { [editorial ? "imagemUrl" : "url"]: `${url}/${arquivo}` },
-        select: editorial ? { status: true } : { patrimonio: { select: { status: true } } },
-    });
+    const registros = await access.listMediaOwners(model, `${url}/${arquivo}`, editorial);
     if (!registros.length) throw new NotFoundError("Arquivo não encontrado.");
 
     let handle;

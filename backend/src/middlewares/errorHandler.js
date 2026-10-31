@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../config/prismaTypes.js";
 import { ZodError } from "zod";
 import BaseError from "../errors/BaseError.js";
 import BadRequestError from "../errors/BadRequestError.js";
@@ -14,7 +14,7 @@ export default function errorHandler(error, req, res, next) {
             field: issue.path.join("."),
             message: issue.message,
         })));
-    } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    } else if (Prisma.PrismaClientKnownRequestError && error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
             error = new ConflictError("Já existe um registro com os dados únicos informados.");
         } else if (error.code === "P2025") {

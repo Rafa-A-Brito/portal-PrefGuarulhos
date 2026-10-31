@@ -1,4 +1,4 @@
-import prisma from "../config/prisma.js";
+import { access } from "../services/index.js";
 import ForbiddenError from "../errors/ForbiddenError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 
@@ -6,10 +6,7 @@ export default function verificarPatrimonioMidia() {
     return async (req, _res, next) => {
         const { id } = req.validatedParams;
 
-        const patrimonio = await prisma.patrimonio.findUnique({
-            where: { id },
-            select: { id: true, status: true },
-        });
+        const patrimonio = await access.getMediaPatrimonio(id);
 
         if (!patrimonio) {
             const erro = new NotFoundError("Patrimônio não encontrado.");
