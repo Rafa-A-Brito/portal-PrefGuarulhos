@@ -9,6 +9,7 @@ import {
   ArrowLeftIcon,
   ArrowLeftStartOnRectangleIcon,
   LockClosedIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
 import "../admin.css";
@@ -108,6 +109,10 @@ export default function AdminLayout() {
               <NavLink to="/admin/usuarios" className={classeAtiva}>
                 <UsersIcon width={18} height={18} aria-hidden="true" />
                 Usuários
+              </NavLink>
+              <NavLink to="/admin/auditoria" className={classeAtiva}>
+                <ClockIcon width={18} height={18} aria-hidden="true" />
+                Histórico de alterações
               </NavLink>
             </section>
           )}
