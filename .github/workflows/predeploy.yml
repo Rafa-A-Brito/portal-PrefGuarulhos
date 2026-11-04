@@ -108,6 +108,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - name: Preparar dependências backend para o teste de contrato
+        working-directory: backend
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run lint
       - run: npm test -- --maxWorkers=2
       - run: npm run build
