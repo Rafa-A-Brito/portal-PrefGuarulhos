@@ -10,6 +10,7 @@ import {
   ArrowLeftStartOnRectangleIcon,
   LockClosedIcon,
   ClockIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../hooks/useAuth";
 import "../admin.css";
@@ -113,6 +114,10 @@ export default function AdminLayout() {
               <NavLink to="/admin/auditoria" className={classeAtiva}>
                 <ClockIcon width={18} height={18} aria-hidden="true" />
                 Histórico de alterações
+              </NavLink>
+              <NavLink to="/admin/feedback" className={classeAtiva}>
+                <ChatBubbleLeftRightIcon width={18} height={18} aria-hidden="true" />
+                Feedback do portal
               </NavLink>
             </section>
           )}

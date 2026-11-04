@@ -1,0 +1,36 @@
+.pagina { min-width: 0; color: #252638; }
+.pagina p, .modal p { margin-block: .6rem; }
+.pagina h2 { margin-block: 1.25rem .6rem; }
+.serie h3 { margin-block: .75rem; }
+.pagina :global(.btn-solid), .modal :global(.btn-solid) { background: #2b255c; border-color: #2b255c; color: #fff; }
+.pagina :global(.btn-outline), .modal :global(.btn-outline) { color: #2b255c; border-color: #2b255c; background: #fff; }
+.pagina button, .modal button { min-height: 44px; }
+.pagina :focus-visible, .modal :focus-visible { outline: 3px solid #6558a6; outline-offset: 3px; }
+.filtros { padding: 1rem; border: 1px solid #e0e1e8; border-radius: .6rem; }
+.grade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.grade label { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.grade input, .grade select { min-height: 44px; width: 100%; min-width: 0; }
+.acoes, .paginacao { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
+.paginacao { justify-content: space-between; }
+.nota { color: #505466; line-height: 1.6; font-size: .88rem; }
+.total { font-size: 1.4rem; overflow-wrap: anywhere; }
+.graficos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.serie { min-width: 0; border-top: 1px solid #e0e1e8; padding-top: .5rem; }
+.rolagem { overflow: auto; max-width: 100%; max-height: 24rem; border: 1px solid #e0e1e8; border-radius: .6rem; }
+.rolagem table { width: 100%; }
+.rolagem caption { text-align: left; padding: .8rem; color: #505466; font-size: .85rem; }
+.rolagem td, .rolagem th { overflow-wrap: anywhere; }
+.rolagem th { overflow-wrap: normal; }
+.serie th:last-child { width: 45%; }
+.lista { min-width: 480px; }
+.lista button { white-space: nowrap; }
+.lista th:last-child { width: 110px; }
+.modal { width: min(760px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; border: 0; border-radius: 1rem; padding: 1.5rem; color: #252638; background: #fff; box-shadow: 0 20px 60px #16132940; }
+.modal::backdrop { background: #15132999; }
+.cabecalhoModal { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.cabecalhoModal h2 { margin: 0; font-size: 1.4rem; }
+.modal dt { font-weight: 600; margin-top: 1rem; }
+.modal dd { margin: .3rem 0; }
+.mensagem { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+@media (max-width: 1100px) { .grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } .graficos { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .grade { grid-template-columns: 1fr; } .cabecalhoModal { flex-direction: column; align-items: stretch; } .modal { padding: 1rem; } .paginacao { justify-content: center; } }

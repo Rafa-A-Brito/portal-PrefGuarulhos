@@ -31,6 +31,7 @@ import AdminNovidades from "./features/admin/pages/AdminNovidades";
 import ConhecaMaisDetalhes from "./pages/ConhecaMaisDetalhes/ConhecaMaisDetalhes";
 import AdminSenha from "./features/admin/pages/AdminSenha";
 import AdminAuditoria from "./features/admin/pages/AdminAuditoria";
+import AdminFeedback from "./features/admin/pages/AdminFeedback";
 
 // Tempo mínimo de cada etapa da transição, só para a tela não "piscar" quando
 // a verificação termina rápido demais. O spinner NÃO depende de tempo fixo:
@@ -199,6 +200,7 @@ function AppRoutes() {
 
           <Route element={<RotaProtegida permissoes={["ADMIN"]} />}>
             <Route path="/admin/auditoria" element={<AdminAuditoria />} />
+            <Route path="/admin/feedback" element={<AdminFeedback />} />
             <Route path="/admin/regioes" element={<AdminRegioes />} />
             <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           </Route>
