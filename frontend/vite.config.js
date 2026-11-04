@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      '^/api/feedback(?:/|$)': {
+        target: 'http://127.0.0.1:3333',
+        changeOrigin: false,
+      },
       '^/api/metricas(?:/|$)': {
         target: 'http://127.0.0.1:3333',
         changeOrigin: false,

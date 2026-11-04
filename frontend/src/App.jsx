@@ -12,6 +12,7 @@ import Patrimonios from "./pages/Patrimonios/Patrimonios";
 import ConhecaMais from "./pages/ConhecaMais/ConhecaMais";
 import PatrimonioDetalhe from "./pages/PatrimonioDetalhe/PatrimonioDetalhe";
 import Contato from "./pages/Contato/Contato";
+import Feedback from "./pages/Feedback/Feedback";
 
 import { PatrimoniosProvider } from "./context/PatrimoniosContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -170,6 +171,7 @@ function AppRoutes() {
                     element={<ConhecaMaisDetalhes />}
                   />
                   <Route path="/contato" element={<Contato />} />
+                  <Route path="/feedback" element={<Feedback />} />
                 </Routes>
               </div>
             </main>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ParticipacaoMetricas from "../../features/metricas/ParticipacaoMetricas";
+import { feedbackAtivo } from "../../utils/feedbackPublico";
 import {
   MapPinIcon,
   PhoneIcon,
@@ -39,6 +40,7 @@ export default function Footer() {
           <Link to="/patrimonios">Patrimônios</Link>
           <Link to="/conheca-mais">Conheça mais</Link>
           <Link to="/contato">Contato</Link>
+          {feedbackAtivo() && <Link to="/feedback">Avaliar o portal</Link>}
         </div>
 
         <div className="footer-col">
