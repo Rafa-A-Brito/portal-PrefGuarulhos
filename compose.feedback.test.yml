@@ -1,0 +1,26 @@
+# Autônomo e exclusivo da F2. Não combinar com o Compose normal ou volumes H2/S1.
+services:
+  db_test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: portal_test
+      POSTGRES_DB: portal_test
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:?senha exclusiva}
+      API_DB_PASSWORD: ${TEST_API_PASSWORD:?senha exclusiva}
+      MIGRATION_DB_PASSWORD: ${TEST_MIGRATION_PASSWORD:?senha exclusiva}
+      METRICAS_DB_PASSWORD: ${TEST_METRICAS_PASSWORD:?senha exclusiva}
+      FEEDBACK_DB_PASSWORD: ${TEST_FEEDBACK_PASSWORD:?senha exclusiva}
+    ports:
+      - "127.0.0.1:${TEST_POSTGRES_PORT:?porta exclusiva F2}:5432"
+    volumes:
+      - pg_feedback_test:/var/lib/postgresql/data
+      - ./infra/postgres/10-roles.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+      - ./infra/postgres/20-metricas-role.sh:/docker-entrypoint-initdb.d/20-metricas-role.sh:ro
+      - ./infra/postgres/30-feedback-role.sh:/docker-entrypoint-initdb.d/30-feedback-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal_test -d portal_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+volumes:
+  pg_feedback_test:

@@ -52,7 +52,7 @@ test("operação em cluster descartável: migration, retenção, cobertura, conc
         };
         await t.test("onze migrations registradas, checksum integral e donos sem DDL para API/operação", async () => {
             const { rows } = await admin.query("SELECT migration_name,checksum,finished_at,rolled_back_at FROM _prisma_migrations ORDER BY migration_name");
-            assert.equal(rows.filter(r => r.finished_at && !r.rolled_back_at).length, 11);
+            assert.equal(rows.filter(r => r.finished_at && !r.rolled_back_at).length, 12);
             for (const r of rows) {
                 assert.ok(r.finished_at || r.rolled_back_at);
                 const sql = await readFile(new URL(`../prisma/migrations/${r.migration_name}/migration.sql`, import.meta.url));

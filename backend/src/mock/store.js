@@ -9,7 +9,15 @@ export const fixtureId = n => `d0000000-0000-4000-8000-${String(n).padStart(12, 
 const createdAt = new Date("2026-01-10T12:00:00Z");
 export const dates = () => ({ createdAt: new Date(createdAt), updatedAt: new Date(createdAt) });
 export const store = { users: [], sessions: [], refreshTokens: [], patrimonios: [], categorias: [], regioes: [],
-    exposicoes: [], novidades: [], audit: [], views: [] };
+    exposicoes: [], novidades: [], audit: [], views: [], feedback: [], recibosFeedback: new Map() };
+
+for (const [i, tipo, mensagem] of [[0, "ELOGIO", "Exemplo fictício: navegação clara."],
+    [1, "SUGESTAO", "Exemplo fictício: incluir ajuda na busca. 🏛️"],
+    [2, "PROBLEMA", "Exemplo fictício: <script>alert('texto sem execução')</script>\n" + "Comentário longo. ".repeat(80)]]) {
+    const data = new Date(Date.now() - i * 86400000);
+    store.feedback.push({ id: fixtureId(1100 + i), tipo, mensagem, avisoVersao: "feedback-v1",
+        createdAt: data, expiraEm: new Date(+data + 180 * 86400000) });
+}
 
 for (const [i, role, email, password, isActive] of [
     [1, "ADMIN", "admin@demo.invalid", "AdminDemo!2026", true],

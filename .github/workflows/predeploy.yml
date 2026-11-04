@@ -20,7 +20,10 @@ jobs:
       TEST_DATABASE_EXCLUSIVE: '1'
       SECURITY_TEST_DATABASE_EXCLUSIVE: '1'
       TEST_POSTGRES_PORT: '5437'
-      TEST_COMPOSE_PROJECT: portal_ci_metricas_${{ github.run_id }}_${{ github.run_attempt }}
+      TEST_COMPOSE_PROJECT: portal_feedback_f2_ci_${{ github.run_id }}_${{ github.run_attempt }}
+      FEEDBACK_TEST_EXCLUSIVE: '1'
+      FEEDBACK_RECEBIMENTO_ATIVO: 'false'
+      FEEDBACK_CONSULTA_ATIVA: 'false'
       METRICAS_COLETA_ATIVA: 'false'
       METRICAS_CONSULTA_ATIVA: 'false'
     defaults:
@@ -44,7 +47,7 @@ jobs:
           node --input-type=module <<'NODE'
           import { randomBytes } from 'node:crypto';
           import { appendFileSync } from 'node:fs';
-          const nomes = ['TEST_POSTGRES_PASSWORD','TEST_API_PASSWORD','TEST_MIGRATION_PASSWORD','TEST_METRICAS_PASSWORD'];
+          const nomes = ['TEST_POSTGRES_PASSWORD','TEST_API_PASSWORD','TEST_MIGRATION_PASSWORD','TEST_METRICAS_PASSWORD','TEST_FEEDBACK_PASSWORD'];
           const senhas = Object.fromEntries(nomes.map(n => [n, randomBytes(24).toString('hex')]));
           for (const valor of Object.values(senhas)) console.log('::add-mask::' + valor);
           const destino = '127.0.0.1:' + process.env.TEST_POSTGRES_PORT + '/portal_test';
@@ -54,20 +57,21 @@ jobs:
             'SECURITY_API_DATABASE_URL=postgresql://portal_api:' + senhas.TEST_API_PASSWORD + '@' + destino,
             'SECURITY_MIGRATION_DATABASE_URL=postgresql://portal_migrator:' + senhas.TEST_MIGRATION_PASSWORD + '@' + destino,
             'METRICAS_OPERACAO_URL=postgresql://portal_metricas_operador:' + senhas.TEST_METRICAS_PASSWORD + '@' + destino,
+            'FEEDBACK_OPERACAO_URL=postgresql://portal_feedback_operador:' + senhas.TEST_FEEDBACK_PASSWORD + '@' + destino,
             '',
           ].join('\n'));
           NODE
       - name: Criar somente volume e PostgreSQL de teste novos
         working-directory: .
         run: |
-          if docker volume inspect "${TEST_COMPOSE_PROJECT}_pg_test" >/dev/null 2>&1 || docker container inspect "${TEST_COMPOSE_PROJECT}-db_test-1" >/dev/null 2>&1; then
+          if docker volume inspect "${TEST_COMPOSE_PROJECT}_pg_feedback_test" >/dev/null 2>&1 || docker container inspect "${TEST_COMPOSE_PROJECT}-db_test-1" >/dev/null 2>&1; then
             echo "Volume já existe; nenhuma reconstrução automática permitida."
             exit 1
           fi
           echo "TEST_COMPOSE_CREATED=1" >> "$GITHUB_ENV"
-          docker compose -f compose.metricas.test.yml -p "$TEST_COMPOSE_PROJECT" up -d --wait db_test
-      - name: Identificar cluster, aplicar migrations pelo migrator e testar V1/V2
-        run: node scripts/validar_metricas_test.js
+          docker compose -f compose.feedback.test.yml -p "$TEST_COMPOSE_PROJECT" up -d --wait db_test
+      - name: Identificar cluster, aplicar 12 migrations e testar F2 e regressões V1/V2
+        run: node scripts/homologar_feedback.js completo
       - name: Validar exemplos systemd sem instalar
         working-directory: .
         run: systemd-analyze verify infra/systemd/portal-metricas-*.service infra/systemd/portal-metricas-*.timer
@@ -85,7 +89,7 @@ jobs:
       - name: Encerrar somente o compose de teste
         if: always() && env.TEST_COMPOSE_CREATED == '1'
         working-directory: .
-        run: docker compose -f compose.metricas.test.yml -p "$TEST_COMPOSE_PROJECT" down -v
+        run: docker compose -f compose.feedback.test.yml -p "$TEST_COMPOSE_PROJECT" down -v
 
   frontend:
     name: Frontend / interface

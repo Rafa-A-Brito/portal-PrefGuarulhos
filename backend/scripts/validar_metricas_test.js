@@ -54,12 +54,12 @@ async function main() {
         await owner.query("BEGIN READ ONLY");
         const { rows } = await owner.query("SELECT migration_name,checksum,finished_at,rolled_back_at FROM _prisma_migrations ORDER BY migration_name");
         const pastas = (await readdir("prisma/migrations")).filter(n => /^\d/.test(n)).sort();
-        assert.equal(rows.length, 11); assert.deepEqual(rows.map(r => r.migration_name), pastas);
+        assert.equal(rows.length, 12); assert.deepEqual(rows.map(r => r.migration_name), pastas);
         for (const r of rows) {
             assert.ok(r.finished_at); assert.equal(r.rolled_back_at, null);
             assert.equal(r.checksum, createHash("sha256").update(await readFile(`prisma/migrations/${r.migration_name}/migration.sql`)).digest("hex"));
         }
-        await owner.query("ROLLBACK"); console.log("11 migrations concluídas na primeira tentativa, checksums iguais; repetição sem pendências.");
+        await owner.query("ROLLBACK"); console.log("12 migrations concluídas na primeira tentativa, checksums iguais; repetição sem pendências.");
         await owner.query(await readFile("scripts/sql/permissoes_metricas.sql", "utf8"));
     } finally { await owner.end(); }
     run(["scripts/run-suite.js"]);

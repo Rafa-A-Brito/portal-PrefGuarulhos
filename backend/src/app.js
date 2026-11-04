@@ -14,6 +14,7 @@ import { arquivoLegadoParamsSchema, imagemEditorialParamsSchema } from "./schema
 import securityHeaders from "./middlewares/securityHeaders.js";
 import metricasRoutes from "./routes/metricasRoute.js";
 import requestId from "./middlewares/requestId.js";
+import feedbackRoutes from "./routes/feedbackRoute.js";
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.disable("x-powered-by");
 app.use(requestId);
 app.set("trust proxy", env.TRUST_PROXY_IPS ? env.TRUST_PROXY_IPS.split(",").map(ip => ip.trim()) : false);
 app.use(securityHeaders);
+// Preflight e parser próprios devem executar antes do CORS/parser gerais.
+app.use("/api/feedback", feedbackRoutes);
 app.use(cors({ origin: env.CORS_ORIGIN, exposedHeaders: ["Retry-After", "X-Request-Id"] }));
 // Inclui erros de validação/autenticação que não chegam aos controllers.
 app.use(["/api/auth", "/api/admin", "/api/admins"], (_req, res, next) => {
@@ -28,7 +31,7 @@ app.use(["/api/auth", "/api/admin", "/api/admins"], (_req, res, next) => {
     next();
 });
 // Antes do parser: cobre também JSON malformado ou corpo acima do limite.
-app.use("/api/admin/auditoria", (_req, res, next) => {
+app.use(["/api/admin/auditoria", "/api/admin/feedback"], (_req, res, next) => {
     res.setHeader("Cache-Control", "private, no-store");
     next();
 });

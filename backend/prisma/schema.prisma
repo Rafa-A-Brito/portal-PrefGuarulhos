@@ -6,6 +6,42 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TipoFeedback {
+  ELOGIO
+  SUGESTAO
+  PROBLEMA
+
+  @@map("tipo_feedback")
+}
+
+model Feedback {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tipo        TipoFeedback
+  mensagem    String          @db.VarChar(2000)
+  avisoVersao String          @map("aviso_versao") @db.VarChar(40)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiraEm    DateTime        @map("expira_em") @db.Timestamptz(3)
+  recibo      ReciboFeedback?
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)], map: "feedback_data_id_idx")
+  @@index([tipo, createdAt(sort: Desc), id(sort: Desc)], map: "feedback_tipo_data_id_idx")
+  @@index([expiraEm, id], map: "feedback_expiracao_idx")
+  @@map("feedback")
+}
+
+model ReciboFeedback {
+  chaveDigest    String    @id @map("chave_digest") @db.Char(64)
+  conteudoDigest String    @map("conteudo_digest") @db.Char(64)
+  versaoChave    String    @map("versao_chave") @db.VarChar(40)
+  feedbackId    String?   @unique(map: "feedback_recibo_registro_key") @map("feedback_id") @db.Uuid
+  recebidoEm    DateTime  @default(now()) @map("recebido_em") @db.Timestamptz(3)
+  expiraEm      DateTime  @map("expira_em") @db.Timestamptz(3)
+  feedback      Feedback? @relation(fields: [feedbackId], references: [id], onDelete: SetNull)
+
+  @@index([expiraEm], map: "feedback_recibo_expiracao_idx")
+  @@map("feedback_recibo")
+}
+
 enum Role {
   EDITOR
   ADMIN

@@ -6,3 +6,5 @@ backend/prisma/data/patrimonios.js text eol=lf
 backend/prisma/data/patrimonioEditorialCurado.js text eol=lf
 backend/reports/D1C-auditoria-editorial.json text eol=lf
 backend/reports/D1C-excluidos-editoriais.json text eol=lf
+# Migration nova de Feedback: checksum estável entre Windows e CI; históricas intactas.
+backend/prisma/migrations/20261102120000_add_feedback/migration.sql text eol=lf

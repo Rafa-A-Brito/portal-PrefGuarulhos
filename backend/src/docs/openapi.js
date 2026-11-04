@@ -1,6 +1,7 @@
 import { paths } from "./paths.js";
 import { schemas } from "./schemas.js";
 import { pathsAuditoria } from "./auditoria.js";
+import { pathsFeedback } from "./feedback.js";
 
 const openapi = {
     openapi: "3.0.3",
@@ -13,6 +14,7 @@ const openapi = {
     tags: [
         { name: "Dashboard" },
         { name: "Auditoria" },
+        { name: "Feedback" },
         { name: "Regiões" },
         { name: "Sistema" },
         { name: "Autenticação" },
@@ -22,7 +24,7 @@ const openapi = {
         { name: "Exposições" },
         { name: "Novidades" },
     ],
-    paths: { ...paths, ...pathsAuditoria },
+    paths: { ...paths, ...pathsAuditoria, ...pathsFeedback },
     components: {
         securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
         schemas,
