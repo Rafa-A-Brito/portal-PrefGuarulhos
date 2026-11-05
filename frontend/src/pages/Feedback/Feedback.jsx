@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { criarEnvioFeedback, enviarFeedback } from "../../services/feedbackPublicoApi";
 import { feedbackAtivo, TIPOS_FEEDBACK, prepararFeedback, contarComentario, envioExpirou } from "../../utils/feedbackPublico";
 import styles from "./Feedback.module.css";
@@ -18,22 +18,12 @@ function falhaPublica(error) {
   return { estado: "incerto", texto: "Não foi possível confirmar o recebimento. A tentativa pode ter sido recebida, mesmo se a conexão foi interrompida." };
 }
 
+// Mantém links antigos funcionando; o único formulário público fica em Contato.
 export default function Feedback() {
-  return <section className={styles.pagina} aria-labelledby="feedback-titulo">
-    <header className={styles.cabecalho}>
-      <p className={styles.sobre}>Experiência no portal</p>
-      <h1 id="feedback-titulo">Avaliar o portal</h1>
-      <p>Ajude a melhorar a navegação e as informações deste site.</p>
-    </header>
-    {feedbackAtivo() ? <FormularioFeedback /> : <div className={styles.cartao}>
-      <h2>Feedback indisponível</h2>
-      <p>O formulário de avaliação ainda não está disponível.</p>
-      <p>Para outros assuntos, consulte os <Link to="/contato">canais de contato</Link>.</p>
-    </div>}
-  </section>;
+  return <Navigate to="/contato" replace />;
 }
 
-function FormularioFeedback() {
+export function FormularioFeedback() {
   const [tipo, setTipo] = useState(""), [mensagem, setMensagem] = useState("");
   const [erros, setErros] = useState({}), [pendente, setPendente] = useState(null);
   const [resultado, setResultado] = useState({ estado: "pronto", texto: "" });
@@ -107,13 +97,13 @@ function FormularioFeedback() {
     mensagemRef.current?.focus();
   }
 
-  return <div className={styles.cartao}>
+  return <div className={styles.integrado}>
     <div className={styles.finalidade}>
       <h2>Sobre sua experiência</h2>
       <p>Envie um elogio, sugestão ou problema de uso. Este formulário não gera protocolo de atendimento e não substitui a Ouvidoria.</p>
-      <p>Para denúncias, reclamações formais ou pedidos de atendimento, consulte os <Link to="/contato">canais de contato</Link>.</p>
+      <p>Para denúncias, reclamações formais ou pedidos de atendimento, consulte os <a href="#canais-contato">canais de contato</a>.</p>
     </div>
-    <form onSubmit={submeter} noValidate aria-label="Avaliação do portal" aria-busy={enviando}>
+    <form className="contato-form" onSubmit={submeter} noValidate aria-label="Avaliação do portal" aria-busy={enviando}>
       <fieldset className={styles.tipos} disabled={Boolean(pendente)} aria-describedby={erros.tipo ? "feedback-tipo-ajuda feedback-tipo-erro" : "feedback-tipo-ajuda"}>
         <legend>Tipo de feedback <span>(obrigatório)</span></legend>
         <p id="feedback-tipo-ajuda" className={styles.ajuda}>Escolha a opção que melhor descreve seu comentário.</p>

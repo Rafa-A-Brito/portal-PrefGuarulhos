@@ -65,6 +65,25 @@ it("lista paginada real, ordem preservada e detalhes somente sob demanda", async
   expect(screen.queryByRole("dialog")).toBeNull(); expect(document.activeElement).toBe(botao);
 });
 
+it.each([["USER_DEACTIVATE", true, false, "Conta administrativa desativada"], ["USER_ACTIVATE", false, true, "Conta administrativa ativada"]])(
+  "detalhe %s separa ator e alvo e não inventa identidade ou sessões", async (action, antes, depois, titulo) => {
+    const evento = { ...eventos[0], action, oldValues: { isActive: antes }, newValues: { isActive: depois } };
+    adapter(c => c.url === "/admin/auditoria" ? Promise.resolve(resposta(c, lista([evento]))) : Promise.resolve(resposta(c, evento)));
+    montar(); await screen.findByText("1 alterações registradas.");
+    fireEvent.click(screen.getByRole("button", { name: /Detalhes da alteração/ }));
+    const modal = within(screen.getByRole("dialog")); await modal.findByText(titulo);
+    const responsavel = modal.getByText("Quem realizou?").closest("div");
+    const alvo = modal.getByText("Quem ou o que foi afetado?").closest("div");
+    expect(responsavel.textContent).toContain("Ana — nome atual");
+    expect(alvo.textContent).toContain(id(2)); expect(alvo.textContent).toContain("Nome do alvo não informado");
+    expect(alvo.textContent).not.toContain("Ana");
+    const comparacao = modal.getByRole("region", { name: "Comparação de valores" });
+    expect(comparacao.textContent).toContain("Situação da conta");
+    expect(within(comparacao).getAllByRole("cell").map(c => c.textContent)).toEqual(antes ? ["Ativa", "Desativada"] : ["Desativada", "Ativa"]);
+    expect(modal.getByText("Quando aconteceu? · America/Sao_Paulo").closest("div").textContent).toContain("12:20:00");
+    expect(screen.getByRole("dialog").textContent).not.toMatch(/IP:|Sessão:|Página visitada:|revokedAt/);
+  });
+
 it("troca página usando total do servidor e aplica filtros voltando à primeira", async () => {
   const user = userEvent.setup();
   const spy = adapter(c => Promise.resolve(resposta(c, lista([eventos[0]], c.params.pagina, 41)))); montar();
@@ -154,7 +173,7 @@ it("texto malicioso não vira HTML e senha não exibe campos mesmo em DTO impró
   adapter(c => c.url.endsWith(id(10)) ? Promise.resolve(resposta(c, { ...eventos[0], newValues: { name: "<img src=x onerror=alert(1)>", passwordHash: "NUNCA" } }))
     : c.url.endsWith(id(13)) ? Promise.resolve(resposta(c, { ...eventos[3], oldValues: { password: "NUNCA" } })) : padrao(c)); montar();
   await screen.findByText("4 alterações registradas."); await user.click(screen.getAllByRole("button", { name: /Detalhes da alteração/ })[0]);
-  await screen.findByText("<img src=x onerror=alert(1)>"); expect(screen.getByRole("dialog").querySelector("img")).toBeNull();
+  await within(screen.getByRole("dialog")).findAllByText("<img src=x onerror=alert(1)>"); expect(screen.getByRole("dialog").querySelector("img")).toBeNull();
   expect(screen.queryByText(/NUNCA/)).toBeNull(); await user.click(screen.getByRole("button", { name: "Fechar detalhes" }));
   await user.click(screen.getAllByRole("button", { name: /Detalhes da alteração/ })[3]);
   await screen.findByText("Valores de senha nunca são apresentados."); expect(screen.queryByText(/NUNCA/)).toBeNull();

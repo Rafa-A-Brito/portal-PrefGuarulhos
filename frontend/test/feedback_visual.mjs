@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import assert from "node:assert/strict";
-const output = path.resolve("../.cache/feedback_f3/visual"), origin = "http://127.0.0.1:5193";
+const output = path.resolve("../.cache/ui_f1/contato_visual"), origin = "http://127.0.0.1:5193";
 await mkdir(output, { recursive: true });
 const profile = await mkdtemp(path.join(output, "chrome_"));
 let binary;
@@ -19,7 +19,7 @@ const servers = [], pendentes = new Map();
 const pause = ms => new Promise(r => setTimeout(r, ms));
 async function servidor(porta, ativo) {
   const serverOrigin = `http://127.0.0.1:${porta}`;
-  const vite = await createServer({ configFile: false, envDir: false, logLevel: "error", server: { host: "127.0.0.1", port: porta, strictPort: true },
+  const vite = await createServer({ configFile: false, envDir: false, cacheDir: path.join(output, "vite_" + porta), logLevel: "error", server: { host: "127.0.0.1", port: porta, strictPort: true },
     define: { "import.meta.env.VITE_API_BASE_URL": JSON.stringify(serverOrigin + "/api"), "import.meta.env.VITE_FEEDBACK_ATIVO": JSON.stringify(String(ativo)),
       "import.meta.env.VITE_METRICAS_ATIVAS": '"false"', "import.meta.env.VITE_GOOGLE_MAPS_API_KEY": '""', "import.meta.env.VITE_USE_MOCK_MAP": '"true"' },
     plugins: [react(), { name: "feedback-fixtures", configureServer(server) {
@@ -98,12 +98,12 @@ try {
   await call("Emulation.setDeviceMetricsOverride", { width: 390, height: 900, deviceScaleFactor: 1, mobile: false });
   await call("Page.navigate", { url: "http://127.0.0.1:5194/feedback" });
   await esperar("document.body.innerText.includes('Feedback indisponível')");
-  assert.equal(await evaluate("document.querySelector('form')===null && document.querySelector('footer a[href=\"/feedback\"]')===null"), true);
+  assert.equal(await evaluate("location.pathname==='/contato' && document.querySelector('form')===null && ![...document.querySelectorAll('footer a')].some(a=>a.textContent==='Avaliar o portal')"), true);
   await captura("feedback_desativado_390", 390); resultados.push({ flagFalsa: true, formulario: false, link: false, envios: envios.length });
-  for (const width of [1440, 390, 320]) {
+  for (const width of [1440, 768, 390, 320]) {
     await call("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: false });
     await call("Page.navigate", { url: origin + "/feedback" });
-    await esperar("document.querySelector('textarea') && document.querySelector('footer a[href=\"/feedback\"]')");
+    await esperar("location.pathname==='/contato' && document.querySelector('textarea') && [...document.querySelectorAll('footer a')].some(a=>a.textContent==='Avaliar o portal' && a.getAttribute('href')==='/contato')");
     await pause(400);
     assert.equal(await evaluate("document.documentElement.scrollWidth <= innerWidth"), true, "Overflow " + width);
     assert.equal(await evaluate("[...document.querySelectorAll('input[type=radio]')].every(e=>!e.checked)"), true);
@@ -123,7 +123,7 @@ try {
   // Zoom CSS 200% no formulário e reflow equivalente de página a 720 CSS px.
   await call("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await call("Page.navigate", { url: origin + "/feedback" }); await esperar("document.querySelector('textarea')");
-  await evaluate("document.querySelector('section[aria-labelledby=feedback-titulo]').style.zoom='2'");
+  await evaluate("document.querySelector('.contato-form').style.zoom='2'");
   assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth && document.querySelector('textarea').getBoundingClientRect().right<=innerWidth"), true);
   await captura("feedback_zoom_200", 1440); resultados.push({ zoomCssFormulario: "200%", overflow: false });
   await call("Emulation.setDeviceMetricsOverride", { width: 720, height: 1000, deviceScaleFactor: 2, mobile: false });
@@ -147,18 +147,13 @@ try {
   modo = "demo"; await preencher("Demonstração sintética."); await evaluate("document.querySelector('button[type=submit]').click()");
   await esperar("document.querySelector('[role=status]').textContent.includes('apenas em memória')");
   await captura("feedback_demo_320", 320); resultados.push({ demoExplicita: true });
-  // Rota existente e mailto preservados; nenhum POST de Contato.
-  await call("Page.navigate", { url: origin + "/contato" }); await esperar("document.querySelector('#nome')");
-  await evaluate(`for(const [id,value] of [['nome','Pessoa fictícia'],['email','fixture@example.invalid'],['mensagem','Mensagem sintética de contato']]){
-    const e=document.getElementById(id),proto=e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
-    Object.getOwnPropertyDescriptor(proto,'value').set.call(e,value);e.dispatchEvent(new Event('input',{bubbles:true}));}`);
-  await evaluate("document.querySelector('.contato-submit').click()");
-  for (let i = 0; i < 30 && !navegacoes.some(url => url.startsWith('mailto:')); i++) await pause(100);
-  assert.ok(navegacoes.some(url => url.startsWith("mailto:patrimonio.cultural@guarulhos.sp.gov.br?subject=") && decodeURIComponent(url).includes("Mensagem sintética de contato")), "Contato mantém mailto");
+  // Contato é o formulário oficial; mailto institucional continua como canal separado.
+  await call("Page.navigate", { url: origin + "/contato" }); await esperar("document.querySelector('textarea')");
+  assert.equal(await evaluate("document.querySelectorAll('form').length===1 && document.querySelector('#nome')===null && document.querySelector('a[href=\"mailto:patrimonio.cultural@guarulhos.sp.gov.br\"]')!==null"), true);
   const antes = envios.length;
-  await evaluate("document.querySelector('footer a[href=\"/feedback\"]').click()");
-  await esperar("location.pathname==='/feedback' && document.querySelector('textarea')"); assert.equal(envios.length, antes);
-  resultados.push({ contatoMailto: true, linkFooterRotaReal: true });
+  await evaluate("[...document.querySelectorAll('footer a')].find(a=>a.textContent==='Avaliar o portal').click()");
+  await esperar("location.pathname==='/contato' && document.querySelector('textarea')"); assert.equal(envios.length, antes);
+  resultados.push({ contatoUnico: true, canalInstitucionalPreservado: true, linkFooterRotaReal: true, redirecionamentoLegado: true });
   assert.deepEqual(exceptions, []);
   // Não grava conteúdo/chaves nos resultados, apenas as verificações agregadas.
   await writeFile(path.join(output, "resultado.json"), JSON.stringify({ resultados, exceptions, totalPostSinteticos: envios.length, banco: "não acessado", limitacao: "viewports/zoom simulados; sem leitor de tela ou aparelho físico" }, null, 2));

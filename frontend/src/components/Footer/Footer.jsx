@@ -40,7 +40,7 @@ export default function Footer() {
           <Link to="/patrimonios">Patrimônios</Link>
           <Link to="/conheca-mais">Conheça mais</Link>
           <Link to="/contato">Contato</Link>
-          {feedbackAtivo() && <Link to="/feedback">Avaliar o portal</Link>}
+          {feedbackAtivo() && <Link to="/contato">Avaliar o portal</Link>}
         </div>
 
         <div className="footer-col">

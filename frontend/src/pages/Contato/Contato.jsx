@@ -5,8 +5,10 @@ import {
   MapPinIcon,
   EnvelopeIcon,
   ClockIcon,
-  PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
+
+import { FormularioFeedback } from "../Feedback/Feedback";
+import { feedbackAtivo } from "../../utils/feedbackPublico";
 
 /**
  * CONSTANTES DE CONTATO
@@ -21,30 +23,7 @@ const URL_FALA_BR = "https://falabr.cgu.gov.br";
 const URL_OUVIDORIA = PORTAL_PREFEITURA;
 const EMAIL_PATRIMONIO = "patrimonio.cultural@guarulhos.sp.gov.br";
 
-/**
- * Assuntos específicos do Patrimônio Cultural. Assuntos genéricos da
- * Prefeitura (impostos, poda de árvore, elogio/reclamação etc.) já têm
- * canal próprio na seção "Outras formas de contato" logo abaixo — por
- * isso não entram nesta lista.
- */
-const motivos = [
-  { value: "duvida", label: "Dúvida sobre um patrimônio" },
-  { value: "contribuicao", label: "Envio de informações ou fotos" },
-  { value: "sugestao", label: "Sugestão de bem para catalogar" },
-  { value: "correcao", label: "Correção de informação no site" },
-  { value: "denuncia", label: "Relatar dano ou risco ao patrimônio" },
-  { value: "visita", label: "Visita, uso do espaço ou evento" },
-  { value: "imprensa", label: "Imprensa ou parceria" },
-  { value: "outro", label: "Outro assunto" },
-];
-
-const CAMPO_MAX = 60;
-const MENSAGEM_MAX = 600;
-
-const FORM_INICIAL = { nome: "", email: "", motivo: "duvida", mensagem: "" };
-
 export default function Contato() {
-  const [form, setForm] = useState(FORM_INICIAL);
   const [infoAberta, setInfoAberta] = useState(false);
 
   // Fecha o card de informações com Esc. O listener só existe enquanto o
@@ -58,143 +37,48 @@ export default function Contato() {
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [infoAberta]);
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((atual) => ({ ...atual, [name]: value }));
-  }
-
-  /**
-   * Ainda não existe endpoint de contato no backend. Por isso o envio abre o
-   * aplicativo de e-mail do visitante com a mensagem preenchida (mailto).
-   * Quando a rota real existir, troque este corpo por uma chamada em
-   * services/api.js.
-   */
-  function handleSubmit(e) {
-    e.preventDefault();
-    const assunto =
-      motivos.find((m) => m.value === form.motivo)?.label ?? "Contato";
-    const corpo = `Nome: ${form.nome}\nE-mail: ${form.email}\n\n${form.mensagem}`;
-    window.location.href = `mailto:${EMAIL_PATRIMONIO}?subject=${encodeURIComponent(
-      assunto,
-    )}&body=${encodeURIComponent(corpo)}`;
-  }
-
-  const mensagemRestante = MENSAGEM_MAX - form.mensagem.length;
-  const pertoDoLimite = mensagemRestante <= 40;
-
   return (
     <div>
       <div className="page-hero">
         <h1>Fale conosco</h1>
         <p>
-          Escolha o canal certo para o seu assunto ou envie uma mensagem
-          diretamente para a equipe responsável pelos patrimônios históricosde
-          Guarulhos.
+          Avalie sua experiência no portal ou escolha um canal institucional
+          para assuntos sobre o patrimônio cultural de Guarulhos.
         </p>
       </div>
 
-      {/* ===== Formulário — canal prioritário ===== */}
+      {/* O formulário público usa o contrato de Feedback; contato institucional abaixo. */}
       <section className="sobre" style={{ marginTop: 0 }}>
         <div className="sobre-inner">
           <div className="section-head">
             <div>
-              <h2>Envie sua mensagem</h2>
+              <h2>Avaliar o portal</h2>
               <p className="sub">
-                Dúvidas sobre um bem tombado, sugestões de catalogação, fotos,
-                relatos de dano ou pedidos de visita — fale direto com a equipe
-                da Prefeitura de Guarulhos responsável.
+                Compartilhe um elogio, uma sugestão ou um problema de uso do site.
+                Para dúvidas sobre bens, envio de fotos ou pedidos de visita,
+                utilize os canais institucionais abaixo.
               </p>
             </div>
           </div>
 
-          <form className="contato-form" onSubmit={handleSubmit}>
-            <div className="contato-field">
-              <label htmlFor="nome">Nome completo</label>
-              <input
-                id="nome"
-                name="nome"
-                type="text"
-                placeholder="Digite seu nome"
-                value={form.nome}
-                onChange={handleChange}
-                maxLength={CAMPO_MAX}
-                required
-              />
-            </div>
-
-            <div className="contato-field">
-              <label htmlFor="email">E-mail</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="seu.email@exemplo.com"
-                value={form.email}
-                onChange={handleChange}
-                maxLength={CAMPO_MAX}
-                required
-              />
-            </div>
-
-            <div className="contato-field">
-              <label htmlFor="motivo">Assunto</label>
-              <select
-                id="motivo"
-                name="motivo"
-                value={form.motivo}
-                onChange={handleChange}
-              >
-                {motivos.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="contato-field">
-              <div className="contato-field-header">
-                <label htmlFor="mensagem">Mensagem</label>
-                <span
-                  className={`contato-contador${
-                    pertoDoLimite ? " perto-limite" : ""
-                  }`}
-                >
-                  {form.mensagem.length}/{MENSAGEM_MAX}
-                </span>
-              </div>
-              <textarea
-                id="mensagem"
-                name="mensagem"
-                placeholder="Escreva sua mensagem aqui..."
-                value={form.mensagem}
-                onChange={handleChange}
-                maxLength={MENSAGEM_MAX}
-                required
-              />
-            </div>
-
-            <button type="submit" className="contato-submit">
-              <PaperAirplaneIcon width={16} height={16} />
-              Enviar mensagem
-            </button>
-            <p className="contato-nota">
-              Ao enviar, abriremos o seu aplicativo de e-mail com a mensagem já
-              preenchida.
-            </p>
-          </form>
+          {feedbackAtivo() ? <FormularioFeedback /> : <div className="contato-form" role="status">
+            <h3>Feedback indisponível</h3>
+            <p>O formulário de avaliação ainda não está disponível. Nenhuma mensagem foi enviada.</p>
+            <p>Utilize os canais de contato abaixo para outros assuntos.</p>
+          </div>}
         </div>
       </section>
 
       {/* ===== Outras formas de contato ===== */}
-      <section className="sobre">
+      <section className="sobre" id="canais-contato">
         <div className="sobre-inner">
           <div className="section-head">
             <div>
               <h2>Outras formas de contato</h2>
               <p className="sub">
-                Se o seu assunto não for sobre um patrimônio específico, a
-                Prefeitura atende por dois canais oficiais:
+                Para assuntos sobre patrimônios, escreva para{" "}
+                <a href={`mailto:${EMAIL_PATRIMONIO}`}>{EMAIL_PATRIMONIO}</a>.
+                Para acesso à informação e atendimento geral, consulte os canais abaixo:
               </p>
             </div>
           </div>

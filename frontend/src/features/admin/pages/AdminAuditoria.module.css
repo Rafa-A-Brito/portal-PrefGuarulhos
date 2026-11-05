@@ -1,4 +1,5 @@
-.pagina { min-width: 0; }
+.pagina { min-width: 0; color: var(--ink); }
+.filtros { padding: 1rem; box-shadow: none; }
 .pagina :global(.btn-outline), .modal :global(.btn-outline) { color: #2b255c; border-color: #2b255c; }
 .pagina :global(.btn-solid), .modal :global(.btn-solid) { color: #fff; background: #2b255c; border-color: #2b255c; }
 .pagina *, .modal * { box-sizing: border-box; }
@@ -13,11 +14,14 @@
 .busca label { flex: 1; }
 .nota { font-size: .88rem; color: #505466; line-height: 1.6; }
 .rolagem { max-width: 100%; overflow-x: auto; border: 1px solid #e0e1e8; border-radius: .6rem; }
-.lista { min-width: 740px; table-layout: fixed; width: 100%; }
+.lista { min-width: 900px; table-layout: fixed; width: 100%; border: 0; box-shadow: none; }
+.lista th:first-child { width: 20%; }
+.lista th:nth-child(2) { width: 16%; }
+.lista td { vertical-align: top; }
 .lista th:last-child { width: 110px; }
 .lista button { white-space: nowrap; padding-inline: .6rem; }
 .lista td, .metadados dd { overflow-wrap: anywhere; }
-.identificador { font-size: .78rem; }
+.identificador { font-size: .75rem; line-height: 1.5; }
 .pagina small, .modal small { display: block; margin-top: .3rem; color: #505466; font-size: .8rem; }
 .pagina caption, .modal caption { text-align: left; padding: .8rem; color: #505466; font-size: .85rem; }
 .paginacao { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; flex-wrap: wrap; }
@@ -28,10 +32,15 @@
 .cabecalhoModal { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .cabecalhoModal h2 { margin: 0; font-size: 1.4rem; }
 .frase { padding-block: .75rem; line-height: 1.65; overflow-wrap: anywhere; }
+.ocorrencia { margin-top: 1rem; padding: .8rem 1rem; background: var(--paper); border-left: 3px solid var(--navy); }
+.ocorrencia p { margin: 0; }
+.ocorrencia p:last-child { margin-top: .25rem; font-weight: 600; }
+.identificadores { margin-block: 1rem; font-size: .85rem; }
+.identificadores summary { cursor: pointer; padding-block: .6rem; }
 .metadados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .metadados dt { font-weight: 600; font-size: .85rem; }
 .metadados dd { margin: .3rem 0 0; }
-.comparacao { width: 100%; min-width: 520px; table-layout: fixed; }
+.comparacao { width: 100%; min-width: 520px; table-layout: fixed; border: 0; box-shadow: none; }
 .comparacao th:first-child { width: 25%; }
 .comparacao td { white-space: pre-wrap; overflow-wrap: anywhere; vertical-align: top; }
 .comparacao th { overflow-wrap: anywhere; }

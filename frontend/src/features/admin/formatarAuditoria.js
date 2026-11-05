@@ -14,15 +14,23 @@ const tipos = {
 const verbos = {
   CREATE: ["Criação", "criou"], UPDATE: ["Atualização", "alterou"], DELETE: ["Exclusão", "excluiu"],
   PUBLISH: ["Publicação", "publicou"], ARCHIVE: ["Arquivamento", "arquivou"],
-  ACTIVATE: ["Ativação", "ativou"], DEACTIVATE: ["Inativação", "desativou"],
+  ACTIVATE: ["Ativação", "ativou"], DEACTIVATE: ["Desativação", "desativou"],
   PASSWORD_CHANGE: ["Troca de senha", "alterou a senha de"], REORDER: ["Reordenação", "reordenou"],
 };
-export const ACOES_AUDITORIA = Object.fromEntries([
+// Emissores operacionais reais fora da enumeração dos serviços HTTP.
+// Não inferir a operação específica de um importador a partir do prefixo.
+const operacionais = {
+  INITIAL_LOAD_BINDING: { entidades: ["Patrimonio"], rotulo: "Vinculação à carga inicial" },
+  SYNC_PATRIMONIO: { entidades: ["Patrimonio"], rotulo: "Sincronização de patrimônio" },
+  D1C_EDITORIAL_IMPORT: { entidades: ["PatrimonioFato", "PatrimonioLigacao"], rotulo: "Importação editorial" },
+};
+export const ACOES_AUDITORIA = { ...Object.fromEntries([
   ...Object.keys(tipos).flatMap(p => ["CREATE", "UPDATE", "DELETE"].map(v => [p, v])),
   ...["PATRIMONIO", "EXPOSICAO", "NOVIDADE"].flatMap(p => ["PUBLISH", "ARCHIVE"].map(v => [p, v])),
   ...["ACTIVATE", "DEACTIVATE", "PASSWORD_CHANGE"].map(v => ["USER", v]),
   ...["FATO", "LIGACAO"].map(p => [p, "REORDER"]),
-].map(([p, v]) => [`${p}_${v}`, `${RECURSOS_AUDITORIA[tipos[p][0]]} · ${verbos[v][0]}`]));
+].map(([p, v]) => [`${p}_${v}`, `${RECURSOS_AUDITORIA[tipos[p][0]]} · ${verbos[v][0]}`])),
+...Object.fromEntries(Object.entries(operacionais).map(([acao, dado]) => [acao, dado.rotulo])) };
 
 const comuns = ["slug", "status", "publicadoEm", "arquivadoEm"];
 // Lista positiva independente de dados recebidos. Nunca mostrar JSON bruto por fallback.
@@ -63,9 +71,34 @@ export function dataHoraAuditoria(value) {
   if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) return "Data não disponível";
   return new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO_AUDITORIA, dateStyle: "short", timeStyle: "medium" }).format(new Date(value));
 }
-export const recursoAuditoria = e => RECURSOS_AUDITORIA[e.entity] || "Recurso não identificado";
-export const acaoAuditoria = e => ACOES_AUDITORIA[e.action] && tipos[e.action.split("_")[0]][0] === e.entity
-  ? verbos[e.action.split("_").slice(1).join("_")][0] : "Ação não identificada";
+export const recursoAuditoria = e => Object.hasOwn(RECURSOS_AUDITORIA, e.entity) ? RECURSOS_AUDITORIA[e.entity] : "Recurso não identificado";
+export function acaoAuditoria(e) {
+  if (!Object.hasOwn(ACOES_AUDITORIA, e.action)) return "Ação não identificada";
+  if (Object.hasOwn(operacionais, e.action)) return operacionais[e.action].entidades.includes(e.entity)
+    ? operacionais[e.action].rotulo : "Ação não identificada";
+  return tipos[e.action.split("_")[0]]?.[0] === e.entity
+    ? verbos[e.action.split("_").slice(1).join("_")][0] : "Ação não identificada";
+}
+const alvos = {
+  User: ["Conta administrativa", "name", "email"], Patrimonio: ["Patrimônio", "nome", "slug"],
+  RegiaoPatrimonio: ["Região", "nome", "slug"], PatrimonioImagem: ["Imagem", "titulo", "textoAlternativo"],
+  PatrimonioDocumento: ["Documento/referência", "titulo"], PatrimonioFato: ["Fato", "rotulo"],
+  PatrimonioLigacao: ["Ligação entre patrimônios", "texto"], Exposicao: ["Exposição", "titulo", "slug"],
+  Novidade: ["Novidade", "titulo", "slug"],
+};
+export function alvoAuditoria(evento) {
+  const reordena = ["FATO_REORDER", "LIGACAO_REORDER"].includes(evento.action) && acaoAuditoria(evento) !== "Ação não identificada";
+  const [tipo, ...identificadores] = Object.hasOwn(alvos, evento.entity) ? alvos[evento.entity] : ["Registro"];
+  // Nunca usa evento.user: identifica o ator atual, não o alvo histórico.
+  if (!reordena && evento.action !== "USER_PASSWORD_CHANGE" && acaoAuditoria(evento) !== "Ação não identificada") {
+    for (const origem of ["newValues", "oldValues"]) for (const campo of identificadores) {
+      const nome = texto(evento[origem]?.[campo]).trim();
+      if (nome) return { titulo: nome, tipo, origem: origem === "newValues" ? "Identificação nos valores posteriores" : "Identificação nos valores anteriores" };
+    }
+  }
+  return { titulo: reordena ? "Itens do patrimônio" : tipo, tipo,
+    origem: reordena ? "Reordenação no patrimônio identificado abaixo" : "Nome do alvo não informado neste evento" };
+}
 
 function urlSegura(v, campo) {
   if (campo === "fonte" && !/^[a-z][a-z\d+.-]*:|^\/|\\/i.test(v)) return v;
@@ -103,11 +136,14 @@ export function formatarAuditoria(evento) {
   const conhecida = acao !== "Ação não identificada";
   const senha = evento.action === "USER_PASSWORD_CHANGE";
   const reordena = conhecida && verbo === "REORDER";
-  const alvo = reordena ? `itens de ${recurso.toLowerCase()} do patrimônio ${idAuditoria(evento.entityId)}`
-    : `${tipos[prefixo]?.[1] || "registro"} ${idAuditoria(evento.entityId)}`;
+  const identificacao = alvoAuditoria(evento);
+  const alvo = reordena ? `itens de ${recurso.toLowerCase()} do patrimônio identificado abaixo`
+    : identificacao.titulo !== identificacao.tipo ? `${tipos[prefixo]?.[1] || "registro"} “${identificacao.titulo}”`
+      : `${evento.entity === "User" ? "usuário" : "registro"} identificado abaixo`;
   const data = dataHoraAuditoria(evento.createdAt), responsavel = responsavelAuditoria(evento);
   let frase = `Atividade administrativa registrada em ${data}.`;
-  if (conhecida && evento.user) frase = senha && evento.userId === evento.entityId
+  if (conhecida && Object.hasOwn(operacionais, evento.action)) frase = `Em ${data}, foi registrada ${acao.toLowerCase()} em ${recurso}.`;
+  else if (conhecida && evento.user) frase = senha && evento.userId === evento.entityId
     ? `Em ${data}, ${responsavel} alterou sua senha.`
     : `Em ${data}, ${responsavel} ${verbos[verbo][1]} ${alvo}.`;
   else if (conhecida) frase = `Em ${data}, foi registrada ${acao.toLowerCase()} em ${recurso}. Responsável não disponível no registro.`;
@@ -125,11 +161,15 @@ export function formatarAuditoria(evento) {
     } else {
       const exibir = (origem, ausente) => !possui(origem, campo) ? ausente : campo === "localizacao" && origem[campo] !== null
         ? Object.entries(local).filter(([k]) => possui(origem[campo], k)).map(([k, n]) => `${n}: ${valor(origem[campo][k], k)}`).join("\n") || "Valor não disponível"
-        : valor(origem[campo], campo);
-      linhas.push({ campo: rotulos[campo], anterior: exibir(antes, "Valor anterior não disponível"), novo: exibir(depois, "Novo valor não disponível") });
+        : evento.entity === "User" && campo === "isActive" && typeof origem[campo] === "boolean"
+          ? origem[campo] ? "Ativa" : "Desativada" : valor(origem[campo], campo);
+      linhas.push({ campo: evento.entity === "User" && campo === "isActive" ? "Situação da conta" : rotulos[campo], anterior: exibir(antes, "Valor anterior não disponível"), novo: exibir(depois, "Novo valor não disponível") });
     }
   }
-  return { acao, recurso, frase, linhas, responsavel,
+  const ocorrencia = conhecida && evento.action === "USER_DEACTIVATE" ? "Conta administrativa desativada"
+    : conhecida && evento.action === "USER_ACTIVATE" ? "Conta administrativa ativada"
+      : conhecida ? `${acao} · ${recurso}` : "Atividade administrativa registrada";
+  return { acao, recurso, frase, linhas, responsavel, alvo: identificacao, ocorrencia,
     codigoAcao: codigo(evento.action), codigoRecurso: codigo(evento.entity), reordena,
     aviso: senha ? "Valores de senha nunca são apresentados." : !linhas.length ? "Detalhes dessa alteração não disponíveis."
       : linhas.every(l => l.anterior === l.novo) ? "A ocorrência foi registrada, mas a diferença não está disponível nos valores apresentados." : null };

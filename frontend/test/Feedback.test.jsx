@@ -1,9 +1,11 @@
 import { StrictMode } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import Feedback from "../src/pages/Feedback/Feedback";
+import Contato from "../src/pages/Contato/Contato";
+import { feedbackSchema } from "../../backend/src/schemas/feedbackSchema.js";
 import Footer from "../src/components/Footer/Footer";
 import { JANELA_FEEDBACK } from "../src/utils/feedbackPublico";
 
@@ -12,7 +14,7 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); 
 const sucesso = (status = 201, demonstracao = false) => new Response(JSON.stringify({ success: true,
   data: { recebido: true, recebidoEm: "2026-11-03T12:00:00.000Z", ...(demonstracao && { demonstracao: true }) } }), { status });
 const erro = (status, code, retry) => new Response(JSON.stringify({ error: { code, message: "CANARIO_SERVIDOR" } }), { status, headers: retry ? { "Retry-After": retry } : {} });
-const abrir = (strict = false) => render(<MemoryRouter>{strict ? <StrictMode><Feedback /></StrictMode> : <Feedback />}</MemoryRouter>);
+const abrir = (strict = false) => render(<MemoryRouter>{strict ? <StrictMode><Contato /></StrictMode> : <Contato />}</MemoryRouter>);
 function preencher(tipo = "Sugestão", mensagem = "  Busca mais clara 🏛️\r\nOutro parágrafo.  ") {
   fireEvent.click(screen.getByRole("radio", { name: tipo }));
   fireEvent.change(screen.getByLabelText(/Comentário \(obrigatório\)/), { target: { value: mensagem } });
@@ -22,18 +24,41 @@ const status = () => screen.getByRole("status").textContent;
 
 test("flag falsa oculta link e formulário, acesso direto informa indisponibilidade", () => {
   vi.stubEnv("VITE_FEEDBACK_ATIVO", "false"); const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
-  render(<MemoryRouter><Feedback /><Footer /></MemoryRouter>);
+  render(<MemoryRouter><Contato /><Footer /></MemoryRouter>);
   expect(screen.getByRole("heading", { name: "Feedback indisponível" })).toBeDefined();
   expect(screen.queryByRole("form")).toBeNull(); expect(screen.queryByRole("link", { name: "Avaliar o portal" })).toBeNull();
   expect(fetchMock).not.toHaveBeenCalled();
 });
 test("link discreto, três tipos sem seleção inicial, campos e aviso provisório", () => {
-  render(<MemoryRouter><Feedback /><Footer /></MemoryRouter>);
-  expect(screen.getByRole("link", { name: "Avaliar o portal" }).getAttribute("href")).toBe("/feedback");
+  render(<MemoryRouter><Contato /><Footer /></MemoryRouter>);
+  expect(screen.getByRole("link", { name: "Avaliar o portal" }).getAttribute("href")).toBe("/contato");
   expect(screen.getAllByRole("radio")).toHaveLength(3); expect(screen.getAllByRole("radio").every(r => !r.checked)).toBe(true);
   expect(screen.getByText(/ainda sem aprovação institucional/)).toBeDefined();
   expect(screen.getByText(/não gera protocolo/)).toBeDefined();
   expect(screen.queryByLabelText(/E-mail|Nome completo|Nota|Anexo/)).toBeNull();
+});
+test("rota antiga redireciona ao único formulário no Contato e preserva canais institucionais", async () => {
+  const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+  render(<MemoryRouter initialEntries={["/feedback"]}><Routes>
+    <Route path="/feedback" element={<Feedback />} /><Route path="/contato" element={<Contato />} />
+  </Routes></MemoryRouter>);
+  await screen.findByRole("heading", { name: "Fale conosco" });
+  expect(screen.getAllByRole("form")).toHaveLength(1);
+  expect(screen.getByRole("link", { name: "patrimonio.cultural@guarulhos.sp.gov.br" }).getAttribute("href")).toBe("mailto:patrimonio.cultural@guarulhos.sp.gov.br");
+  expect(screen.getByRole("link", { name: "Acessar Fala.BR" })).toBeDefined();
+  expect(screen.getByRole("link", { name: "Acessar Ouvidoria" })).toBeDefined();
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+test("Contato envia somente o contrato F1–F4 sem nome, e-mail, cookie ou JWT", async () => {
+  const fetchMock = vi.fn().mockResolvedValue(sucesso()); vi.stubGlobal("fetch", fetchMock);
+  abrir(); preencher("Sugestão", "  Melhorar a busca  "); enviar();
+  await waitFor(() => expect(status()).toContain("Feedback recebido."));
+  const [url, request] = fetchMock.mock.calls[0], payload = JSON.parse(request.body);
+  expect(url).toBe("/api/feedback");
+  expect(payload).toEqual({ tipo: "SUGESTAO", mensagem: "Melhorar a busca", avisoVersao: "feedback-v1" });
+  expect(feedbackSchema.safeParse(payload).success).toBe(true);
+  expect(request.credentials).toBe("omit"); expect(request.headers.Authorization).toBeUndefined();
+  expect(request.headers["X-Portal-Feedback"]).toBe("1"); expect(request.headers["Idempotency-Key"]).toMatch(/^[A-Za-z0-9_-]{43}$/);
 });
 test("validação obrigatória anuncia erros associados e foca primeiro campo", () => {
   const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock); abrir(); enviar();

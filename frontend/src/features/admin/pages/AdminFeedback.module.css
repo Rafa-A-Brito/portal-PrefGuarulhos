@@ -6,7 +6,7 @@
 .pagina :global(.btn-outline), .modal :global(.btn-outline) { color: #2b255c; border-color: #2b255c; background: #fff; }
 .pagina button, .modal button { min-height: 44px; }
 .pagina :focus-visible, .modal :focus-visible { outline: 3px solid #6558a6; outline-offset: 3px; }
-.filtros { padding: 1rem; border: 1px solid #e0e1e8; border-radius: .6rem; }
+.filtros { padding: 1rem; border: 1px solid var(--line); border-radius: var(--admin-radius-lg, 16px); box-shadow: none; }
 .grade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .grade label { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
 .grade input, .grade select { min-height: 44px; width: 100%; min-width: 0; }
@@ -17,7 +17,7 @@
 .graficos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
 .serie { min-width: 0; border-top: 1px solid #e0e1e8; padding-top: .5rem; }
 .rolagem { overflow: auto; max-width: 100%; max-height: 24rem; border: 1px solid #e0e1e8; border-radius: .6rem; }
-.rolagem table { width: 100%; }
+.rolagem table { width: 100%; border: 0; box-shadow: none; }
 .rolagem caption { text-align: left; padding: .8rem; color: #505466; font-size: .85rem; }
 .rolagem td, .rolagem th { overflow-wrap: anywhere; }
 .rolagem th { overflow-wrap: normal; }

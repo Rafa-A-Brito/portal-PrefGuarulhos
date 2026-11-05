@@ -91,11 +91,12 @@ export default function AdminRegioes() {
     );
   return (
     <section className="admin-regioes" aria-labelledby="titulo-regioes">
-      <h1 id="titulo-regioes">Regiões</h1>
+      <header className="admin-page-head"><h1 id="titulo-regioes">Regiões</h1>
       <p>
         Catálogo de classificação dos patrimônios. Cadastre somente referências
         validadas documentalmente.
-      </p>
+      </p></header>
+      <div className="admin-regioes-toolbar">
       <form
         className="admin-regioes-busca"
         onSubmit={(e) => {
@@ -107,6 +108,8 @@ export default function AdminRegioes() {
         <label>
           Buscar região
           <input
+            type="search"
+            placeholder="Nome ou parte do nome"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             maxLength={100}
@@ -137,6 +140,7 @@ export default function AdminRegioes() {
         >
           Atualizar regiões
         </button>
+      </div>
       </div>
       {erro && <p role="alert">{erro}</p>}
       {sucesso && <p role="status">{sucesso}</p>}
@@ -223,11 +227,10 @@ export default function AdminRegioes() {
       <ul className="admin-regioes-lista">
         {lista.itens.map((r) => (
           <li key={r.id}>
-            <h2>{r.nome}</h2>
-            <p>
-              {r.ativo ? "Ativa" : "Inativa"} · {r.slug}
-            </p>
-            {r.descricao && <p>{r.descricao}</p>}
+            <div className="admin-regioes-info"><h2>{r.nome}</h2>
+              <p><span className="admin-regioes-status" data-ativo={r.ativo}>{r.ativo ? "Ativa" : "Inativa"}</span> <span>{r.slug}</span></p>
+              {r.descricao && <p>{r.descricao}</p>}
+            </div>
             <button
               type="button"
               className="btn-outline"
@@ -246,6 +249,7 @@ export default function AdminRegioes() {
       </ul>
       <nav aria-label="Paginação das regiões" className="admin-regioes-acoes">
         <button
+          className="btn-outline"
           type="button"
           disabled={consulta.pagina <= 1 || carregando || salvando}
           onClick={() => {
@@ -260,6 +264,7 @@ export default function AdminRegioes() {
           {Math.max(1, lista.paginacao.totalPaginas)}
         </span>
         <button
+          className="btn-outline"
           type="button"
           disabled={
             consulta.pagina >= lista.paginacao.totalPaginas ||

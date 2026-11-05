@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ACOES_AUDITORIA, filtrosAuditoria, formatarAuditoria, dataHoraAuditoria } from "../src/features/admin/formatarAuditoria";
+import { ACOES_AUDITORIA, alvoAuditoria, filtrosAuditoria, formatarAuditoria, dataHoraAuditoria } from "../src/features/admin/formatarAuditoria";
+import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "../../backend/src/utils/auditoria.js";
 import { eventosAuditoria as eventos, idAuditoriaFixture as id } from "./fixtures/auditoria";
 
 describe("datas civis de São Paulo", () => {
@@ -23,14 +24,14 @@ describe("datas civis de São Paulo", () => {
 describe("narrativa determinística e valores permitidos", () => {
   it("distingue ator atual, alvo e troca da própria senha", () => {
     const f = formatarAuditoria(eventos[0]);
-    expect(f.frase).toContain("Ana — nome atual alterou usuário " + id(2));
+    expect(f.frase).toContain("Ana — nome atual alterou usuário “Nome alterado”");
     expect(f.linhas[0]).toEqual({ campo: "Nome", anterior: "Nome anterior", novo: "Nome alterado" });
     expect(formatarAuditoria(eventos[3]).frase).toContain("alterou sua senha");
-    expect(formatarAuditoria({ ...eventos[3], entityId: id(2) }).frase).toContain("alterou a senha de usuário " + id(2));
+    expect(formatarAuditoria({ ...eventos[3], entityId: id(2) }).frase).toContain("alterou a senha de usuário identificado abaixo");
   });
   it("responsável ausente não inventa identidade; código desconhecido é neutro", () => {
     expect(formatarAuditoria(eventos[1]).frase).toContain("Responsável não disponível");
-    const f = formatarAuditoria({ ...eventos[0], action: "D1C_EDITORIAL_IMPORT", oldValues: { password: "segredo" } });
+    const f = formatarAuditoria({ ...eventos[0], action: "EVENTO_FUTURO", oldValues: { password: "segredo" } });
     expect(f.frase).toMatch(/^Atividade administrativa registrada/); expect(f.linhas).toEqual([]);
     expect(formatarAuditoria({ ...eventos[0], entity: "Novidade" }).acao).toBe("Ação não identificada");
   });
@@ -46,7 +47,7 @@ describe("narrativa determinística e valores permitidos", () => {
   });
   it("reordenação identifica patrimônio pai e só mostra IDs/ordens permitidos", () => {
     const f = formatarAuditoria({ ...eventos[2], newValues: { itens: [{ id: id(5), ordem: 0, token: "segredo" }] } });
-    expect(f.frase).toContain("do patrimônio " + id(4)); expect(f.reordena).toBe(true);
+    expect(f.frase).toContain("do patrimônio identificado abaixo"); expect(f.reordena).toBe(true);
     expect(f.linhas[0].novo).toBe(`ID: ${id(5)} · Ordem: 0`); expect(JSON.stringify(f)).not.toContain("segredo");
   });
   it("não apresenta credenciais, estruturas desconhecidas ou parâmetros de URLs", () => {
@@ -62,8 +63,38 @@ describe("narrativa determinística e valores permitidos", () => {
     const f = formatarAuditoria({ ...eventos[0], oldValues: { name: "<img src=x onerror=alert(1)>" }, newValues: { name: "<img src=x onerror=alert(1)>" } });
     expect(f.linhas[0].novo).toContain("<img"); expect(f.aviso).toContain("ocorrência");
   });
-  it.each(Object.keys(ACOES_AUDITORIA))("código conhecido %s gera verbo somente com entidade correta", action => {
-    const entity = ({ USER: "User", PATRIMONIO: "Patrimonio", REGIAO: "RegiaoPatrimonio", IMAGEM: "PatrimonioImagem", DOCUMENTO: "PatrimonioDocumento", FATO: "PatrimonioFato", LIGACAO: "PatrimonioLigacao", EXPOSICAO: "Exposicao", NOVIDADE: "Novidade" })[action.split("_")[0]];
+  it.each(Object.values(AUDIT_ACTIONS))("enumeração real backend: %s é reconhecida", action => {
+    const entity = AUDIT_ENTITIES[action.split("_")[0]];
+    expect(ACOES_AUDITORIA).toHaveProperty(action);
     expect(formatarAuditoria({ ...eventos[0], action, entity }).acao).not.toBe("Ação não identificada");
+  });
+  it.each([
+    ["INITIAL_LOAD_BINDING", "Patrimonio", "Vinculação à carga inicial"],
+    ["SYNC_PATRIMONIO", "Patrimonio", "Sincronização de patrimônio"],
+    ["D1C_EDITORIAL_IMPORT", "PatrimonioFato", "Importação editorial"],
+    ["D1C_EDITORIAL_IMPORT", "PatrimonioLigacao", "Importação editorial"],
+  ])("emissor operacional %s / %s sem inferir criação/edição", (action, entity, rotulo) => {
+    const f = formatarAuditoria({ ...eventos[0], action, entity, oldValues: null, newValues: { operacao: "create", manifesto: "não divulgar" } });
+    expect(f.acao).toBe(rotulo); expect(f.linhas).toEqual([]); expect(f.frase).not.toMatch(/criou|alterou/);
+    expect(JSON.stringify(f)).not.toContain("não divulgar");
+  });
+  it.each(["__proto__", "constructor", "EVENTO_DESCONHECIDO"])("fallback seguro para %s", action => {
+    expect(formatarAuditoria({ action, entity: action }).acao).toBe("Ação não identificada");
+  });
+  it.each([["USER_DEACTIVATE", true, false, "Ativa", "Desativada"], ["USER_ACTIVATE", false, true, "Desativada", "Ativa"]])(
+    "%s mostra somente os estados fornecidos e não atribui o nome do ator ao alvo", (action, antes, depois, anterior, novo) => {
+      const evento = { ...eventos[0], action, oldValues: { isActive: antes }, newValues: { isActive: depois } };
+      const f = formatarAuditoria(evento);
+      expect(f.linhas).toEqual([{ campo: "Situação da conta", anterior, novo }]);
+      expect(f.alvo.titulo).toBe("Conta administrativa"); expect(f.alvo.origem).toContain("não informado");
+      expect(f.responsavel).toBe("Ana — nome atual");
+      expect(JSON.stringify(f)).not.toMatch(/sessionId|revokedAt|página visitada/);
+      expect(formatarAuditoria({ ...evento, oldValues: null }).linhas[0].anterior).toBe("Valor anterior não disponível");
+    });
+  it("identificação legível usa apenas valores fornecidos do alvo", () => {
+    expect(alvoAuditoria(eventos[0]).titulo).toBe("Nome alterado");
+    expect(alvoAuditoria({ ...eventos[0], newValues: null }).titulo).toBe("Nome anterior");
+    expect(alvoAuditoria({ ...eventos[0], newValues: null, oldValues: null }).titulo).toBe("Conta administrativa");
+    expect(alvoAuditoria({ ...eventos[0], action: "PATRIMONIO_UPDATE", entity: "Patrimonio", newValues: { nome: "Casa de teste" } }).titulo).toBe("Casa de teste");
   });
 });

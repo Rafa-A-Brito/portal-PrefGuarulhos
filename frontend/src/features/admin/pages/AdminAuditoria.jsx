@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { buscarAuditoria, erroAuditoria, listarAuditoria } from "../../../services/auditoriaApi";
 import { listarUsuarios } from "../../../services/adminApi";
 import { ACOES_AUDITORIA, RECURSOS_AUDITORIA, acaoAuditoria, dataHoraAuditoria, filtrosAuditoria,
-  formatarAuditoria, idAuditoria, recursoAuditoria, responsavelAuditoria } from "../formatarAuditoria";
+  alvoAuditoria, formatarAuditoria, idAuditoria, recursoAuditoria, responsavelAuditoria } from "../formatarAuditoria";
 import styles from "./AdminAuditoria.module.css";
 
 const VAZIO = { inicio: "", fim: "", userId: "", action: "", entity: "", entityId: "" };
@@ -44,7 +44,7 @@ function DetalheAuditoria({ id, fechar }) {
   const f = evento && formatarAuditoria(evento);
   function manterFoco(e) {
     if (e.key !== "Tab") return;
-    const itens = [...dialog.current.querySelectorAll('button:not(:disabled), [tabindex="0"]')];
+    const itens = [...dialog.current.querySelectorAll('button:not(:disabled), summary, [tabindex="0"]')];
     const primeiro = itens[0], ultimo = itens.at(-1);
     if (e.shiftKey && [primeiro, titulo.current].includes(document.activeElement)) {
       e.preventDefault(); ultimo?.focus();
@@ -61,23 +61,29 @@ function DetalheAuditoria({ id, fechar }) {
     </div>
     {carregando ? <p role="status">Carregando alteração…</p> : resultado.erro
       ? <Falha erro={resultado.erro} repetir={() => setRevisao(v => v + 1)} /> : <>
+        <div className={styles.ocorrencia}><p className={styles.nota}>O que aconteceu?</p><p>{f.ocorrencia}</p></div>
         <p className={styles.frase}>{f.frase}</p>
         <dl className={styles.metadados}>
-          <div><dt>Responsável</dt><dd>{f.responsavel}{evento.user?.email && <small>{evento.user.email}</small>}</dd></div>
-          <div><dt>Data/hora · America/Sao_Paulo</dt><dd>{dataHoraAuditoria(evento.createdAt)}<small>{evento.createdAt}</small></dd></div>
-          <div><dt>Ação registrada</dt><dd>{f.acao}<small>{f.codigoAcao}</small></dd></div>
-          <div><dt>Seção/recurso</dt><dd>{f.recurso}<small>{f.codigoRecurso}</small></dd></div>
+          <div><dt>Quem realizou?</dt><dd>{f.responsavel}{evento.user?.email && <small>{evento.user.email}</small>}</dd></div>
+          <div><dt>Quem ou o que foi afetado?</dt><dd>{f.alvo.titulo}<small>{f.alvo.origem}</small>
+            <small>ID do alvo: {idAuditoria(evento.entityId)}</small></dd></div>
+          <div><dt>Quando aconteceu? · America/Sao_Paulo</dt><dd>{dataHoraAuditoria(evento.createdAt)}</dd></div>
+          <div><dt>Seção/recurso</dt><dd>{f.recurso}</dd></div>
+        </dl>
+        <details className={styles.identificadores}><summary>Identificadores do registro</summary><dl className={styles.metadados}>
+          <div><dt>Código da ação</dt><dd>{f.codigoAcao}</dd></div>
+          <div><dt>Código do recurso</dt><dd>{f.codigoRecurso}</dd></div>
           <div><dt>ID do evento</dt><dd>{idAuditoria(evento.id)}</dd></div>
           <div><dt>{f.reordena ? "ID do patrimônio pai (reordenação)" : "ID do registro alvo"}</dt><dd>{idAuditoria(evento.entityId)}</dd></div>
           <div><dt>ID do responsável</dt><dd>{idAuditoria(evento.userId)}</dd></div>
           {!f.reordena && evento.registro && Object.hasOwn(evento.registro, "patrimonioId") &&
             <div><dt>Patrimônio relacionado (ID)</dt><dd>{idAuditoria(evento.registro.patrimonioId)}</dd></div>}
-        </dl>
+        </dl></details>
         <p className={styles.nota}>Nome e e-mail do responsável refletem o cadastro atual, não uma fotografia histórica.
           A seção deriva do recurso; não identifica sessão ou página navegada.</p>
         {f.aviso && <p>{f.aviso}</p>}
         {f.linhas.length > 0 && <div className={styles.rolagem} tabIndex={0} role="region" aria-label="Comparação de valores">
-          <table className={`admin-table ${styles.comparacao}`}><caption>Valores permitidos registrados no evento</caption>
+          <table className={`admin-table ${styles.comparacao}`}><caption>O que mudou? Valores registrados no evento</caption>
             <thead><tr><th scope="col">Campo</th><th scope="col">Anterior</th><th scope="col">Novo</th></tr></thead>
             <tbody>{f.linhas.map(l => <tr key={l.campo}><th scope="row">{l.campo}</th><td>{l.anterior}</td><td>{l.novo}</td></tr>)}</tbody>
           </table>
@@ -182,7 +188,7 @@ export default function AdminAuditoria() {
               <tbody>{data.itens.map(e => <tr key={e.id}>
                 <td>{responsavelAuditoria(e)}{e.user?.email && <small>{e.user.email}</small>}</td>
                 <td><time dateTime={e.createdAt}>{dataHoraAuditoria(e.createdAt)}</time></td>
-                <td>{acaoAuditoria(e)}</td><td>{recursoAuditoria(e)}</td><td className={styles.identificador}>{idAuditoria(e.entityId)}
+                <td>{acaoAuditoria(e)}</td><td>{recursoAuditoria(e)}</td><td>{alvoAuditoria(e).titulo}<small className={styles.identificador}>ID: {idAuditoria(e.entityId)}</small>
                   {["FATO_REORDER", "LIGACAO_REORDER"].includes(e.action) && <small>Patrimônio pai</small>}</td>
                 <td><button type="button" className="btn-outline" aria-label={`Detalhes da alteração ${idAuditoria(e.id)}`} onClick={() => setSelecionado(e.id)}>Detalhes</button></td>
               </tr>)}</tbody>

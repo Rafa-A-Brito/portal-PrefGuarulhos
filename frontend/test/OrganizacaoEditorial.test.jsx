@@ -70,13 +70,15 @@ test("D2 catálogo vazio; ADMIN cria, edita sem mudar slug e inativa/reativa", a
   await user.clear(screen.getByLabelText("Descrição e referência documental"));
   await user.click(screen.getByLabelText("Região ativa"));
   await user.click(screen.getByRole("button", { name: "Salvar região" }));
-  await screen.findByText(/Inativa · regiao-teste/);
+  const inativa = await screen.findByText("Inativa");
+  expect(inativa.closest("li").textContent).toContain("regiao-teste");
   expect(writes[1]).toEqual({ method: "patch", url: `/admin/regioes/${region.id}`, body: { nome: "Nome revisado", descricao: null, ativo: false } });
   expect(regions[0].slug).toBe(region.slug);
   await user.click(screen.getByRole("button", { name: "Editar região Nome revisado" }));
   await user.click(screen.getByLabelText("Região ativa"));
   await user.click(screen.getByRole("button", { name: "Salvar região" }));
-  await screen.findByText(/Ativa · regiao-teste/);
+  const ativa = await screen.findByText("Ativa");
+  expect(ativa.closest("li").textContent).toContain("regiao-teste");
 });
 test("D2 EDITOR não tem interface de gestão nem executa mutação regional", () => {
   auth.perfil = "EDITOR"; render(<AdminRegioes />);

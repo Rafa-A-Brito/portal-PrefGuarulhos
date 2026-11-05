@@ -42,6 +42,14 @@
 .pendente > button { display: block; }
 .decisao { padding: 16px; margin-top: 16px; border: 1px solid #85818f; border-radius: 8px; }
 .decisao button { display: block; }
+.integrado { max-width: 780px; margin-inline: auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.65; }
+.integrado .finalidade { padding: 0; border: 0; margin-bottom: 1rem; }
+.integrado .finalidade h2 { font-size: 1.1rem; }
+.integrado :global(.contato-form) { max-width: none; margin: 0; gap: 0; }
+.integrado .tipos, .integrado .campo, .integrado .aviso { margin-bottom: 1.25rem; }
+.integrado .campo textarea { box-sizing: border-box; }
+.integrado a { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
+.integrado :is(a, button, input, textarea):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
 @media (max-width: 480px) {
   .pagina { padding: 24px 12px 40px; }
   .cartao { padding: 18px 14px; }
