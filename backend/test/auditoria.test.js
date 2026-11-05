@@ -109,7 +109,8 @@ test("edição própria e de outro usuário distinguem responsável do alvo; per
     const { tx, events } = recorder(); let row = { ...actor };
     tx.$queryRaw = async () => [];
     tx.user = { findUnique: async () => row, count: async () => 2,
-        update: async ({ data }) => (row = { ...row, ...data }) };
+        update: async ({ data }) => (row = { ...row, ...data, tokenVersion: (row.tokenVersion ?? 0) + (data.tokenVersion?.increment ?? 0) }) };
+    tx.authSession = { updateMany: async () => ({ count: 0 }) };
     stub(t, prisma, "$transaction", async cb => cb(tx));
     await users.updateAdmin(actor.id, { nome: "Nome novo" }, actor);
     assert.equal(events[0].entityId, actor.id); assert.equal(events[0].userId, actor.id);

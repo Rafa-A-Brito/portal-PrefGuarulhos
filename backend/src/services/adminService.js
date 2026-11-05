@@ -141,7 +141,12 @@ export async function changeAdminStatus(id, ativo, actor) {
         if (current.isActive === ativo) return toAdmin(current);
         if (!ativo) await ensureAnotherAdmin(transaction, current);
         const updated = await transaction.user.update({
-            where: { id }, data: { isActive: ativo }, select: userSelect,
+            where: { id }, data: { isActive: ativo, tokenVersion: { increment: 1 } }, select: userSelect,
+        });
+        // Também na reativação: contas anteriormente inativas podem ter sessões
+        // emitidas antes desta política. Nunca sobrescrever revogações anteriores.
+        await transaction.authSession.updateMany({
+            where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() },
         });
         await registrarAuditoria(transaction, { userId: actor.id, action: ativo ? A.USER_ACTIVATE : A.USER_DEACTIVATE,
             entity: E.USER, entityId: id, before: { isActive: !ativo }, after: { isActive: ativo } });

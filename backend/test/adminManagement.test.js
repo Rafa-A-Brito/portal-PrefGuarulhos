@@ -79,10 +79,24 @@ function setup(t, { actorRole = "ADMIN", otherRole = "EDITOR", otherActive = tru
                 throw new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "7.10.0" });
             }
             updates++;
-            Object.assign(row, data, { updatedAt: new Date() });
+            const tokenVersion = row.tokenVersion + (data.tokenVersion?.increment ?? 0);
+            Object.assign(row, data, { tokenVersion, updatedAt: new Date() });
             return row;
         },
-    }, authSession: { create: async ({ data }) => data }, $queryRaw: async (strings, id) => {
+    }, authSession: {
+        create: async ({ data }) => {
+            const row = rows.find(r => r.id === data.userId);
+            row.authSessions = [{ ...data, revokedAt: null }];
+            return data;
+        },
+        updateMany: async ({ where, data }) => {
+            assert.ok(locked);
+            assert.equal(where.revokedAt, null);
+            const sessions = rows.find(r => r.id === where.userId).authSessions.filter(s => s.revokedAt === null);
+            for (const session of sessions) Object.assign(session, data);
+            return { count: sessions.length };
+        },
+    }, $queryRaw: async (strings, id) => {
         if (strings.join("?").includes("SELECT id FROM users WHERE id =")) { locked = true; return []; }
         assert.match(strings.join("?"), /role = 'ADMIN' AND is_active = true/);
         assert.match(strings.join("?"), /ORDER BY id FOR UPDATE/);
@@ -254,14 +268,20 @@ test("status é idempotente, preserva atualizadoEm e permite reativação", asyn
     let result = await request(mock.token, "PATCH", target, { ativo: true });
     assert.equal(result.status, 200);
     assert.equal(mock.updates, 0);
+    assert.equal(mock.other.tokenVersion, 0);
     result = await request(mock.token, "PATCH", target, { ativo: false });
     const first = result.body.data;
     result = await request(mock.token, "PATCH", target, { ativo: false });
     assert.deepEqual(result.body.data, first);
     assert.equal(mock.updates, 1);
+    assert.equal(mock.other.tokenVersion, 1);
+    const revokedAt = mock.other.authSessions[0].revokedAt;
+    assert.ok(revokedAt);
     result = await request(mock.token, "PATCH", target, { ativo: true });
     assert.equal(result.body.data.ativo, true);
     assert.equal(mock.updates, 2);
+    assert.equal(mock.other.tokenVersion, 2);
+    assert.equal(mock.other.authSessions[0].revokedAt, revokedAt);
 });
 
 test("desativação bloqueia login e JWT já emitido; rebaixamento retira autorização", async (t) => {
@@ -280,9 +300,13 @@ test("desativação bloqueia login e JWT já emitido; rebaixamento retira autori
     assert.equal((await login()).status, 401);
     assert.equal((await request(token)).status, 401);
     assert.equal((await request(mock.token, "PATCH", `/${mock.other.id}/status`, { ativo: true })).status, 200);
-    assert.equal((await request(token)).status, 200);
+    assert.equal((await request(token)).status, 401);
+    const relogged = await login();
+    assert.equal(relogged.status, 200);
+    const currentToken = (await relogged.json()).data.token;
+    assert.equal((await request(currentToken)).status, 200);
     assert.equal((await request(mock.token, "PATCH", `/${mock.other.id}`, { role: "EDITOR" })).status, 200);
-    assert.equal((await request(token)).status, 403);
+    assert.equal((await request(currentToken)).status, 403);
 });
 
 test("DELETE não existe e não remove usuário", async (t) => {
