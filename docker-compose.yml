@@ -59,8 +59,8 @@ services:
     read_only: true
     tmpfs:
       - /tmp:mode=1777
-    ports:
-      - "127.0.0.1:${BACKEND_PORT:-3333}:3333"
+    expose:
+      - "3333"
     volumes:
       - uploads_data:/app/uploads
     healthcheck:
