@@ -16,8 +16,10 @@ test("segurança de login em PostgreSQL descartável", { skip: !process.env.TEST
     const { default: db } = await import("../src/config/prisma.js");
     t.after(() => db.$disconnect());
     const { criarControleConta } = await import("../src/services/loginAccountService.js");
-    const { securityDigest } = await import("../src/config/authSecurity.js");
+    const { criarRegistroAcessos, accessSignals } = await import("../src/services/loginAccessService.js");
+    const { security, securityDigest } = await import("../src/config/authSecurity.js");
     const { hashPassword } = await import("../src/utils/password.js");
+    const { logOutput } = await import("../src/utils/logger.js");
     const email = randomUUID() + "@example.test", password = "IntegracaoSegura123!";
     const user = await db.user.create({ data: { email, name: "Teste", passwordHash: await hashPassword(password) } });
     const keys = [];
@@ -94,6 +96,109 @@ test("segurança de login em PostgreSQL descartável", { skip: !process.env.TEST
             state = await db.loginAccountLimit.findUnique({ where: { key: a.key } });
             assert.equal(state.revision, state.cleared);
         });
+        await t.test("login responde com o contrato atual mesmo quando o registro assíncrono falha", async () => {
+            const { default: app } = await import("../src/app.js");
+            const { loginAccesses } = await import("../src/services/loginAccessService.js");
+            const original = loginAccesses.record;
+            const server = app.listen(0, "127.0.0.1"); await once(server, "listening");
+            let release, started;
+            const pending = new Promise(resolve => { release = resolve; });
+            const began = new Promise(resolve => { started = resolve; });
+            loginAccesses.record = async () => { started(); await pending; throw new Error("indisponibilidade simulada"); };
+            try {
+                await db.loginAccountLimit.deleteMany({ where: { key: securityDigest("login-account", email) } });
+                const response = await fetch(`http://127.0.0.1:${server.address().port}/api/auth/login`, {
+                    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password }),
+                });
+                assert.equal(response.status, 200); assert.equal(response.headers.get("cache-control"), "no-store");
+                const body = await response.json(); assert.equal(body.success, true);
+                assert.ok(body.data.token); assert.ok(body.data.refreshToken); assert.ok(body.data.sessionExpiresAt);
+                await began; // A resposta já chegou enquanto o trabalho secundário segue pendente.
+                release(); await new Promise(resolve => setImmediate(resolve));
+            } finally { release(); loginAccesses.record = original; await new Promise(resolve => server.close(resolve)); }
+        });
+        const chrome = "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36";
+        const firefox = "Mozilla/5.0 (Windows NT 10.0) Firefox/131.0";
+        const signals = (ip, userAgent = chrome) => ({ ip, userAgent });
+        const sent = [], logs = [], originalLog = logOutput.write;
+        logOutput.write = (_level, line) => logs.push(line);
+        const config = { ...security, AUTH_ALERT_ENABLED: true };
+        const accesses = criarRegistroAcessos({ clock, config, locate: async () => null, transport: async message => sent.push(message) });
+        try {
+            await t.test("referência, navegador/rede conhecidos, troca só de IP/rede não alerta", async () => {
+                assert.equal((await accesses.record(user.id, signals("192.0.2.1"))).suspicious, false);
+                assert.equal((await accesses.record(user.id, signals("192.0.2.90"))).suspicious, false);
+                assert.equal((await accesses.record(user.id, signals("198.51.100.3"))).suspicious, false);
+                assert.equal((await accesses.record(user.id, signals("198.51.100.4", firefox))).suspicious, false);
+                assert.equal(sent.length, 0);
+                assert.deepEqual(accessSignals(signals("2001:db8:1:2::1")), accessSignals(signals("2001:0db8:0001:9::5")));
+            });
+            await t.test("suspeita, reserva concorrente/deduplicação, destinatário cadastrado e envio fora do login", async () => {
+                const safari = "Mozilla/5.0 (iPhone) Safari/605.1";
+                const rows = await Promise.all(Array.from({ length: 5 }, () => accesses.record(user.id, signals("203.0.113.7", safari))));
+                assert.equal(rows.filter(r => r.suspicious).length, 1);
+                assert.equal(rows.filter(r => r.deliveryState === "pending").length, 1);
+                assert.equal(sent.length, 0);
+                await Promise.all([accesses.deliver(), accesses.deliver()]);
+                assert.equal(sent.length, 1); assert.equal(sent[0].to, email);
+                assert.equal((await accesses.record(user.id, signals("203.0.114.1", "Mozilla (Linux) Edg/130.0"))).deliveryState, "none");
+            });
+            await t.test("localização e provedor indisponíveis; fila persiste e tenta de novo; cooldown", async () => {
+                time += 86400001;
+                const unavailable = criarRegistroAcessos({ clock, config, locate: async () => { throw new Error("senha-token-cookie"); },
+                    transport: async () => { throw new Error("senha-token-cookie"); } });
+                const row = await unavailable.record(user.id, signals("10.2.3.4", "Mozilla (Android) OPR/90.0"));
+                assert.equal(row.suspicious, true); assert.equal(row.regionKey, null); assert.equal(row.deliveryState, "pending");
+                await unavailable.deliver();
+                const stored = await db.loginAccess.findUnique({ where: { id: row.id } });
+                assert.equal(stored.deliveryState, "pending"); assert.equal(stored.attempts, 1);
+                await db.loginAccess.update({ where: { id: row.id }, data: { availableAt: clock() } });
+                await accesses.deliver(); assert.equal(sent.length, 2);
+                assert.doesNotMatch(logs.join(""), /senha-token-cookie|203\.0\.113|Safari|password|refreshToken/);
+            });
+            await t.test("lease abandonada é recuperada por outra instância; envio falha após três tentativas", async () => {
+                time += 86400001;
+                const row = await accesses.record(user.id, signals("10.4.5.6", "Mozilla (Linux) Safari/605.1"));
+                assert.equal(row.deliveryState, "pending");
+                await db.loginAccess.update({ where: { id: row.id }, data: {
+                    deliveryState: "sending", attempts: 1, lease: randomUUID(), availableAt: new Date(time - 1),
+                } });
+                time += 86400001;
+                const waiting = await accesses.record(user.id, signals("10.9.8.7", "Mozilla (Macintosh) Edg/130.0"));
+                assert.equal(waiting.deliveryState, "none"); // Uma pendência impede acumular avisos em dias diferentes.
+                const otherWorker = criarRegistroAcessos({ clock, config, transport: async message => sent.push(message) });
+                const count = sent.length;
+                await Promise.all([otherWorker.deliver(), accesses.deliver()]);
+                assert.equal(sent.length, count + 1); assert.equal(sent.at(-1).idempotencyKey, row.id);
+                const delivered = await db.loginAccess.findUnique({ where: { id: row.id } });
+                assert.equal(+delivered.noticeAt, time); // Intervalo começa na entrega efetiva, não na reserva antiga.
+                time += 86400001;
+                const next = await accesses.record(user.id, signals("10.5.6.7", "Mozilla (Windows) OPR/90.0"));
+                assert.equal(next.deliveryState, "pending");
+                const broken = criarRegistroAcessos({ clock, config, transport: async () => { throw new Error("offline"); } });
+                for (let i = 1; i <= 3; i++) {
+                    assert.equal(await broken.deliver(), true);
+                    const stored = await db.loginAccess.findUnique({ where: { id: next.id } });
+                    assert.equal(stored.attempts, i); assert.equal(stored.deliveryState, i === 3 ? "failed" : "pending");
+                    if (i < 3) await db.loginAccess.update({ where: { id: next.id }, data: { availableAt: clock() } });
+                }
+                assert.equal(await broken.deliver(), false);
+            });
+            await t.test("região opcional combina com navegador; desativado não enfileira; retenção e limpeza", async () => {
+                const regional = criarRegistroAcessos({ clock, config: { ...config, AUTH_ALERT_ENABLED: false }, locate: async () => "BR-SP" });
+                await regional.record(user.id, signals("192.0.2.1"));
+                const newRegion = criarRegistroAcessos({ clock, config: { ...config, AUTH_ALERT_ENABLED: false }, locate: async () => "BR-RJ" });
+                const row = await newRegion.record(user.id, signals("192.0.2.1", "Mozilla (Macintosh) Firefox/131.0"));
+                assert.equal(row.suspicious, true); assert.equal(row.deliveryState, "none");
+                const serialized = JSON.stringify(row);
+                assert.doesNotMatch(serialized, /192\.0\.2|Mozilla|BR-RJ|passwordHash|refreshToken|cookie/);
+                await db.loginAccess.updateMany({ where: { userId: user.id }, data: { expiresAt: new Date(0) } });
+                await db.loginAccountLimit.updateMany({ where: { key: { in: keys } }, data: { expiresAt: new Date(0) } });
+                await accesses.cleanup();
+                assert.equal(await db.loginAccess.count({ where: { userId: user.id } }), 0);
+                assert.equal(await db.loginAccountLimit.count({ where: { key: { in: keys } } }), 0);
+            });
+        } finally { logOutput.write = originalLog; }
     } finally {
         await db.user.delete({ where: { id: user.id } });
         await db.loginAccountLimit.deleteMany({ where: { key: { in: keys } } });

@@ -1,7 +1,8 @@
 import { auth } from "../services/index.js";
 import env from "../config/env.js";
-const { loginAccounts } = env.MOCK_DATA ? {} : await import("../services/loginAccountService.js");
-const { accountLimitError } = env.MOCK_DATA ? {} : await import("../middlewares/loginAccountLimiter.js");
+const { loginAccounts, accountLimitError, scheduleAccess } = env.MOCK_DATA ? {} : Object.assign({},
+    ...await Promise.all([import("../services/loginAccountService.js"), import("../middlewares/loginAccountLimiter.js"),
+        import("../services/loginAccessService.js")]));
 const { login: loginService, changePassword: changePasswordService, refresh: refreshService, logout: logoutService } = auth;
 
 export async function login(req, res) {
@@ -17,6 +18,8 @@ export async function login(req, res) {
     }
     if (req.loginAttempt) {
         await loginAccounts.finish(req.loginAttempt, true);
+        const signals = { ip: req.ip, userAgent: req.get("user-agent") };
+        res.once("finish", () => scheduleAccess(data.user.id, signals));
     }
     res.setHeader("Cache-Control", "no-store");
     res.json({ success: true, data });

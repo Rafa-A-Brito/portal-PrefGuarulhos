@@ -40,6 +40,7 @@ test("R1: fonte C2 e migrations aplicadas permanecem preservadas; trilhas nao co
         "20261027120000_add_operacao_metricas",
         "20261102120000_add_feedback",
         "20261110120000_login_account_limits",
+        "20261110130000_login_accesses",
     ]);
     assert.equal(team.length, 11);
     assert.equal(team.includes("20261014010000_add_fatos_ligacoes"), false);

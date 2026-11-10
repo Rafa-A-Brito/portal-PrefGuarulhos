@@ -77,6 +77,7 @@ model User {
   isActive     Boolean  @default(true) @map("is_active")
   tokenVersion Int      @default(0) @map("token_version")
   authSessions AuthSession[]
+  loginAccesses LoginAccess[]
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -101,6 +102,29 @@ model LoginAccountLimit {
 
   @@index([expiresAt])
   @@map("login_account_limits")
+}
+
+model LoginAccess {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String @map("user_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)
+  browserKey     String? @map("browser_key") @db.Char(64)
+  networkKey     String? @map("network_key") @db.Char(64)
+  regionKey      String? @map("region_key") @db.Char(64)
+  fingerprint    String @db.Char(64)
+  suspicious     Boolean @default(false)
+  noticeAt       DateTime? @map("notice_at") @db.Timestamptz(3)
+  deliveryState  String @default("none") @map("delivery_state") @db.VarChar(16)
+  attempts       Int @default(0)
+  availableAt    DateTime? @map("available_at") @db.Timestamptz(3)
+  lease          String? @db.Uuid
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([deliveryState, availableAt])
+  @@map("login_accesses")
 }
 
 model AuthSession {
