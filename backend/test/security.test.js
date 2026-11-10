@@ -24,6 +24,10 @@ function attempt(limiter, ip, email) {
     return { headers, error };
 }
 
+const { beforeEach: beforeEachLoginSecurity } = await import("node:test");
+const { mockLoginSecurity } = await import("./loginSecurityFixture.js");
+beforeEachLoginSecurity(mockLoginSecurity);
+
 test("limite conta/IP normaliza e-mail, Retry-After decresce e janela expira", () => {
     let time = 0;
     const limiter = criarLimitadorLogin({ ipMax: 20, accountMax: 2, windowMs: 10000, now: () => time });

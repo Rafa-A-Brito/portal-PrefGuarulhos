@@ -122,6 +122,10 @@ async function request(token, method = "GET", suffix = "", body) {
     return { status: response.status, body: await response.json() };
 }
 
+const { beforeEach: beforeEachLoginSecurity } = await import("node:test");
+const { mockLoginSecurity } = await import("./loginSecurityFixture.js");
+beforeEachLoginSecurity(mockLoginSecurity);
+
 for (const method of ["GET", "PATCH", "STATUS", "POST"]) {
     test(`${method}: exige token e ADMIN`, async (t) => {
         const mock = setup(t, { actorRole: "EDITOR" });

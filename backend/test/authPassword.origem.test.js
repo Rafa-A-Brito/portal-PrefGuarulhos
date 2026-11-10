@@ -57,6 +57,10 @@ async function call(path, { token, body, method = "PATCH" } = {}) {
     return { status: response.status, body: await response.json() };
 }
 
+const { beforeEach: beforeEachLoginSecurity } = await import("node:test");
+const { mockLoginSecurity } = await import("./loginSecurityFixture.js");
+beforeEachLoginSecurity(mockLoginSecurity);
+
 test("reutiliza regras de cadastro, preserva espaços e rejeita campos extras", () => {
     const current = " SenhaInicial123! ", next = " NovaSenhaSegura123! ";
     assert.deepEqual(changePasswordSchema.parse({ senhaAtual: current, novaSenha: next }), { senhaAtual: current, novaSenha: next });

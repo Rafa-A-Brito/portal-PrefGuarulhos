@@ -75,6 +75,10 @@ function mockUsers({ authenticatedRole = "ADMIN", onCreate } = {}) {
     };
 }
 
+const { beforeEach: beforeEachLoginSecurity } = await import("node:test");
+const { mockLoginSecurity } = await import("./loginSecurityFixture.js");
+beforeEachLoginSecurity(mockLoginSecurity);
+
 test("sem autenticação, cadastro retorna 401", async () => {
     const response = await adminRequest(null, {
         nome: "Maria",

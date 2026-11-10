@@ -91,6 +91,18 @@ model User {
   @@map("users")
 }
 
+model LoginAccountLimit {
+  key          String @id @db.Char(64)
+  generation   String @db.Uuid
+  revision     BigInt @default(0)
+  cleared      BigInt @default(0)
+  blockedUntil DateTime? @map("blocked_until") @db.Timestamptz(3)
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("login_account_limits")
+}
+
 model AuthSession {
   id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId       String @map("user_id") @db.Uuid

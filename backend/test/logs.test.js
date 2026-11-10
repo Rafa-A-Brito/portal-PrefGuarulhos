@@ -25,6 +25,10 @@ function logs(t) { const entries = []; stub(t, logOutput, "write", (_level, line
 async function post(route, body) { return fetch(base + route, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); }
 const secretError = () => Object.assign(new Error("postgresql://admin:senha@db/portal SELECT password_hash, tokenHash\nAuthorization: Bearer segredo\nC:\\privado"), { code: "ECONNREFUSED" });
 
+const { beforeEach: beforeEachLoginSecurity } = await import("node:test");
+const { mockLoginSecurity } = await import("./loginSecurityFixture.js");
+beforeEachLoginSecurity(mockLoginSecurity);
+
 test("JSON contém apenas campos permitidos, limita dados e ignora mensagens/stack/contextos sensíveis", t => {
     const entries = logs(t), requestId = randomUUID();
     requestContext.run({ requestId, req: { method: "GET", baseUrl: "/api/admin", route: { path: "/auditoria" } } }, () => {
