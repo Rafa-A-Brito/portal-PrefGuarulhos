@@ -41,8 +41,9 @@ test("R1: fonte C2 e migrations aplicadas permanecem preservadas; trilhas nao co
         "20261102120000_add_feedback",
         "20261110120000_login_account_limits",
         "20261110130000_login_accesses",
+        "20261116120000_add_status_visitacao",
     ]);
-    assert.equal(team.length, 11);
+    assert.equal(team.length, 12);
     assert.equal(team.includes("20261014010000_add_fatos_ligacoes"), false);
     const schema = readFileSync(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
     for (const name of ["PatrimonioFato", "PatrimonioLigacao"]) assert.equal(schema.match(new RegExp("model " + name + " ", "g")).length, 1);

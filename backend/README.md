@@ -40,6 +40,8 @@ Aplicação web interativa para o mapeamento, consulta e preservação da memór
 
 Documentação da [classificação territorial dos patrimônios](docs/classificacao-territorial.md): códigos, rótulos, contratos e aplicação da migration.
 
+Documentação do [status de visitação](docs/status-visitacao.md): contrato, migration, seeds e comandos Docker.
+
 ---
 
 ## 📖 Sobre o Projeto

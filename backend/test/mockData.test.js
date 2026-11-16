@@ -149,6 +149,25 @@ test("fixtures coerentes, bcrypt, diretórios e assinatura ignoram configuraçõ
     }
 });
 
+test("demonstração inclui publicado fechado e preserva/limpa visitação nas edições", async () => {
+    const detail = await data("/api/patrimonios/espaco-imaginario-2-demo");
+    const list = await data("/api/patrimonios?limite=100");
+    assert.equal(detail.statusVisitacao, "TEMPORARIAMENTE_FECHADO");
+    assert.match(detail.motivoRestricao, /reforma/);
+    assert.equal(detail.previsaoReabertura, "2027-03-15");
+    assert.equal(list.itens.find(p => p.id === detail.id).previsaoReabertura, "2027-03-15");
+    const url = purl(1);
+    const partial = await data(url, { method: "PATCH", token: admin.token, body: { descricaoResumida: "Resumo fictício revisado" } });
+    assert.equal(partial.statusVisitacao, detail.statusVisitacao);
+    assert.equal(partial.motivoRestricao, detail.motivoRestricao);
+    assert.equal(partial.previsaoReabertura, detail.previsaoReabertura);
+    const reopened = await data(url, { method: "PATCH", token: admin.token, body: { statusVisitacao: "ABERTO" } });
+    assert.equal(reopened.motivoRestricao, null);
+    assert.equal(reopened.previsaoReabertura, null);
+    // Restaura a fixture para os demais cenários de demonstração.
+    await data(url, { method: "PATCH", token: admin.token, body: { statusVisitacao: detail.statusVisitacao, motivoRestricao: detail.motivoRestricao, previsaoReabertura: detail.previsaoReabertura } });
+});
+
 test("login, conta inativa, permissões, cache e CORS preservados", async () => {
     assert.equal(admin.user.role, "ADMIN"); assert.equal(editor.user.role, "EDITOR");
     for (const [email, password] of [["inativo@demo.invalid", "InativoDemo!2026"], ["admin@demo.invalid", "senha-errada"], ["ausente@demo.invalid", "AdminDemo!2026"]]) {

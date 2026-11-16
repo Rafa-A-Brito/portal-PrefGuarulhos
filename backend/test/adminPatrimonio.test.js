@@ -37,6 +37,9 @@ const record = (extra = {}) => ({
     descricaoResumida: "Resumo",
     categoriaId: randomUUID(),
     situacao: "PRESERVADO",
+    statusVisitacao: "NAO_INFORMADO",
+    motivoRestricao: null,
+    previsaoReabertura: null,
     status: "RASCUNHO",
     historia: null,
     importanciaCultural: null,
@@ -51,7 +54,8 @@ function database(t, initial = record()) {
     let state = initial;
     const writes = [];
     let locks = 0;
-    const tx = { auditLog: mockAuditLog(),
+    const events = [];
+    const tx = { auditLog: mockAuditLog(events),
         $executeRaw: async (query) => {
             assert.match(query.join(""), /pg_advisory_xact_lock\(73033, 1\)/);
             return 1;
@@ -85,7 +89,7 @@ function database(t, initial = record()) {
     stub(t, prisma.user, "findUnique", async ({ where }) =>
         where.id === admin.id ? admin : editor
     );
-    return { tx, writes, state: () => state, locks: () => locks };
+    return { tx, writes, events, state: () => state, locks: () => locks };
 }
 async function request(path, { user, method = "GET", body } = {}) {
     const response = await fetch(`${base}${path}`, {
@@ -139,6 +143,125 @@ test("schemas parciais não introduzem defaults e recusam campos vazios/protegid
         schemas.listPatrimoniosQuerySchema.safeParse({ status: "RASCUNHO" }).success,
         false
     );
+});
+
+test("visitação valida enum, texto simples e dias reais, sem defaults no PATCH", () => {
+    const valid = { nome: "Bem", descricao: "Descrição", descricaoResumida: "Resumo", categoriaId: randomUUID() };
+    assert.equal(schemas.createPatrimonioSchema.parse({ ...valid, situacao: "EM_RESTAURACAO" }).statusVisitacao, "NAO_INFORMADO");
+    for (const statusVisitacao of ["ABERTO", "ACESSO_PARCIAL", "TEMPORARIAMENTE_FECHADO", "SEM_VISITACAO_PUBLICA", "NAO_INFORMADO"]) {
+        assert.equal(schemas.createPatrimonioSchema.parse({ ...valid, statusVisitacao }).statusVisitacao, statusVisitacao);
+    }
+    for (const previsaoReabertura of ["2028-02-29", "2027-03-15", "0001-01-01", "9999-12-31"]) {
+        assert.equal(schemas.updatePatrimonioSchema.parse({ previsaoReabertura }).previsaoReabertura, previsaoReabertura);
+    }
+    for (const body of [
+        { statusVisitacao: "FECHADO" }, { statusVisitacao: null },
+        { motivoRestricao: " " }, { motivoRestricao: "x".repeat(2001) }, { motivoRestricao: {} },
+        ...["2027-02-29", "2026-04-31", "1900-02-29", "0000-01-01", "2027-13-01", "2027-00-10", "2027-01-00", "2027-2-01", "15/03/2027", "2027-03-15T00:00:00Z", " 2027-03-15", 123]
+            .map(previsaoReabertura => ({ previsaoReabertura })),
+    ]) {
+        assert.equal(schemas.updatePatrimonioSchema.safeParse(body).success, false, JSON.stringify(body));
+        assert.equal(schemas.createPatrimonioSchema.safeParse({ ...valid, ...body }).success, false, JSON.stringify(body));
+    }
+    assert.deepEqual(schemas.updatePatrimonioSchema.parse({ motivoRestricao: " <b>Reforma</b> " }), { motivoRestricao: "<b>Reforma</b>" });
+    assert.deepEqual(schemas.updatePatrimonioSchema.parse({ motivoRestricao: null, previsaoReabertura: null }), { motivoRestricao: null, previsaoReabertura: null });
+});
+
+test("cadastro administrativo grava visitação explícita e não deduz fechamento da conservação", async (t) => {
+    const db = database(t);
+    db.tx.patrimonio.findUnique = async () => null;
+    db.tx.patrimonio.create = async ({ data }) => record(data);
+    const body = { nome: "Espaço fictício", descricao: "Descrição", descricaoResumida: "Resumo", categoriaId: randomUUID(), situacao: "EM_RESTAURACAO" };
+    for (const visitacao of [{}, { statusVisitacao: "TEMPORARIAMENTE_FECHADO" }, {
+        statusVisitacao: "ACESSO_PARCIAL", motivoRestricao: "Obras", previsaoReabertura: "2028-02-29",
+    }]) {
+        const result = await request("/admin/patrimonios", { user: editor, method: "POST", body: { ...body, ...visitacao } });
+        assert.equal(result.status, 201);
+        assert.equal(result.body.data.statusVisitacao, visitacao.statusVisitacao ?? "NAO_INFORMADO");
+        assert.equal(result.body.data.previsaoReabertura, visitacao.previsaoReabertura ?? null);
+        assert.equal(result.body.data.motivoRestricao, visitacao.motivoRestricao ?? null);
+        assert.equal(result.body.data.situacao, "EM_RESTAURACAO");
+        assert.equal(result.body.data.status, "RASCUNHO");
+        assert.equal(db.events.at(-1).newValues.statusVisitacao, result.body.data.statusVisitacao);
+    }
+});
+
+test("PATCH preserva visitação omitida, permite null e audita restrições sem exigir motivo ou previsão", async (t) => {
+    const db = database(t, record({ statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: new Date("2027-03-15T00:00:00.000Z") }));
+    const url = `/admin/patrimonios/${db.state().id}`;
+    const patch = body => request(url, { user: editor, method: "PATCH", body });
+    const partial = await patch({ nome: "Nome revisado", situacao: "PRESERVADO" });
+    assert.equal(partial.status, 200);
+    assert.equal(partial.body.data.statusVisitacao, "TEMPORARIAMENTE_FECHADO");
+    assert.equal(partial.body.data.motivoRestricao, "Reforma");
+    assert.equal(partial.body.data.previsaoReabertura, "2027-03-15");
+    for (const key of ["statusVisitacao", "motivoRestricao", "previsaoReabertura"]) assert.equal(Object.hasOwn(db.writes.at(-1), key), false);
+    assert.equal((await patch({ motivoRestricao: null })).status, 200);
+    assert.equal(db.state().motivoRestricao, null);
+    assert.equal(db.state().previsaoReabertura.toISOString(), "2027-03-15T00:00:00.000Z");
+    assert.equal((await patch({ previsaoReabertura: null })).status, 200);
+    assert.equal(db.events.at(-1).oldValues.previsaoReabertura, "2027-03-15");
+    assert.equal(db.events.at(-1).newValues.previsaoReabertura, null);
+    for (const statusVisitacao of ["ACESSO_PARCIAL", "SEM_VISITACAO_PUBLICA", "TEMPORARIAMENTE_FECHADO"]) {
+        assert.equal((await patch({ statusVisitacao })).status, 200);
+        assert.equal(db.state().motivoRestricao, null);
+        assert.equal(db.state().previsaoReabertura, null);
+    }
+    const result = await patch({ motivoRestricao: " Reforma ", previsaoReabertura: "2028-02-29" });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.data.previsaoReabertura, "2028-02-29");
+    assert.equal(result.body.data.motivoRestricao, "Reforma");
+    assert.equal(db.writes.at(-1).previsaoReabertura.toISOString(), "2028-02-29T00:00:00.000Z");
+    assert.equal(db.events.at(-1).newValues.previsaoReabertura, "2028-02-29");
+    const before = db.writes.length;
+    assert.equal((await patch({ previsaoReabertura: "2027-02-29" })).status, 400);
+    assert.equal((await patch({ statusVisitacao: "INVALIDO" })).status, 400);
+    assert.equal(db.writes.length, before);
+});
+
+test("ABERTO e NAO_INFORMADO limpam o aviso na mesma escrita e na auditoria", async (t) => {
+    const db = database(t, record({ status: "PUBLICADO", situacao: "EM_RESTAURACAO" }));
+    const url = `/admin/patrimonios/${db.state().id}`;
+    const patch = body => request(url, { user: admin, method: "PATCH", body });
+    for (const statusVisitacao of ["ABERTO", "NAO_INFORMADO"]) {
+        await patch({ statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: "2027-03-15" });
+        const before = db.writes.length;
+        const result = await patch({ statusVisitacao, motivoRestricao: "Aviso antigo", previsaoReabertura: "2027-03-15" });
+        assert.equal(result.status, 200);
+        assert.equal(db.writes.length, before + 1);
+        assert.deepEqual(db.writes.at(-1), { statusVisitacao, motivoRestricao: null, previsaoReabertura: null, updatedBy: admin.id });
+        assert.equal(result.body.data.motivoRestricao, null);
+        assert.equal(result.body.data.previsaoReabertura, null);
+        assert.equal(result.body.data.status, "PUBLICADO");
+        assert.equal(result.body.data.situacao, "EM_RESTAURACAO");
+        assert.deepEqual(db.events.at(-1).oldValues, { statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: "2027-03-15" });
+        assert.deepEqual(db.events.at(-1).newValues, { statusVisitacao, motivoRestricao: null, previsaoReabertura: null });
+    }
+});
+
+test("publicado e fechado permanece na lista e no detalhe públicos com data sem horário", async (t) => {
+    const db = database(t, record({ status: "PUBLICADO", situacao: "EM_RESTAURACAO", statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: new Date("2020-03-15T00:00:00.000Z") }));
+    const verify = ({ where, select }) => {
+        assert.equal(where.status, "PUBLICADO");
+        assert.equal(Object.hasOwn(where, "statusVisitacao"), false);
+        for (const field of ["statusVisitacao", "motivoRestricao", "previsaoReabertura"]) assert.equal(select[field], true);
+        return db.state().status === where.status ? db.state() : null;
+    };
+    stub(t, prisma.patrimonio, "findFirst", async args => verify(args));
+    stub(t, prisma.patrimonio, "findMany", async args => verify(args) ? [db.state()] : []);
+    stub(t, prisma.patrimonio, "count", async ({ where }) => Number(db.state().status === where.status));
+    const list = await request("/patrimonios");
+    const detail = await request(`/patrimonios/${db.state().slug}`);
+    assert.equal(list.status, 200); assert.equal(detail.status, 200);
+    assert.equal(list.body.data.paginacao.total, 1);
+    for (const result of [list.body.data.itens[0], detail.body.data]) {
+        assert.equal(result.statusVisitacao, "TEMPORARIAMENTE_FECHADO");
+        assert.equal(result.motivoRestricao, "Reforma");
+        assert.equal(result.previsaoReabertura, "2020-03-15");
+    }
+    db.state().status = "RASCUNHO";
+    assert.equal((await request("/patrimonios")).body.data.itens.length, 0);
+    assert.equal((await request(`/patrimonios/${db.state().slug}`)).status, 404);
 });
 
 test("listagem administrativa reutiliza filtros, paginação e ordenação estável em todos os status", async (t) => {

@@ -1,4 +1,4 @@
-import { SituacaoPatrimonio, StatusPublicacao } from "../config/prismaTypes.js";
+import { SituacaoPatrimonio, StatusPublicacao, StatusVisitacao } from "../config/prismaTypes.js";
 import { z } from "zod";
 import { regiaoSlugSchema } from "./regiaoSchema.js";
 
@@ -66,6 +66,11 @@ const createPatrimonioFieldsSchema = z.strictObject({
         .max(6, "Informe no máximo 6 categorias adicionais.")
         .optional(),
     situacao: z.enum(Object.values(SituacaoPatrimonio)).default(SituacaoPatrimonio.NAO_INFORMADO),
+    statusVisitacao: z.enum(Object.values(StatusVisitacao)).default(StatusVisitacao.NAO_INFORMADO),
+    motivoRestricao: optionalText(2000, "Informe um motivo válido.").nullable(),
+    previsaoReabertura: z.iso.date("Informe uma data real no formato YYYY-MM-DD.")
+        .refine(value => !value.startsWith("0000-"), "Informe um ano entre 0001 e 9999.")
+        .nullable().optional(),
     localizacao: localizacaoSchema.optional(),
 });
 
@@ -123,6 +128,7 @@ export const updatePatrimonioSchema = createPatrimonioFieldsSchema
     .partial()
     .extend({
         situacao: z.enum(Object.values(SituacaoPatrimonio)).optional(),
+        statusVisitacao: z.enum(Object.values(StatusVisitacao)).optional(),
         localizacao: localizacaoFieldsSchema
             .partial()
             .extend({

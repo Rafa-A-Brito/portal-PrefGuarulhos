@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { logFailure } from "./logger.js";
+import { dataVisitacao } from "./visitacaoPatrimonio.js";
 
 // Compatibilidade com REGIAO_CREATE/UPDATE e RegiaoPatrimonio já persistidos.
 export const AUDIT_ENTITIES = Object.freeze({
@@ -18,7 +19,7 @@ const urlFields = ["url", "imagemUrl", "ctaUrl", "ctaSaibaMais", "fonte"];
 const fields = Object.freeze({
     User: ["name", "email", "role", "isActive"],
     RegiaoPatrimonio: ["nome", "slug", "descricao", "ativo"],
-    Patrimonio: ["nome", "slug", "regiaoId", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "status", "categoriaId", "categoriasAdicionais", "localizacao", "publicadoEm", "arquivadoEm"],
+    Patrimonio: ["nome", "slug", "regiaoId", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "statusVisitacao", "motivoRestricao", "previsaoReabertura", "status", "categoriaId", "categoriasAdicionais", "localizacao", "publicadoEm", "arquivadoEm"],
     PatrimonioImagem: ["patrimonioId", "titulo", "textoAlternativo", "credito", "fonte", "ordem", "principal", "url", "principais", "principaisSubstituidas"],
     PatrimonioDocumento: ["patrimonioId", "titulo", "descricao", "url", "tipo", "fonte", "dataDocumento", "mimeType"],
     PatrimonioFato: ["patrimonioId", "rotulo", "valor", "ordem", "itens"],
@@ -69,6 +70,7 @@ export function auditValues(entity, source) {
         if (url === undefined) delete result[key]; else result[key] = url;
     }
     if (entity === AUDIT_ENTITIES.PATRIMONIO) {
+        if (Object.hasOwn(result, "previsaoReabertura")) result.previsaoReabertura = dataVisitacao(source.previsaoReabertura);
         if (Object.hasOwn(source, "localizacao")) result.localizacao = source.localizacao === null ? null : pick(source.localizacao, locationFields);
         if (Array.isArray(source.categoriasAdicionais)) result.categoriasAdicionais = source.categoriasAdicionais
             .map(item => typeof item === "string" ? item : item?.categoriaId ?? item?.categoria?.id ?? item?.id).filter(id => typeof id === "string").sort();

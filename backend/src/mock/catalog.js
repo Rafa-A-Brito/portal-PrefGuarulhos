@@ -8,6 +8,7 @@ import BadRequestError from "../errors/BadRequestError.js";
 import NotFoundError from "../errors/NotFoundError.js";
 import ConflictError from "../errors/ConflictError.js";
 import { legadoEditorial } from "../utils/identidadeEditorial.js";
+import { dadosVisitacao, dataVisitacao } from "../utils/visitacaoPatrimonio.js";
 
 export const getRow = id => find(store.patrimonios, id, "Patrimônio não encontrado.", "PATRIMONIO_NOT_FOUND");
 const category = id => find(store.categorias, id, "Categoria não encontrada.", "CATEGORIA_NOT_FOUND");
@@ -20,6 +21,7 @@ export function patrimonioDto(row, admin = true, detail = true) {
     const categoria = category(row.categoriaId);
     const data = { numeroExibicao: row.numeroExibicao, ordemExibicao: row.ordemExibicao, regiao: region(row.regiaoId, admin),
         id: row.id, nome: row.nome, slug: row.slug, descricaoResumida: row.descricaoResumida, situacao: row.situacao,
+        statusVisitacao: row.statusVisitacao, motivoRestricao: row.motivoRestricao, previsaoReabertura: dataVisitacao(row.previsaoReabertura),
         publicadoEm: row.publicadoEm, categoria: detail ? clone(categoria) : summaryCategory(categoria),
         categoriasAdicionais: row.categoriasAdicionais.map(category).sort(byName).map(admin && detail ? clone : summaryCategory),
         localizacao: clone(row.localizacao), imagens: clone([...row.imagens].sort((a, b) => Number(b.principal) - Number(a.principal) || byOrder(a, b))) };
@@ -81,7 +83,8 @@ export async function createPatrimonio(input, createdBy) {
     let slug = base;
     for (let n = 2; store.patrimonios.some(p => p.slug === slug); n++) slug = `${base.slice(0, 210)}-${n}`;
     const row = { id: randomUUID(), regiaoId: null, numeroExibicao: null, ordemExibicao: null, historia: null, importanciaCultural: null,
-        categoriasAdicionais: [], localizacao: null, ...data, slug, status: "RASCUNHO", createdBy, updatedBy: null,
+        categoriasAdicionais: [], localizacao: null, motivoRestricao: null, previsaoReabertura: null,
+        ...data, ...dadosVisitacao(data), slug, status: "RASCUNHO", createdBy, updatedBy: null,
         createdAt: new Date(), updatedAt: new Date(), publicadoEm: null, arquivadoEm: null,
         imagens: [], documentos: [], fatos: [], ligacoes: [], detalhes: [], rotas: [] };
     if (row.localizacao) row.localizacao = { id: randomUUID(), patrimonioId: row.id, ...row.localizacao };
@@ -101,7 +104,7 @@ export async function updatePatrimonio(id, data, user) {
         localizacao = { id: localizacao?.id ?? randomUUID(), patrimonioId: id, ...merged };
     }
     const before = patrimonioDto(row);
-    Object.assign(row, clone(data), { localizacao, updatedBy: user.id, updatedAt: new Date() });
+    Object.assign(row, clone(data), dadosVisitacao(data), { localizacao, updatedBy: user.id, updatedAt: new Date() });
     audit(user, "PATRIMONIO_UPDATE", "Patrimonio", id, before, patrimonioDto(row));
     return patrimonioDto(row);
 }

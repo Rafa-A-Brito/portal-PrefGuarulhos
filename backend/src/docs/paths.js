@@ -27,7 +27,8 @@ const localId = "55555555-5555-4555-8555-555555555555";
 const categoria = { id: categoriaId, nome: "Histórico", slug: "historico" };
 const localizacao = { id: localId, patrimonioId, endereco: "Rua Exemplo", numero: "10", complemento: null, bairro: "Centro", cidade: "Guarulhos", uf: "SP", cep: "07010-000", latitude: "-23.4628000", longitude: "-46.5333000" };
 const imagem = { id: imagemId, url: "https://example.org/imagem.jpg", titulo: null, textoAlternativo: "Fachada da edificação", principal: true };
-const resumo = { id: patrimonioId, nome: "Casa da Cultura Exemplo", slug: "casa-da-cultura-exemplo", descricaoResumida: "Edificação histórica em Guarulhos.", situacao: "PRESERVADO", publicadoEm: "2026-09-01T12:00:00.000Z", categoria, localizacao, imagens: [imagem] };
+const visitacaoExemplo = { statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Fechado por reforma do telhado.", previsaoReabertura: "2027-03-15" };
+const resumo = { id: patrimonioId, nome: "Casa da Cultura Exemplo", slug: "casa-da-cultura-exemplo", descricaoResumida: "Edificação histórica em Guarulhos.", situacao: "EM_RESTAURACAO", ...visitacaoExemplo, publicadoEm: "2026-09-01T12:00:00.000Z", categoria, localizacao, imagens: [imagem] };
 
 export const paths = {
     "/api": {
@@ -157,6 +158,12 @@ paths["/api/admin/patrimonios/{id}"] = {
         security: bearerAuth, parameters: [idParameter], requestBody: body("PatrimonioPatch", { nome: "Novo nome", localizacao: { bairro: "Centro" } }), responses: { ...adminResponses, 413: tooLarge },
     },
 };
+paths["/api/patrimonios"].get.description += " Patrimônios publicados continuam visíveis com qualquer status de visitação, inclusive fechados.";
+paths["/api/patrimonios/{slug}"].get.description += " O fechamento para visitação não altera a disponibilidade deste detalhe.";
+paths["/api/admin/patrimonios"].post.description += " Visitação assume NAO_INFORMADO quando omitida; nunca é deduzida da conservação. Motivo/previsão são opcionais, e ABERTO/NAO_INFORMADO limpam o aviso.";
+paths["/api/admin/patrimonios/{id}"].patch.description += " Visitação: omitidos preservados; null limpa motivo/previsão. ABERTO/NAO_INFORMADO limpam ambos na mesma atualização. A previsão não muda o status automaticamente.";
+Object.assign(paths["/api/admin/patrimonios"].post.requestBody.content["application/json"].example, visitacaoExemplo);
+Object.assign(paths["/api/admin/patrimonios"].post.responses[201].content["application/json"].example.data, visitacaoExemplo);
 paths["/api/auth/senha"] = {
     patch: {
         tags: ["Autenticação"], summary: "Troca a própria senha",

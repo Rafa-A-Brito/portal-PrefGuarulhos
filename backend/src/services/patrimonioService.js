@@ -10,6 +10,7 @@ import { destinoPublicoWhere } from "../utils/identidadeEditorial.js";
 import { fatoSelect, ligacaoSelect, ordemEditorial } from "./patrimonioEditorialService.js";
 import { validarAtribuicaoRegiao, regiaoPublicSelect, regiaoAdminSelect } from "./regiaoService.js";
 import { auditSnapshot, registrarAuditoria, AUDIT_ACTIONS as A, AUDIT_ENTITIES as E } from "../utils/auditoria.js";
+import { dadosVisitacao, dataVisitacao } from "../utils/visitacaoPatrimonio.js";
 
 const MAX_SLUG_ATTEMPTS = 1000;
 
@@ -25,6 +26,9 @@ function achatarCategorias(patrimonio) {
     const { categoriasAdicionais, ...resto } = patrimonio;
     return {
         ...resto,
+        ...(Object.hasOwn(resto, "previsaoReabertura") && {
+            previsaoReabertura: dataVisitacao(resto.previsaoReabertura),
+        }),
         categoriasAdicionais: (categoriasAdicionais ?? []).map((item) => item.categoria),
     };
 }
@@ -38,6 +42,9 @@ const publicListSelect = {
     slug: true,
     descricaoResumida: true,
     situacao: true,
+    statusVisitacao: true,
+    motivoRestricao: true,
+    previsaoReabertura: true,
     publicadoEm: true,
     categoria: { select: categoriaResumoSelect },
     categoriasAdicionais: categoriasAdicionaisSelect,
@@ -72,6 +79,9 @@ const publicDetailSelect = {
     historia: true,
     importanciaCultural: true,
     situacao: true,
+    statusVisitacao: true,
+    motivoRestricao: true,
+    previsaoReabertura: true,
     publicadoEm: true,
     updatedAt: true,
     categoria: { select: { id: true, nome: true, slug: true, descricao: true } },
@@ -366,6 +376,7 @@ export async function updatePatrimonio(id, data, user) {
             where: { id },
             data: {
                 ...fields,
+                ...dadosVisitacao(data),
                 updatedBy: user.id,
                 ...(locationUpdate && { localizacao: locationUpdate }),
                 ...(categoriasAdicionais !== undefined && {
@@ -509,6 +520,7 @@ export async function createPatrimonio(data, createdBy) {
                     historia: data.historia,
                     importanciaCultural: data.importanciaCultural,
                     situacao: data.situacao ?? SituacaoPatrimonio.NAO_INFORMADO,
+                    ...dadosVisitacao({ ...data, statusVisitacao: data.statusVisitacao ?? "NAO_INFORMADO" }),
                     status: StatusPublicacao.RASCUNHO,
                     categoriaId: data.categoriaId,
                     createdBy,

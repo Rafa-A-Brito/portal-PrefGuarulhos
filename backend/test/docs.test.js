@@ -3,6 +3,24 @@ import { test } from "node:test";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import openapi from "../src/docs/openapi.js";
 
+test("Swagger documenta visitação, limpeza no PATCH e publicado fechado por reforma", () => {
+    const schemas = openapi.components.schemas;
+    assert.deepEqual(schemas.StatusVisitacao.enum, ["ABERTO", "ACESSO_PARCIAL", "TEMPORARIAMENTE_FECHADO", "SEM_VISITACAO_PUBLICA", "NAO_INFORMADO"]);
+    assert.equal(schemas.PatrimonioRequest.properties.statusVisitacao.default, "NAO_INFORMADO");
+    assert.equal(schemas.PatrimonioPatch.properties.statusVisitacao.default, undefined);
+    for (const name of ["PatrimonioRequest", "PatrimonioPatch", "PatrimonioResumo", "PatrimonioDetalhe", "PatrimonioAdmin", "PatrimonioAdminResumo"]) {
+        assert.equal(schemas[name].properties.previsaoReabertura.format, "date");
+        assert.equal(schemas[name].properties.previsaoReabertura.nullable, true);
+        assert.equal(schemas[name].properties.motivoRestricao.nullable, true);
+        assert.equal(schemas[name].properties.motivoRestricao.maxLength, 2000);
+    }
+    const example = openapi.paths["/api/patrimonios/{slug}"].get.responses[200].content["application/json"].example.data;
+    assert.equal(example.statusVisitacao, "TEMPORARIAMENTE_FECHADO");
+    assert.match(example.motivoRestricao, /reforma/);
+    assert.equal(example.previsaoReabertura, "2027-03-15");
+    assert.match(schemas.PatrimonioPatch.description, /ABERTO.*NAO_INFORMADO/);
+});
+
 test("especificação OpenAPI válida, com referências, rotas e autenticação corretas", async () => {
     await SwaggerParser.validate(structuredClone(openapi));
     assert.equal(openapi.openapi, "3.0.3");

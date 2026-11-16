@@ -27,6 +27,7 @@
         "prisma:status": "prisma migrate status",
         "prisma:seed": "prisma db seed",
         "test:postgres": "node scripts/validate-patrimonios-postgres.js",
+        "test:visitacao:postgres": "node scripts/validate-visitacao-postgres.js",
         "admin:create": "node prisma/create-admin.js",
         "test:integration": "node scripts/test-db.js test",
         "test:db:assert": "node scripts/assert-test-db.js",

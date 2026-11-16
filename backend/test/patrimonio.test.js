@@ -248,6 +248,7 @@ test("normaliza o cadastro e aplica os valores padrão", () => {
         importanciaCultural: "Referência cultural da cidade",
         categoriaId,
         situacao: "NAO_INFORMADO",
+        statusVisitacao: "NAO_INFORMADO",
         localizacao: {
             endereco: "Praça Tereza Cristina",
             bairro: "Centro",

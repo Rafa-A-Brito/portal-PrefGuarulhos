@@ -33,6 +33,7 @@ test("PostgreSQL: pesquisa em banco vazio usa detalhes atuais e preserva assets 
         assert.equal(applied.aplicados, 33);
         const rows = await prisma.patrimonio.findMany({ include: { detalhes: true, imagens: true, fatos: true, ligacoes: true } });
         assert.ok(rows.every(row => row.descricao.trim() && row.detalhes.length && row.status === "RASCUNHO"));
+        assert.ok(rows.every(row => row.statusVisitacao === "NAO_INFORMADO" && row.motivoRestricao === null && row.previsaoReabertura === null));
         assert.ok(rows.every(row => Number.isInteger(row.numeroExibicao) && Number.isInteger(row.ordemExibicao)));
         assert.equal(rows.filter(row => row.nome === "Casa José Maurício").length, 1);
         assert.ok(rows.every(row => row.imagens[0].url.startsWith("http://assets.example.test/arquivos/patrimonios/")));

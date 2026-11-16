@@ -51,6 +51,11 @@ export const schemas = {
         ],
     },
     StatusPublicacao: { type: "string", enum: ["RASCUNHO", "PUBLICADO", "ARQUIVADO"] },
+    StatusVisitacao: {
+        type: "string",
+        enum: ["ABERTO", "ACESSO_PARCIAL", "TEMPORARIAMENTE_FECHADO", "SEM_VISITACAO_PUBLICA", "NAO_INFORMADO"],
+        description: "Informado pelo editor, independente da conservação e da publicação. A previsão não reabre automaticamente o patrimônio.",
+    },
     Error: {
         type: "object",
         required: ["success", "message", "details", "error"],
@@ -218,6 +223,9 @@ export const schemas = {
             historia: string("História com trim.", { minLength: 1 }),
             importanciaCultural: string("Importância cultural com trim.", { minLength: 1 }),
             situacao: { ...ref("Situacao"), default: "NAO_INFORMADO" },
+            statusVisitacao: { ...ref("StatusVisitacao"), default: "NAO_INFORMADO" },
+            motivoRestricao: nullable(string("Texto simples com trim; sem interpretação de HTML. Pode ser desconhecido.", { minLength: 1, maxLength: 2000, example: "Fechado por reforma do telhado." })),
+            previsaoReabertura: nullable(string("Dia civil real entre 0001 e 9999, no formato YYYY-MM-DD, sem horário ou fuso. Pode ser desconhecido.", { format: "date", example: "2027-03-15" })),
             localizacao: ref("LocalizacaoRequest"),
         },
     },
@@ -539,9 +547,11 @@ schemas.PatrimonioPatch = {
     ...schemas.PatrimonioRequest,
     required: undefined,
     minProperties: 1,
+    description: "Campos omitidos são preservados. null limpa motivoRestricao/previsaoReabertura. ABERTO e NAO_INFORMADO limpam ambos na mesma atualização, mesmo se enviados no corpo. Motivo e previsão não são obrigatórios para restringir a visitação.",
     properties: {
         ...schemas.PatrimonioRequest.properties,
         situacao: ref("Situacao"),
+        statusVisitacao: ref("StatusVisitacao"),
         localizacao: ref("LocalizacaoPatch"),
     },
 };
@@ -617,6 +627,12 @@ for (const name of [
     "PatrimonioAdminResumo",
     "PatrimonioAdmin",
 ]) {
+    Object.assign(schemas[name].properties, {
+        statusVisitacao: ref("StatusVisitacao"),
+        motivoRestricao: schemas.PatrimonioRequest.properties.motivoRestricao,
+        previsaoReabertura: schemas.PatrimonioRequest.properties.previsaoReabertura,
+    });
+    schemas[name].required.push("statusVisitacao", "motivoRestricao", "previsaoReabertura");
     schemas[name].properties.categoriasAdicionais = {
         type: "array",
         items: ref("CategoriaResumo"),

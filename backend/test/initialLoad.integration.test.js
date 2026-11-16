@@ -43,6 +43,7 @@ test("PostgreSQL: carga, rollback, reexecução, edições, aliases e pesquisa p
         assert.equal(applied.aplicados, 34);
         const loaded = await state();
         assert.ok(loaded.patrimonios.every(row => row.status === "RASCUNHO" && row.publicadoEm === null && row.detalhes.length));
+        assert.ok(loaded.patrimonios.every(row => row.statusVisitacao === "NAO_INFORMADO" && row.motivoRestricao === null && row.previsaoReabertura === null));
         assert.equal((await prisma.user.findUnique({ where: { email: SEED_EMAIL } })).isActive, false);
         const target = loaded.patrimonios[0];
         await prisma.patrimonio.update({ where: { id: target.id }, data: { nome: "Nome administrativo", slug: "slug-administrativo-" + randomUUID(),

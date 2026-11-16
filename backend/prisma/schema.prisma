@@ -60,6 +60,16 @@ enum SituacaoPatrimonio {
   @@map("situacao_patrimonio")
 }
 
+enum StatusVisitacao {
+  ABERTO
+  ACESSO_PARCIAL
+  TEMPORARIAMENTE_FECHADO
+  SEM_VISITACAO_PUBLICA
+  NAO_INFORMADO
+
+  @@map("status_visitacao")
+}
+
 enum StatusPublicacao {
   RASCUNHO
   PUBLICADO
@@ -190,6 +200,9 @@ model Patrimonio {
   historia            String?            @db.Text
   importanciaCultural String?            @map("importancia_cultural") @db.Text
   situacao            SituacaoPatrimonio @default(NAO_INFORMADO)
+  statusVisitacao      StatusVisitacao    @default(NAO_INFORMADO) @map("status_visitacao")
+  motivoRestricao     String?            @map("motivo_restricao") @db.Text
+  previsaoReabertura  DateTime?          @map("previsao_reabertura") @db.Date
   status              StatusPublicacao   @default(RASCUNHO)
   categoriaId         String             @map("categoria_id") @db.Uuid
   createdBy           String             @map("created_by") @db.Uuid

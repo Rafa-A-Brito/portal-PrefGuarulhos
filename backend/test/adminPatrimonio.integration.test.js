@@ -20,6 +20,9 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         categoria = await prisma.categoria.create({ data: { nome: key, slug: key } });
         categoriaAdicional = await prisma.categoria.create({ data: { nome: `${key}-adicional`, slug: `${key}-adicional` } });
         patrimonio = await service.createPatrimonio({ nome: key, descricao: "Descrição", descricaoResumida: "Resumo", categoriaId: categoria.id, categoriasAdicionais: [categoriaAdicional.id] }, user.id);
+        assert.equal(patrimonio.statusVisitacao, "NAO_INFORMADO");
+        assert.equal(patrimonio.motivoRestricao, null);
+        assert.equal(patrimonio.previsaoReabertura, null);
         const id = patrimonio.id;
         const originalSlug = patrimonio.slug;
         await assert.rejects(service.getPatrimonioBySlug(originalSlug), { statusCode: 404 });
@@ -45,6 +48,16 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         await assert.rejects(service.updatePatrimonio(id, { nome: "Não persistir", categoriaId: randomUUID() }, user), { statusCode: 400 });
         assert.equal((await service.getAdminPatrimonio(id)).nome, `${key} editado`);
 
+        const { updatePatrimonioSchema } = await import("../src/schemas/patrimonioSchema.js");
+        await service.updatePatrimonio(id, updatePatrimonioSchema.parse({
+            statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: "2028-02-29",
+        }), user);
+        const partial = await service.updatePatrimonio(id, { descricaoResumida: "Resumo revisado" }, user);
+        assert.equal(partial.statusVisitacao, "TEMPORARIAMENTE_FECHADO");
+        assert.equal(partial.motivoRestricao, "Reforma");
+        assert.equal(partial.previsaoReabertura, "2028-02-29");
+        assert.equal((await prisma.patrimonio.findUnique({ where: { id } })).previsaoReabertura.toISOString(), "2028-02-29T00:00:00.000Z");
+
         // Duas publicações simultâneas devem observar a mesma data após o bloqueio da linha.
         const published = await Promise.all([
             service.changePatrimonioStatus(id, "PUBLICADO", user),
@@ -55,6 +68,21 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         assert.equal((await service.getPatrimonioBySlug(originalSlug)).id, id);
         assert.deepEqual((await service.getPatrimonioBySlug(originalSlug)).categoriasAdicionais.map((item) => item.id), [categoriaAdicional.id]);
         assert.equal((await service.listPatrimonios({ busca: key, pagina: 1, limite: 20 })).itens.length, 1);
+        for (const dto of [await service.getPatrimonioBySlug(originalSlug),
+            (await service.listPatrimonios({ busca: key, pagina: 1, limite: 20 })).itens[0]]) {
+            assert.equal(dto.statusVisitacao, "TEMPORARIAMENTE_FECHADO");
+            assert.equal(dto.motivoRestricao, "Reforma");
+            assert.equal(dto.previsaoReabertura, "2028-02-29");
+        }
+        await service.updatePatrimonio(id, { statusVisitacao: "ABERTO" }, user);
+        const reopened = await prisma.patrimonio.findUnique({ where: { id } });
+        assert.equal(reopened.statusVisitacao, "ABERTO");
+        assert.equal(reopened.motivoRestricao, null);
+        assert.equal(reopened.previsaoReabertura, null);
+        const logs = await prisma.auditLog.findMany({ where: { entityId: id, action: "PATRIMONIO_UPDATE" } });
+        const reopeningLog = logs.find(log => log.newValues.statusVisitacao === "ABERTO");
+        assert.deepEqual(reopeningLog.oldValues, { statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: "2028-02-29" });
+        assert.deepEqual(reopeningLog.newValues, { statusVisitacao: "ABERTO", motivoRestricao: null, previsaoReabertura: null });
         await assert.rejects(service.updatePatrimonio(id, { nome: "Proibido" }, { id: user.id, role: "EDITOR" }), { statusCode: 403 });
 
         const archived = await service.changePatrimonioStatus(id, "ARQUIVADO", user);
