@@ -135,6 +135,9 @@ export function normalizarPatrimonio(p) {
     categoriasAdicionaisIds: adicionais.map((c) => c.id),
     categoriasInfo: [p.categoria, ...adicionais].filter(Boolean),
     situacao: p.situacao,
+    statusVisitacao: p.statusVisitacao ?? "NAO_INFORMADO",
+    motivoRestricao: p.motivoRestricao ?? null,
+    previsaoReabertura: p.previsaoReabertura ?? null,
     status: p.status, // só vem nas rotas /admin
     bairro: loc?.bairro ?? "",
     cidade: loc?.cidade ?? "",

@@ -13,6 +13,7 @@ import { CATEGORIA_META } from "../../features/categoriaMeta";
 import PatrimoniosRelacionados from "./PatrimoniosRelacionados";
 import SecoesAcordeao from "./SecoesAcordeao";
 import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
+import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
 import { AuthContext } from "../../context/AuthContextInstance.js";
 import { buscarPatrimonioPorId } from "../../services/patrimoniosApi";
 import { buscarPatrimonioAdmin } from "../../services/adminApi";
@@ -236,6 +237,7 @@ function DetalhePorSlug({ slug }) {
               <span className="cat-badge situacao-demolido">Demolido</span>
             )}
             <h1>{item.nome}</h1>
+            <VisitacaoPatrimonio item={item} aviso />
             <MetadataEditorial item={item} />
             {politica.exibirEndereco && item.bairro && (
               <span className="detalhe-bairro">

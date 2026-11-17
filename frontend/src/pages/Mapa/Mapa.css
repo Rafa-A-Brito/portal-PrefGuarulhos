@@ -6,6 +6,8 @@
   overflow-wrap: anywhere;
 }
 .mapa-detail-panel .mapa-detail-img { flex-shrink: 0; max-width: 100%; }
+.mapa-detail-imagem { position: relative; flex-shrink: 0; }
+.mapa-detail-imagem .mapa-detail-img { display: block; }
 .mapa-detail-panel .mapa-detail-body { overflow-y: auto; min-height: 0; }
 .mapa-detail-panel .mapa-detail-close { width: 40px; height: 40px; }
 .mapa-detail-panel .mapa-detail-actions { position: sticky; bottom: -16px; background: white; padding: 8px 0; }

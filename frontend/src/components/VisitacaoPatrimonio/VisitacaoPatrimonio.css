@@ -1,0 +1,57 @@
+.visitacao-selo {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 72px);
+  padding: 5px 9px;
+  border: 1px solid var(--orange);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--navy);
+  box-shadow: var(--shadow-plaque);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.visitacao-selo svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.visitacao-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: fit-content;
+  max-width: 60ch;
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--orange);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.visitacao-aviso > svg {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  color: var(--navy);
+}
+.visitacao-aviso > div { min-width: 0; }
+.visitacao-aviso strong { font-weight: 600; }
+.visitacao-aviso p {
+  margin: 5px 0 0;
+  font-size: inherit;
+  color: inherit;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}

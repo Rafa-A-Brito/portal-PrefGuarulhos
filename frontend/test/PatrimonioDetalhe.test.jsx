@@ -48,6 +48,37 @@ async function carregado() {
   await screen.findByText("Descrição integral do bem");
 }
 
+test.each([
+  ["TEMPORARIAMENTE_FECHADO", "Temporariamente fechado para visitação"],
+  ["ACESSO_PARCIAL", "Acesso parcial"],
+  ["SEM_VISITACAO_PUBLICA", "Sem visitação pública"],
+])("detalhe %s mantém conservação, motivo literal e dia civil da API", async (statusVisitacao, aviso) => {
+  const motivoRestricao = "Interdição preventiva. <strong>Não é reforma</strong>";
+  responder({ ...registro, situacao: "DEMOLIDO", statusVisitacao, motivoRestricao, previsaoReabertura: "2027-03-15" });
+  abrir(); await carregado();
+  const note = screen.getByRole("note", { name: "Visitação" });
+  expect(note.textContent).toContain(aviso);
+  expect(note.textContent).toContain(motivoRestricao);
+  expect(note.textContent).toContain("15/03/2027");
+  expect(note.querySelector("time").getAttribute("datetime")).toBe("2027-03-15");
+  expect(note.querySelector("p strong")).toBeNull();
+  expect(screen.getByText("Demolido")).toBeTruthy();
+});
+
+test.each([null, ""])("restrição com previsão %s e motivo desconhecido exibe somente o aviso", async previsaoReabertura => {
+  responder({ ...registro, statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: null, previsaoReabertura });
+  abrir(); await carregado();
+  expect(screen.getByRole("note").textContent).toBe("Temporariamente fechado para visitação");
+  expect(screen.queryByText(/Previsão de reabertura/)).toBeNull();
+});
+
+test.each([undefined, "NAO_INFORMADO", "ABERTO"])("detalhe com visitação %s não mostra aviso anterior", async statusVisitacao => {
+  responder({ ...registro, statusVisitacao, motivoRestricao: "Aviso antigo", previsaoReabertura: "2027-03-15" });
+  abrir(); await carregado();
+  expect(screen.queryByRole("note")).toBeNull();
+  expect(screen.queryByText("Aviso antigo")).toBeNull();
+});
+
 test("acesso direto/F5 busca GET por slug e renderiza registro completo sem a listagem", async () => {
   responder();
   const view = abrir({ patrimonios: undefined, carregando: true, erro: "Lista indisponível" });

@@ -33,6 +33,11 @@
 .plaqueta > .favorito-btn.is-ativo {
   color: #c0264a;
 }
+.plaqueta figure .favorito-btn {
+  width: 44px;
+  height: 44px;
+  z-index: 3;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .favorito-btn svg {

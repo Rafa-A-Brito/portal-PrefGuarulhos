@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaquetaCard from "../src/features/mapa/PlaquetaCard";
 import { PATRIMONIOS_SEM_DESTINO } from "./fixtures/localizacaoPatrimonios";
@@ -24,4 +24,24 @@ test("card normal mantém bairro e CEP", () => {
 test("card demolido indica referência histórica", () => {
   abrir({ ...bem, situacao: "DEMOLIDO" });
   expect(screen.getByText("Localização aproximada / referência histórica")).toBeTruthy();
+});
+
+test.each([
+  ["TEMPORARIAMENTE_FECHADO", "Fechado"],
+  ["ACESSO_PARCIAL", "Acesso parcial"],
+  ["SEM_VISITACAO_PUBLICA", "Sem visitação pública"],
+])("card %s exibe selo com texto/ícone e mantém o favorito acionável", (statusVisitacao, texto) => {
+  abrir({ ...bem, statusVisitacao });
+  const selo = screen.getByText(texto);
+  expect(selo.closest("figure")).toBeTruthy();
+  expect(selo.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
+  const favorito = screen.getByRole("button", { name: /Patrimônio.*favoritos/ });
+  const anterior = favorito.getAttribute("aria-pressed");
+  fireEvent.click(favorito);
+  expect(favorito.getAttribute("aria-pressed")).not.toBe(anterior);
+});
+
+test.each([undefined, "NAO_INFORMADO", "ABERTO"])("card com visitação %s não tem selo", statusVisitacao => {
+  const { container } = render(<MemoryRouter><PlaquetaCard item={{ ...bem, statusVisitacao }} /></MemoryRouter>);
+  expect(container.querySelector(".visitacao-selo")).toBeNull();
 });

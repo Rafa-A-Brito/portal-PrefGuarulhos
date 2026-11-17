@@ -16,6 +16,7 @@ import "./Mapa.css";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import { filtrarPatrimonios } from "../../features/buscarPatrimonios";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
+import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
 
 const FALLBACK_THUMB =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='100%25' height='100%25' fill='%23D9D9D9'/%3E%3C/svg%3E";
@@ -161,14 +162,17 @@ export default function Mapa() {
                 >
                   <XMarkIcon width={16} height={16} />
                 </button>
-                <img
-                  src={selecionado.imagemPrincipal}
-                  alt={selecionado.nome}
-                  className="mapa-detail-img"
-                  onError={(e) => {
-                    e.currentTarget.src = FALLBACK_THUMB;
-                  }}
-                />
+                <div className="mapa-detail-imagem">
+                  <img
+                    src={selecionado.imagemPrincipal}
+                    alt={selecionado.nome}
+                    className="mapa-detail-img"
+                    onError={(e) => {
+                      e.currentTarget.src = FALLBACK_THUMB;
+                    }}
+                  />
+                  <VisitacaoPatrimonio item={selecionado} />
+                </div>
                 <div className="mapa-detail-body">
                   <h3>{selecionado.nome}</h3>
                   {endereco.map((linha, i) => (

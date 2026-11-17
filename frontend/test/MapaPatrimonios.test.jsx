@@ -67,6 +67,18 @@ function MapaComContexto({ patrimonios }) {
   return <MemoryRouter><PatrimoniosContext.Provider value={{ patrimonios, selecionado, setSelecionado }}><Mapa /></PatrimoniosContext.Provider></MemoryRouter>;
 }
 
+test.each([
+  ["TEMPORARIAMENTE_FECHADO", "Fechado"], ["ACESSO_PARCIAL", "Acesso parcial"],
+  ["SEM_VISITACAO_PUBLICA", "Sem visitação pública"],
+])("painel do mapa mostra selo %s sobre a imagem e permite fechar", (statusVisitacao, texto) => {
+  render(<MapaComContexto patrimonios={[{ ...item("restrito"), statusVisitacao }]} />);
+  act(() => screen.getByRole("button", { name: /Patrimônio restrito/ }).click());
+  const panel = screen.getByRole("region", { name: "Patrimônio selecionado" });
+  expect(within(panel).getByText(texto).closest(".mapa-detail-imagem")).toBeTruthy();
+  act(() => within(panel).getByRole("button", { name: "Fechar detalhes" }).click());
+  expect(screen.queryByRole("region", { name: "Patrimônio selecionado" })).toBeNull();
+});
+
 test("sidebar e marker compartilham um único painel; mudar seleção e fechar", async () => {
   const first = { ...item("um"), endereco: "Rua Exemplo", numero: "s/n", complemento: "Entrada", cidade: "São Paulo", uf: "SP", cep: "01000-000" };
   const second = { ...item("dois"), situacao: "DEMOLIDO" };

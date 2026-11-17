@@ -4,6 +4,7 @@ import { CATEGORIA_META } from "../categoriaMeta";
 import { classificarLocalizacao } from "./politicaLocalizacao";
 import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
 import FavoritoButton from "../../components/FavoritoButton/FavoritoButton";
+import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
 import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
 
 export default function PlaquetaCard({ item }) {
@@ -29,6 +30,7 @@ export default function PlaquetaCard({ item }) {
           {meta?.label ?? item.categoria}
         </span>
         <FavoritoButton item={item} className="destaque-fav" />
+        <VisitacaoPatrimonio item={item} />
       </figure>
       <div className="plaqueta-body">
         <h3>{item.nome}</h3>

@@ -263,6 +263,7 @@ test("edição usa PATCH, preserva resumo editorial e imagens, normaliza Decimal
     numeroExibicao: null, ordemExibicao: null,
     nome: "Estação revisada", descricao: records[0].descricao, descricaoResumida: "Resumo editorial próprio.",
     categoriaId: cats[0].id, categoriasAdicionais: [cats[1].id], situacao: "PRESERVADO",
+    statusVisitacao: "NAO_INFORMADO", motivoRestricao: null, previsaoReabertura: null,
     historia: "História completa atual.", importanciaCultural: "Importância atual.",
     localizacao: { endereco: "Rua Teste", numero: "393", complemento: "Acesso lateral", bairro: "Centro", cidade: "São Paulo", uf: "SP", cep: "07010-000", latitude: -23.4543, longitude: -46.5333 },
   });
@@ -271,6 +272,56 @@ test("edição usa PATCH, preserva resumo editorial e imagens, normaliza Decimal
   expect(records[0].imagens).toHaveLength(1);
   expect(flags.geo).not.toHaveBeenCalled();
   expect(screen.queryByRole("heading", { name: "Editar patrimônio" })).toBeNull();
+});
+
+test("edição carrega e preserva visitação ao alterar somente o nome", async () => {
+  Object.assign(records[0], { statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma do telhado", previsaoReabertura: "2027-03-15" });
+  const user = await edit();
+  expect(screen.getByLabelText("Visitação").value).toBe("TEMPORARIAMENTE_FECHADO");
+  expect(screen.getByLabelText("Motivo da restrição").value).toBe("Reforma do telhado");
+  expect(screen.getByLabelText("Previsão de reabertura").value).toBe("2027-03-15");
+  fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Nome revisado" } });
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.find(c => c.method === "patch")?.body).toMatchObject({
+    nome: "Nome revisado", statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma do telhado", previsaoReabertura: "2027-03-15",
+  }));
+});
+
+test.each([
+  ["Motivo da restrição", "motivoRestricao", "previsaoReabertura", "2027-03-15"],
+  ["Previsão de reabertura", "previsaoReabertura", "motivoRestricao", "Reforma"],
+])("apagar %s envia null e preserva o outro campo de visitação", async (label, field, other, value) => {
+  Object.assign(records[0], { statusVisitacao: "ACESSO_PARCIAL", motivoRestricao: "Reforma", previsaoReabertura: "2027-03-15" });
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText(label), { target: { value: "" } });
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.find(c => c.method === "patch")?.body).toMatchObject({ [field]: null, [other]: value, statusVisitacao: "ACESSO_PARCIAL" }));
+});
+
+test.each(["ABERTO", "NAO_INFORMADO"])("selecionar %s limpa os campos do formulário e do PATCH", async statusVisitacao => {
+  Object.assign(records[0], { statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "Reforma", previsaoReabertura: "2027-03-15" });
+  const user = await edit();
+  await user.selectOptions(screen.getByLabelText("Visitação"), statusVisitacao);
+  expect(screen.queryByLabelText("Motivo da restrição")).toBeNull();
+  expect(screen.queryByLabelText("Previsão de reabertura")).toBeNull();
+  await user.selectOptions(screen.getByLabelText("Visitação"), "TEMPORARIAMENTE_FECHADO");
+  expect(screen.getByLabelText("Motivo da restrição").value).toBe("");
+  expect(screen.getByLabelText("Previsão de reabertura").value).toBe("");
+  await user.selectOptions(screen.getByLabelText("Visitação"), statusVisitacao);
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.find(c => c.method === "patch")?.body).toMatchObject({ statusVisitacao, motivoRestricao: null, previsaoReabertura: null }));
+});
+
+test.each(["ACESSO_PARCIAL", "TEMPORARIAMENTE_FECHADO", "SEM_VISITACAO_PUBLICA"])("registro antigo aceita %s sem motivo nem previsão", async statusVisitacao => {
+  const user = await edit();
+  expect(screen.getByLabelText("Visitação").value).toBe("NAO_INFORMADO");
+  expect(screen.queryByLabelText("Motivo da restrição")).toBeNull();
+  await user.selectOptions(screen.getByLabelText("Visitação"), statusVisitacao);
+  expect(screen.getByLabelText("Motivo da restrição").required).toBe(false);
+  expect(screen.getByLabelText("Motivo da restrição").maxLength).toBe(2000);
+  expect(screen.getByLabelText("Previsão de reabertura").required).toBe(false);
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.find(c => c.method === "patch")?.body).toMatchObject({ statusVisitacao, motivoRestricao: null, previsaoReabertura: null }));
 });
 
 test.each([400, 401, 403, 404, 409])("erro %i ao salvar aparece e mantém formulário e imagens", async status => {

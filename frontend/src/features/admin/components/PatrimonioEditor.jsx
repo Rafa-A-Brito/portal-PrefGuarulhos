@@ -26,6 +26,7 @@ import * as adminApi from "../../../services/adminApi";
 import * as referenciasApi from "../../../services/referenciasApi";
 import AdminLigacoes from "./AdminLigacoes";
 import OrganizacaoEditorial from "./OrganizacaoEditorial";
+import { STATUS_VISITACAO, restricaoVisitacao } from "../../visitacao";
 import "./PatrimonioEditor.css";
 
 /**
@@ -76,6 +77,9 @@ const FORMULARIO_VAZIO = {
   categoriaId: "",
   categoriasAdicionais: [],
   situacao: "NAO_INFORMADO",
+  statusVisitacao: "NAO_INFORMADO",
+  motivoRestricao: "",
+  previsaoReabertura: "",
   cep: "",
   endereco: "",
   numero: "",
@@ -128,6 +132,9 @@ function paraFormulario(patrimonio) {
     categoriaId: patrimonio.categoriaId ?? "",
     categoriasAdicionais: patrimonio.categoriasAdicionaisIds ?? [],
     situacao: patrimonio.situacao ?? "NAO_INFORMADO",
+    statusVisitacao: patrimonio.statusVisitacao ?? "NAO_INFORMADO",
+    motivoRestricao: patrimonio.motivoRestricao ?? "",
+    previsaoReabertura: patrimonio.previsaoReabertura ?? "",
     cep: formatarCep(patrimonio.cep || ""),
     endereco: patrimonio.endereco || "",
     numero: patrimonio.numero || "",
@@ -401,7 +408,13 @@ export default function PatrimonioEditor({
   function atualizar(campo, valor) {
     marcarCampoManual(campo);
     if (campo === "cep") alterarCep(valor);
-    setFormulario((f) => ({ ...f, [campo]: valor }));
+    setFormulario((f) => ({
+      ...f,
+      [campo]: valor,
+      ...(campo === "statusVisitacao" && !restricaoVisitacao(valor) && {
+        motivoRestricao: "", previsaoReabertura: "",
+      }),
+    }));
   }
 
   // Trocar a principal tira essa categoria das adicionais (o backend recusa
@@ -533,6 +546,13 @@ export default function PatrimonioEditor({
         categoriaId: formulario.categoriaId,
         categoriasAdicionais: formulario.categoriasAdicionais,
         situacao: formulario.situacao,
+        statusVisitacao: formulario.statusVisitacao,
+        motivoRestricao: restricaoVisitacao(formulario.statusVisitacao)
+          ? formulario.motivoRestricao.trim() || null
+          : null,
+        previsaoReabertura: restricaoVisitacao(formulario.statusVisitacao)
+          ? formulario.previsaoReabertura || null
+          : null,
         historia: opcional(formulario.historia),
         importanciaCultural: opcional(formulario.importanciaCultural),
         localizacao: {
@@ -893,19 +913,62 @@ export default function PatrimonioEditor({
               </select>
             </label>
 
-            <label>
-              Situação
-              <select
-                value={formulario.situacao}
-                onChange={(e) => atualizar("situacao", e.target.value)}
-              >
-                {SITUACOES.map((sit) => (
-                  <option key={sit.valor} value={sit.valor}>
-                    {sit.rotulo}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <fieldset className="admin-form-col-2 patrimonio-editor-situacao">
+              <legend>Situação</legend>
+              <div className="admin-form-grid">
+                <label>
+                  Conservação
+                  <select
+                    value={formulario.situacao}
+                    onChange={(e) => atualizar("situacao", e.target.value)}
+                  >
+                    {SITUACOES.map((sit) => (
+                      <option key={sit.valor} value={sit.valor}>
+                        {sit.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Visitação
+                  <select
+                    value={formulario.statusVisitacao}
+                    onChange={(e) => atualizar("statusVisitacao", e.target.value)}
+                  >
+                    {STATUS_VISITACAO.map(({ valor, rotulo }) => (
+                      <option key={valor} value={valor}>{rotulo}</option>
+                    ))}
+                  </select>
+                </label>
+                {restricaoVisitacao(formulario.statusVisitacao) && (
+                  <>
+                    <label className="admin-form-col-2">
+                      Motivo da restrição
+                      <textarea
+                        rows={3}
+                        maxLength={2000}
+                        value={formulario.motivoRestricao}
+                        onChange={(e) => atualizar("motivoRestricao", e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Previsão de reabertura
+                      <input
+                        type="date"
+                        min="0001-01-01"
+                        max="9999-12-31"
+                        value={formulario.previsaoReabertura}
+                        onChange={(e) => atualizar("previsaoReabertura", e.target.value)}
+                      />
+                    </label>
+                    <p className="admin-ajuda admin-form-col-2">
+                      Motivo e previsão são opcionais. A previsão não altera a
+                      visitação automaticamente.
+                    </p>
+                  </>
+                )}
+              </div>
+            </fieldset>
 
             <OrganizacaoEditorial
               key={editandoId}
