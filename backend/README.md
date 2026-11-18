@@ -361,3 +361,5 @@ Desenvolvido como parte de um projeto acadêmico voltado à valorização do pat
 Autenticação atual: acesso Bearer de 300s e sessão renovável limitada a 8h,
 com refresh rotativo e logout no servidor. A migration de sessões exige novo login.
 Ver [contratos e implantação](docs/SESSOES_RENOVAVEIS.md).
+
+Contrato e comandos Docker do [raio de protecao do entorno](docs/raio-protecao-entorno.md).

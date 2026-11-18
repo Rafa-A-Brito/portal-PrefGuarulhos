@@ -48,6 +48,13 @@ export const localizacaoSchema = localizacaoFieldsSchema.superRefine((localizaca
 });
 
 const createPatrimonioFieldsSchema = z.strictObject({
+    raioProtecaoEntornoMetros: z.number().positive().max(999999999.999)
+        .refine(value => {
+            const [mantissa, exponent = "0"] = String(value).toLowerCase().split("e");
+            return (mantissa.split(".")[1]?.length ?? 0) - Number(exponent) <= 3;
+        },
+            "Informe no máximo 3 casas decimais para o raio em metros.")
+        .nullable().optional(),
     regiaoId: z.uuid().nullable().optional(),
     numeroExibicao: z.number().int().min(1).max(2147483647).nullable().optional(),
     ordemExibicao: z.number().int().min(0).max(2147483647).nullable().optional(),

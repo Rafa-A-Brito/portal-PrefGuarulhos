@@ -23,7 +23,12 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         assert.equal(patrimonio.statusVisitacao, "NAO_INFORMADO");
         assert.equal(patrimonio.motivoRestricao, null);
         assert.equal(patrimonio.previsaoReabertura, null);
+        assert.equal(patrimonio.raioProtecaoEntornoMetros, null);
+        const creationLog = await prisma.auditLog.findFirst({ where: { entityId: patrimonio.id, action: "PATRIMONIO_CREATE" } });
+        assert.equal(creationLog.newValues.raioProtecaoEntornoMetros, null);
         const id = patrimonio.id;
+        await service.updatePatrimonio(id, { raioProtecaoEntornoMetros: 125.375 }, user);
+        assert.equal((await service.getAdminPatrimonio(id)).raioProtecaoEntornoMetros, 125.375);
         const originalSlug = patrimonio.slug;
         await assert.rejects(service.getPatrimonioBySlug(originalSlug), { statusCode: 404 });
         await service.updatePatrimonio(id, { nome: `${key} editado`, localizacao: { endereco: "Rua", bairro: "Centro", latitude: -23, longitude: -46 } }, user);
@@ -34,6 +39,10 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         await service.updatePatrimonio(id, { localizacao: { latitude: -24, longitude: -46 } }, user);
         const edited = await service.getAdminPatrimonio(id);
         assert.deepEqual(edited.categoriasAdicionais.map((item) => item.id), [categoriaAdicional.id]);
+        assert.equal(edited.raioProtecaoEntornoMetros, 125.375);
+        const radiusLog = await prisma.auditLog.findFirst({ where: { entityId: id, action: "PATRIMONIO_UPDATE" }, orderBy: { createdAt: "asc" } });
+        assert.equal(radiusLog.oldValues.raioProtecaoEntornoMetros, null);
+        assert.equal(radiusLog.newValues.raioProtecaoEntornoMetros, 125.375);
         assert.equal(edited.slug, originalSlug);
         assert.equal(edited.localizacao.latitude.toNumber(), -24);
         assert.equal(edited.localizacao.longitude.toNumber(), -46);
@@ -66,6 +75,9 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         assert.equal(published[0].publicadoEm.getTime(), published[1].publicadoEm.getTime());
         assert.equal(published[0].updatedAt.getTime(), published[1].updatedAt.getTime());
         assert.equal((await service.getPatrimonioBySlug(originalSlug)).id, id);
+        assert.equal((await service.getPatrimonioBySlug(originalSlug)).raioProtecaoEntornoMetros, 125.375);
+        await service.updatePatrimonio(id, { raioProtecaoEntornoMetros: null }, user);
+        assert.equal((await service.getPatrimonioBySlug(originalSlug)).raioProtecaoEntornoMetros, null);
         assert.deepEqual((await service.getPatrimonioBySlug(originalSlug)).categoriasAdicionais.map((item) => item.id), [categoriaAdicional.id]);
         assert.equal((await service.listPatrimonios({ busca: key, pagina: 1, limite: 20 })).itens.length, 1);
         for (const dto of [await service.getPatrimonioBySlug(originalSlug),
@@ -97,6 +109,7 @@ test("PostgreSQL: edição, localização, transições concorrentes e visibilid
         assert.equal(republished.arquivadoEm, null);
         assert.ok(republished.publicadoEm >= published[0].publicadoEm);
         assert.equal((await service.getPatrimonioBySlug(originalSlug)).id, id);
+        assert.equal((await service.getPatrimonioBySlug(originalSlug)).raioProtecaoEntornoMetros, null);
     } finally {
         // Remove somente os registros criados por este teste no banco exclusivo.
         try {

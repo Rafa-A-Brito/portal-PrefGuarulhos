@@ -45,6 +45,7 @@ for (let i = 0; i < 20; i++) {
         descricao: "Patrimônio inteiramente fictício, criado para demonstrar o Memória Viva Guarulhos.",
         descricaoResumida: `Exemplo fictício ${i + 1} para navegação e testes.`,
         historia: i % 4 ? "História inventada de um espaço cultural imaginário. Não representa fatos históricos." : null,
+        raioProtecaoEntornoMetros: i === 0 ? 100 : null,
         importanciaCultural: i % 3 ? "Conteúdo ilustrativo sem valor documental." : null,
         categoriaId: store.categorias[i % 3].id, categoriasAdicionais: i % 4 ? [] : [store.categorias[(i + 1) % 3].id],
         regiaoId: i % 5 ? fixtureId([20, 20, 21, 22][i % 4]) : null,

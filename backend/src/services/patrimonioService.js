@@ -26,6 +26,9 @@ function achatarCategorias(patrimonio) {
     const { categoriasAdicionais, ...resto } = patrimonio;
     return {
         ...resto,
+        ...(Object.hasOwn(resto, "raioProtecaoEntornoMetros") && {
+            raioProtecaoEntornoMetros: resto.raioProtecaoEntornoMetros == null ? null : Number(resto.raioProtecaoEntornoMetros),
+        }),
         ...(Object.hasOwn(resto, "previsaoReabertura") && {
             previsaoReabertura: dataVisitacao(resto.previsaoReabertura),
         }),
@@ -63,6 +66,7 @@ const publicListSelect = {
 };
 
 const publicDetailSelect = {
+    raioProtecaoEntornoMetros: true,
     numeroExibicao: true,
     ordemExibicao: true,
     regiao: { select: regiaoPublicSelect },
@@ -517,6 +521,7 @@ export async function createPatrimonio(data, createdBy) {
                     slug,
                     descricao: data.descricao,
                     descricaoResumida: data.descricaoResumida,
+                    raioProtecaoEntornoMetros: data.raioProtecaoEntornoMetros,
                     historia: data.historia,
                     importanciaCultural: data.importanciaCultural,
                     situacao: data.situacao ?? SituacaoPatrimonio.NAO_INFORMADO,

@@ -197,6 +197,7 @@ model Patrimonio {
   regiao              RegiaoPatrimonio?  @relation(fields: [regiaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   descricao           String             @db.Text
   descricaoResumida   String             @map("descricao_resumida") @db.VarChar(500)
+  raioProtecaoEntornoMetros Decimal? @map("raio_protecao_entorno_metros") @db.Decimal(12, 3)
   historia            String?            @db.Text
   importanciaCultural String?            @map("importancia_cultural") @db.Text
   situacao            SituacaoPatrimonio @default(NAO_INFORMADO)

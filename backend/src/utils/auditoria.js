@@ -18,8 +18,8 @@ const locationFields = ["endereco", "numero", "complemento", "bairro", "cidade",
 const urlFields = ["url", "imagemUrl", "ctaUrl", "ctaSaibaMais", "fonte"];
 const fields = Object.freeze({
     User: ["name", "email", "role", "isActive"],
-    RegiaoPatrimonio: ["nome", "slug", "descricao", "ativo"],
-    Patrimonio: ["nome", "slug", "regiaoId", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "statusVisitacao", "motivoRestricao", "previsaoReabertura", "status", "categoriaId", "categoriasAdicionais", "localizacao", "publicadoEm", "arquivadoEm"],
+    RegiaoPatrimonio: [ "nome", "slug", "descricao", "ativo"],
+    Patrimonio: ["raioProtecaoEntornoMetros", "nome", "slug", "regiaoId", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "statusVisitacao", "motivoRestricao", "previsaoReabertura", "status", "categoriaId", "categoriasAdicionais", "localizacao", "publicadoEm", "arquivadoEm"],
     PatrimonioImagem: ["patrimonioId", "titulo", "textoAlternativo", "credito", "fonte", "ordem", "principal", "url", "principais", "principaisSubstituidas"],
     PatrimonioDocumento: ["patrimonioId", "titulo", "descricao", "url", "tipo", "fonte", "dataDocumento", "mimeType"],
     PatrimonioFato: ["patrimonioId", "rotulo", "valor", "ordem", "itens"],

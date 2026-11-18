@@ -55,6 +55,7 @@ export function catalogoInicial(tipo = "canonical") {
         const record = { key, nome: item.nome, aliases: [sourceSlug], categoria: item.categoria,
             ...(research && { numeroExibicao: research.numeroExibicao, ordemExibicao: research.ordemExibicao }),
             descricao: description, descricaoResumida: item.descricaoResumida, historia: item.historia,
+            ...(item.raioProtecaoEntornoMetros !== undefined && { raioProtecaoEntornoMetros: item.raioProtecaoEntornoMetros }),
             importanciaCultural: item.importanciaCultural, situacao: item.situacao,
             detalhes: item.detalhes.map((detail, ordem) => ({ icone: detail.icone ?? null, titulo: detail.titulo, texto: detail.texto, ordem })),
             localizacao: { endereco: item.endereco, numero: item.numero ?? null, bairro: item.bairro,
@@ -107,6 +108,7 @@ export function planejarCarga({ records, existing, categories, bindings, reconci
         const data = createPatrimonioSchema.parse({ nome: source.nome, descricao: source.descricao,
             descricaoResumida: source.descricaoResumida, categoriaId: matches[0]?.id || stableId("category/" + categorySlug),
             historia: source.historia, importanciaCultural: source.importanciaCultural, situacao: source.situacao,
+            raioProtecaoEntornoMetros: source.raioProtecaoEntornoMetros,
             localizacao: source.localizacao });
         entries.push({ source, id, current, data, categorySlug, bound: logs.length > 0 });
     }

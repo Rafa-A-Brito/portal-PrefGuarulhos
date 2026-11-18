@@ -713,6 +713,7 @@ const sourceNames = new Map();
                 ),
                 categoriaId: category.id,
                 situacao: item.situacao,
+                raioProtecaoEntornoMetros: item.raioProtecaoEntornoMetros,
 
                 ...(item.historia && {
                     historia: repararTexto(item.historia),

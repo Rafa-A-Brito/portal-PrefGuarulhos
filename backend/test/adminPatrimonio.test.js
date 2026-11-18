@@ -171,12 +171,13 @@ test("cadastro administrativo grava visitação explícita e não deduz fechamen
     const db = database(t);
     db.tx.patrimonio.findUnique = async () => null;
     db.tx.patrimonio.create = async ({ data }) => record(data);
-    const body = { nome: "Espaço fictício", descricao: "Descrição", descricaoResumida: "Resumo", categoriaId: randomUUID(), situacao: "EM_RESTAURACAO" };
+    const body = { raioProtecaoEntornoMetros: 100.125, nome: "Espaço fictício", descricao: "Descrição", descricaoResumida: "Resumo", categoriaId: randomUUID(), situacao: "EM_RESTAURACAO" };
     for (const visitacao of [{}, { statusVisitacao: "TEMPORARIAMENTE_FECHADO" }, {
         statusVisitacao: "ACESSO_PARCIAL", motivoRestricao: "Obras", previsaoReabertura: "2028-02-29",
     }]) {
         const result = await request("/admin/patrimonios", { user: editor, method: "POST", body: { ...body, ...visitacao } });
         assert.equal(result.status, 201);
+        assert.equal(result.body.data.raioProtecaoEntornoMetros, 100.125);
         assert.equal(result.body.data.statusVisitacao, visitacao.statusVisitacao ?? "NAO_INFORMADO");
         assert.equal(result.body.data.previsaoReabertura, visitacao.previsaoReabertura ?? null);
         assert.equal(result.body.data.motivoRestricao, visitacao.motivoRestricao ?? null);
@@ -592,4 +593,28 @@ test("PATCH preserva coordenadas omitidas, limpa null/null e aceita zero sem alt
     assert.equal(schemas.localizacaoSchema.safeParse({
         endereco: "Rua", bairro: "Centro", latitude: null, longitude: null,
     }).success, false, "null continua proibido no cadastro");
+});
+
+test("raio documental: valida faixa, precisao, omissao e null", async t => {
+    const key = "raioProtecaoEntornoMetros";
+    for (const value of [0, -1, Infinity, -Infinity, NaN, "100", "", true, {}, [], 1000000000, 1.0001, 0.0001]) {
+        assert.equal(schemas.updatePatrimonioSchema.safeParse({ [key]: value }).success, false, String(value));
+    }
+    for (const value of [null, 0.001, 100, 125.375, 999999999.999]) {
+        assert.equal(schemas.updatePatrimonioSchema.parse({ [key]: value })[key], value);
+    }
+    const db = database(t, record({ [key]: 125.375 }));
+    const id = db.state().id;
+    let result = await request(`/admin/patrimonios/${id}`, { user: admin, method: "PATCH", body: { descricaoResumida: "Revisado" } });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.data[key], 125.375);
+    result = await request(`/admin/patrimonios/${id}`, { user: admin, method: "PATCH", body: { [key]: 99.125 } });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.data[key], 99.125);
+    for (const value of [0, -1, "100", 0.0001, 1000000000]) {
+        assert.equal((await request(`/admin/patrimonios/${id}`, { user: admin, method: "PATCH", body: { [key]: value } })).status, 400);
+    }
+    result = await request(`/admin/patrimonios/${id}`, { user: admin, method: "PATCH", body: { [key]: null } });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.data[key], null);
 });

@@ -243,6 +243,7 @@ test("busca em seções, filtros combinados, categoria adicional, paginação e 
     assert.equal(filtered.itens.length, 1); assert.equal(filtered.itens[0].id, fixtureId(100));
     const regional = await data("/api/patrimonios?regiao=norte-demo"); assert.ok(regional.itens.every(p => p.regiao.slug === "norte-demo"));
     const detail = await data("/api/patrimonios/espaco-imaginario-1-demo");
+    assert.equal(detail.raioProtecaoEntornoMetros, 100);
     assert.equal(detail.fatos.length, 1); assert.equal(detail.ligacoes.length, 1); assert.ok(detail.detalhes.length);
     assert.equal(detail.createdBy, undefined); assert.equal(detail.status, undefined);
     assert.equal((await call("/api/patrimonios/espaco-imaginario-13-demo")).status, 404);

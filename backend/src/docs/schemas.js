@@ -935,3 +935,13 @@ schemas.DocumentoPatch = (() => {
 })();
 
 schemasOrganizacaoEditorial(schemas);
+
+const raioProtecaoEntorno = {
+    type: "number", format: "double", nullable: true, minimum: 0, exclusiveMinimum: true,
+    maximum: 999999999.999, multipleOf: 0.001, example: 100,
+    description: "Raio de proteção do entorno em metros, definido em documento oficial. Decimal(12,3), até 3 casas decimais. Omitido ou null na criação: sem raio. No PATCH, omissão preserva o valor atual; null remove o raio cadastrado. Retornado como número JSON ou null.",
+};
+for (const name of ["PatrimonioRequest", "PatrimonioPatch", "PatrimonioDetalhe", "PatrimonioCriado", "PatrimonioAdmin"]) {
+    schemas[name].properties.raioProtecaoEntornoMetros = { ...raioProtecaoEntorno };
+    if (!["PatrimonioRequest", "PatrimonioPatch"].includes(name)) schemas[name].required.push("raioProtecaoEntornoMetros");
+}

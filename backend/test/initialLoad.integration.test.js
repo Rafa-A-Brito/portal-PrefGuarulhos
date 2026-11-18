@@ -45,9 +45,10 @@ test("PostgreSQL: carga, rollback, reexecução, edições, aliases e pesquisa p
         assert.ok(loaded.patrimonios.every(row => row.status === "RASCUNHO" && row.publicadoEm === null && row.detalhes.length));
         assert.ok(loaded.patrimonios.every(row => row.statusVisitacao === "NAO_INFORMADO" && row.motivoRestricao === null && row.previsaoReabertura === null));
         assert.equal((await prisma.user.findUnique({ where: { email: SEED_EMAIL } })).isActive, false);
+        assert.ok(loaded.patrimonios.every(row => row.raioProtecaoEntornoMetros === null));
         const target = loaded.patrimonios[0];
         await prisma.patrimonio.update({ where: { id: target.id }, data: { nome: "Nome administrativo", slug: "slug-administrativo-" + randomUUID(),
-            descricao: "Texto administrativo preservado", status: "ARQUIVADO", arquivadoEm: new Date() } });
+            raioProtecaoEntornoMetros: 125.375, descricao: "Texto administrativo preservado", status: "ARQUIVADO", arquivadoEm: new Date() } });
         const edited = await state();
         const { importPatrimonios } = await import("../prisma/import-patrimonios.js");
         const importerReview = await importPatrimonios({ prisma, databaseUrl: process.env.TEST_DATABASE_URL, uploadDir,

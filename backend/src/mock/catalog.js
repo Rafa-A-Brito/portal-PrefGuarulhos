@@ -26,7 +26,7 @@ export function patrimonioDto(row, admin = true, detail = true) {
         categoriasAdicionais: row.categoriasAdicionais.map(category).sort(byName).map(admin && detail ? clone : summaryCategory),
         localizacao: clone(row.localizacao), imagens: clone([...row.imagens].sort((a, b) => Number(b.principal) - Number(a.principal) || byOrder(a, b))) };
     if (!detail) data.imagens = data.imagens.slice(0, 1).map(({ id, url, titulo, textoAlternativo, principal }) => ({ id, url, titulo, textoAlternativo, principal }));
-    if (detail) Object.assign(data, { descricao: row.descricao, historia: row.historia, importanciaCultural: row.importanciaCultural,
+    if (detail) Object.assign(data, { raioProtecaoEntornoMetros: row.raioProtecaoEntornoMetros, descricao: row.descricao, historia: row.historia, importanciaCultural: row.importanciaCultural,
         updatedAt: row.updatedAt, detalhes: clone(row.detalhes), documentos: clone(row.documentos), fatos: clone([...row.fatos].sort(byOrder)),
         ligacoes: row.ligacoes.map(l => ({ ...clone(l), destino: store.patrimonios.find(p => p.id === l.patrimonioDestinoId) }))
             .filter(l => admin || (l.destino?.status === "PUBLICADO" && !legadoEditorial(l.destino))).sort(byOrder)
@@ -83,7 +83,7 @@ export async function createPatrimonio(input, createdBy) {
     let slug = base;
     for (let n = 2; store.patrimonios.some(p => p.slug === slug); n++) slug = `${base.slice(0, 210)}-${n}`;
     const row = { id: randomUUID(), regiaoId: null, numeroExibicao: null, ordemExibicao: null, historia: null, importanciaCultural: null,
-        categoriasAdicionais: [], localizacao: null, motivoRestricao: null, previsaoReabertura: null,
+        categoriasAdicionais: [], localizacao: null, raioProtecaoEntornoMetros: null, motivoRestricao: null, previsaoReabertura: null,
         ...data, ...dadosVisitacao(data), slug, status: "RASCUNHO", createdBy, updatedBy: null,
         createdAt: new Date(), updatedAt: new Date(), publicadoEm: null, arquivadoEm: null,
         imagens: [], documentos: [], fatos: [], ligacoes: [], detalhes: [], rotas: [] };
