@@ -477,6 +477,7 @@ test("novo usa POST e reabre edição; cancelar não grava", async () => {
   await user.click(screen.getByRole("button", { name: "Salvar" }));
   await screen.findByRole("heading", { name: "Editar patrimônio" });
   expect(calls.filter(c => c.method === "post")).toHaveLength(1);
+  expect(calls.find(c => c.method === "post").body).not.toHaveProperty("raioProtecaoEntornoMetros");
   expect(screen.getByLabelText("Nome").value).toBe("Novo bem");
   expect(calls.find(c => c.method === "post").body).toMatchObject({ descricao: "Descrição nova", descricaoResumida: "Resumo manual novo" });
   expect(screen.getByLabelText("Resumo").value).toBe("Resumo manual novo");
@@ -993,4 +994,41 @@ test("D3D+: ADMIN cadastra região dentro do formulário de patrimônio, selecio
   expect(screen.getByLabelText("Número de exibição").value).toBe("5");
   expect(calls.find(c => c.method === "post" && c.url === "/admin/regioes").body).toEqual({ nome: "Centro Histórico", slug: "centro-historico", descricao: null, ativo: true });
   expect(calls.filter(c => c.method === "patch").length).toBe(antes); // não salvou o patrimônio
+});
+
+test("raio: carrega 100 m, omite inalterado, salva virgula, reabre e remove", async () => {
+  records[0].raioProtecaoEntornoMetros = 100;
+  let user = await edit();
+  const field = () => screen.getByLabelText("Raio de prote\u00e7\u00e3o do entorno (m)");
+  expect(field().value).toBe("100");
+  await user.clear(screen.getByLabelText("Nome"));
+  await user.type(screen.getByLabelText("Nome"), "Nome revisado");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body).not.toHaveProperty("raioProtecaoEntornoMetros");
+  expect(records[0].raioProtecaoEntornoMetros).toBe(100);
+  cleanup(); calls = [];
+  records[0].nome = "Esta\u00e7\u00e3o";
+  user = await edit();
+  await user.clear(field()); await user.type(field(), "125,5");
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body.raioProtecaoEntornoMetros).toBe(125.5);
+  cleanup(); calls = [];
+  user = await edit();
+  expect(field().value).toBe("125,5");
+  await user.clear(field());
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  await waitFor(() => expect(calls.some(c => c.method === "patch")).toBe(true));
+  expect(calls.find(c => c.method === "patch").body.raioProtecaoEntornoMetros).toBeNull();
+  cleanup(); calls = [];
+  await edit(); expect(field().value).toBe("");
+});
+
+test.each(["0", "-1", "1,0001", "1000000000", "abc", "Infinity"])("raio invalido %s impede salvar", async valor => {
+  const user = await edit();
+  fireEvent.change(screen.getByLabelText("Raio de prote\u00e7\u00e3o do entorno (m)"), { target: { value: valor } });
+  await user.click(screen.getByRole("button", { name: "Salvar" }));
+  expect(calls.some(c => c.method === "patch")).toBe(false);
+  expect(screen.getByText(/raio.*(positivo|entre)/)).toBeTruthy();
 });

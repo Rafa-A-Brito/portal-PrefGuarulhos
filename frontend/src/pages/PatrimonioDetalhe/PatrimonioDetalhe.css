@@ -111,6 +111,12 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
+.detalhe-raio-protecao {
+  margin: 14px 0 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
 .detalhe-page .detalhe-endereco-card {
   margin: 0;
   padding: 0;

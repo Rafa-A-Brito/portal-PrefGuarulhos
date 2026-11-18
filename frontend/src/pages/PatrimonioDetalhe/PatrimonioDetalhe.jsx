@@ -1,3 +1,4 @@
+import { formatarRaioProtecao } from "../../features/raioProtecao";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useVisualizacaoPatrimonio } from "../../hooks/useVisualizacaoPatrimonio";
@@ -193,7 +194,9 @@ function DetalhePorSlug({ slug }) {
   const referencias = item.referencias ?? [];
   const imagens = (item.imagens ?? []).filter((imagem) => imagem.url);
   const resumo = item.descricaoResumida ?? item.resumo;
+  const raioProtecao = formatarRaioProtecao(item.raioProtecaoEntornoMetros);
   const temLocalizacao =
+    Boolean(raioProtecao) ||
     endereco.length > 0 ||
     Boolean(politica.aviso) ||
     Boolean(politica.coordenadasMarcador || rotaUrl);
@@ -311,6 +314,11 @@ function DetalhePorSlug({ slug }) {
                     )}
                   </div>
                 </div>
+              )}
+              {raioProtecao && (
+                <p className="detalhe-raio-protecao">
+                  Raio de proteção do entorno · {raioProtecao}
+                </p>
               )}
               {politica.aviso && (
                 <p className="local-aproximado">{politica.aviso}</p>

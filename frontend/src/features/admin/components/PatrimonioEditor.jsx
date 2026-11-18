@@ -27,6 +27,7 @@ import * as referenciasApi from "../../../services/referenciasApi";
 import AdminLigacoes from "./AdminLigacoes";
 import OrganizacaoEditorial from "./OrganizacaoEditorial";
 import { STATUS_VISITACAO, restricaoVisitacao } from "../../visitacao";
+import { dadosRaioProtecao } from "../../raioProtecao";
 import "./PatrimonioEditor.css";
 
 /**
@@ -70,6 +71,7 @@ const SITUACOES = [
 const FORMULARIO_VAZIO = {
   regiaoId: "",
   regiaoOriginalId: "",
+  raioProtecaoEntornoMetros: "",
   regiaoAtual: null,
   numeroExibicao: "",
   ordemExibicao: "",
@@ -126,6 +128,8 @@ function paraFormulario(patrimonio) {
     regiaoId: patrimonio.regiaoId ?? "",
     regiaoOriginalId: patrimonio.regiaoId ?? "",
     regiaoAtual: patrimonio.regiao ?? null,
+    raioProtecaoEntornoMetros: patrimonio.raioProtecaoEntornoMetros == null
+      ? "" : String(patrimonio.raioProtecaoEntornoMetros).replace(".", ","),
     numeroExibicao: patrimonio.numeroExibicao ?? "",
     ordemExibicao: patrimonio.ordemExibicao ?? "",
     nome: patrimonio.nome,
@@ -449,6 +453,18 @@ export default function PatrimonioEditor({
     if (ocupado || !editandoId) return;
     setErroFormulario(null);
 
+    let dadosRaio;
+    try {
+      dadosRaio = dadosRaioProtecao(
+        formulario.raioProtecaoEntornoMetros,
+        formularioBase ? JSON.parse(formularioBase).raioProtecaoEntornoMetros : "",
+        editandoId === "novo",
+      );
+    } catch (err) {
+      setErroFormulario(err.message);
+      return;
+    }
+
     const cepNumeros = formulario.cep.replace(/\D/g, "");
 
     if (cepNumeros.length !== 8) {
@@ -527,6 +543,7 @@ export default function PatrimonioEditor({
       };
 
       const dados = {
+        ...dadosRaio,
         // Omitir vínculo inalterado permite editar fichas cuja região foi inativada.
         ...((editandoId === "novo" ||
           formulario.regiaoId !== formulario.regiaoOriginalId) && {
@@ -1032,6 +1049,22 @@ export default function PatrimonioEditor({
                 value={formulario.bairro}
                 onChange={(e) => atualizar("bairro", e.target.value)}
               />
+            </label>
+
+            <label htmlFor="patrimonio-raio-protecao">
+              Raio de proteção do entorno (m)
+              <input
+                id="patrimonio-raio-protecao"
+                aria-label="Raio de proteção do entorno (m)"
+                type="text"
+                inputMode="decimal"
+                aria-describedby="patrimonio-raio-protecao-ajuda"
+                value={formulario.raioProtecaoEntornoMetros}
+                onChange={(e) => atualizar("raioProtecaoEntornoMetros", e.target.value)}
+              />
+              <span id="patrimonio-raio-protecao-ajuda" className="admin-ajuda">
+                Preencha apenas se o raio estiver definido em documento oficial.
+              </span>
             </label>
 
             <label htmlFor="patrimonio-cep">

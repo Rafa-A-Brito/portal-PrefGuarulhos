@@ -312,3 +312,22 @@ test.each(PATRIMONIOS_SEM_DESTINO)("relacionados não reativam endereço/mapa/ro
   expect(screen.queryByRole("link", { name: /Ver rota|Ver local aproximado/ })).toBeNull();
   expect(document.querySelector(".detalhe-endereco-card")).toBeNull();
 });
+
+test.each([[100, "100 m"], [125.5, "125,5 m"], [125.375, "125,375 m"]])("raio publico %s aparece junto a localizacao", async (valor, esperado) => {
+  responder({ ...registro, raioProtecaoEntornoMetros: valor }); abrir(); await carregado();
+  expect(screen.getByText(`Raio de prote\u00e7\u00e3o do entorno \u00b7 ${esperado}`).closest("aside")).toBeTruthy();
+});
+
+test.each([null, undefined])("raio vazio %s nao cria linha publica", async valor => {
+  responder({ ...registro, raioProtecaoEntornoMetros: valor }); abrir(); await carregado();
+  expect(screen.queryByText(/Raio de prote/)).toBeNull();
+});
+
+test("remocao do raio desaparece ao reabrir a ficha publica", async () => {
+  responder({ ...registro, raioProtecaoEntornoMetros: 100 });
+  const view = abrir(); await carregado();
+  expect(screen.getByText(/Raio de prote/)).toBeTruthy();
+  view.unmount();
+  responder({ ...registro, raioProtecaoEntornoMetros: null });
+  abrir(); await carregado(); expect(screen.queryByText(/Raio de prote/)).toBeNull();
+});

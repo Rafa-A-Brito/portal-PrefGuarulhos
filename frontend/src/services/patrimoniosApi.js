@@ -138,6 +138,7 @@ export function normalizarPatrimonio(p) {
     statusVisitacao: p.statusVisitacao ?? "NAO_INFORMADO",
     motivoRestricao: p.motivoRestricao ?? null,
     previsaoReabertura: p.previsaoReabertura ?? null,
+    raioProtecaoEntornoMetros: p.raioProtecaoEntornoMetros ?? null,
     status: p.status, // só vem nas rotas /admin
     bairro: loc?.bairro ?? "",
     cidade: loc?.cidade ?? "",
