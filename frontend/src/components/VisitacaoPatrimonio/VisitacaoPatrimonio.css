@@ -24,12 +24,23 @@
   height: 15px;
   flex-shrink: 0;
 }
+.visitacao-selo--linha {
+  position: static;
+  align-self: flex-start;
+  max-width: 100%;
+  box-sizing: border-box;
+  box-shadow: none;
+  margin: 4px 0;
+  text-align: left;
+}
 .visitacao-aviso {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   width: fit-content;
-  max-width: 60ch;
+  max-width: min(100%, 60ch);
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
   margin: 14px 0;
   padding: 12px 14px;
   border-left: 3px solid var(--orange);

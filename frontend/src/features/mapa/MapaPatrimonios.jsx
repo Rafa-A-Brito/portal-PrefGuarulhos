@@ -4,6 +4,8 @@ import "../../styles/global.css";
 import AdvancedMarker from "./AdvancedMarker";
 import { GOOGLE_MAPS_MAP_ID, useGoogleMaps } from "../../hooks/useGoogleMaps";
 import { classificarLocalizacao } from "./politicaLocalizacao";
+import SituacaoPatrimonio from "../patrimonio/SituacaoPatrimonio";
+import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
 
 const GUARULHOS_CENTER = { lat: -23.4542, lng: -46.5268 };
 const mapContainerStyle = {
@@ -74,8 +76,10 @@ export default function MapaPatrimonios({
               </p>
             ) : (
               itensComPolitica.map(({ item, politica }) => (
-                <div
+                <button
+                  type="button"
                   key={item.id}
+                  aria-pressed={selecionado?.id === item.id}
                   className={`mockup-pin-card ${selecionado?.id === item.id ? "active" : ""}`}
                   onClick={() => onSelecionar?.(item)}
                 >
@@ -83,10 +87,12 @@ export default function MapaPatrimonios({
                     {item.categoria}
                   </span>
                   <h4>{item.nome}</h4>
+                  <SituacaoPatrimonio situacao={item.situacao} />
+                  <VisitacaoPatrimonio item={item} emLinha />
                   {politica.aviso && <p>{politica.aviso}</p>}
                   {politica.exibirEndereco && <p>📍 {item.bairro}</p>}
                   {politica.exibirEndereco && item.cep && <p className="mockup-pin-cep">CEP {item.cep}</p>}
-                </div>
+                </button>
               ))
             )}
           </div>

@@ -1,0 +1,13 @@
+.pagina-nao-encontrada {
+  max-width: 720px;
+  margin: 70px auto;
+  padding: 30px 24px 70px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+.pagina-nao-encontrada-codigo { font-size: clamp(4rem, 14vw, 7rem); line-height: 1; font-weight: 800; color: var(--navy); }
+.pagina-nao-encontrada h1 { font-size: clamp(1.5rem, 5vw, 2.25rem); }
+.pagina-nao-encontrada p { max-width: 520px; color: var(--ink-soft); line-height: 1.7; }
+.pagina-nao-encontrada-acoes { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; }

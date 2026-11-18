@@ -13,12 +13,17 @@ import {
   UserGroupIcon as UserGroupIconSolid,
   ShieldCheckIcon as ShieldCheckIconSolid,
 } from "@heroicons/react/24/solid";
+import SituacaoPatrimonio from "../../features/patrimonio/SituacaoPatrimonio";
+import ImagemPatrimonio from "../../components/ImagemPatrimonio";
+import { normalizarUrlImagem } from "../../utils/urlImagem";
 import { heroDestaqueMock } from "../../features/mocks/destaquesMock";
+import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
 import { CATEGORIA_META, CATEGORIAS_ORDEM } from "../../features/categoriaMeta";
 import FavoritoButton from "../../components/FavoritoButton/FavoritoButton";
 import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import BACKGROUND_IMAGE from "../../assets/patrimonios/viaduto_cid_guarulhos.png";
 import "./InicioFiltroDestaques.css";
+import "./InicioHero.css";
 
 const CARD_SCROLL_STEP = 236; // largura do card (220px) + gap (16px)
 const QTD_DESTAQUES = 6;
@@ -28,7 +33,7 @@ export default function Inicio() {
   const trackRef = useRef(null);
   // `categorias` já vem do contexto (contagem por slug, calculada da mesma
   // lista de GET /patrimonios): nenhuma requisição nova.
-  const { patrimonios, categorias, carregando } = usePatrimoniosContext();
+  const { patrimonios, categorias, carregando, erro, recarregar } = usePatrimoniosContext();
   const [categoriaDestaque, setCategoriaDestaque] = useState("todos");
   // Nome das categorias que não estão em CATEGORIA_META (futuras categorias).
   const nomesCategorias = useMemo(() => {
@@ -61,6 +66,9 @@ export default function Inicio() {
       ? patrimonios
       : patrimonios.filter((item) => (item.categorias ?? [item.categoria]).includes(categoriaAtiva))
   ).slice(0, QTD_DESTAQUES);
+  // Conteúdo original restrito ao card flutuante; destaques seguem o acervo.
+  const heroImagens = heroDestaqueMock.imagens.map(normalizarUrlImagem).filter(Boolean);
+  const imagensAdicionais = heroDestaqueMock.extra;
   const [termoBusca, setTermoBusca] = useState("");
 
   const irParaPatrimonios = (termo) => {
@@ -110,7 +118,7 @@ export default function Inicio() {
     <div>
       {/* ===== HERO ===== */}
       <section
-        className="hero hero-v2"
+        className="hero hero-v2 inicio-hero"
         style={{
           backgroundImage: `url(${BACKGROUND_IMAGE})`,
         }}
@@ -137,6 +145,7 @@ export default function Inicio() {
                 type="text"
                 value={termoBusca}
                 onChange={(e) => setTermoBusca(e.target.value)}
+                aria-label="Buscar patrimônios no acervo"
                 placeholder="Busque por nome, bairro, CEP ou categoria..."
               />
               <button type="submit">
@@ -163,7 +172,7 @@ export default function Inicio() {
               <MapPinIcon width={16} height={16} />
               <div>
                 <h3>{heroDestaqueMock.nome}</h3>
-                <span className="hfc-bairro">{heroDestaqueMock.bairro}</span>
+                {heroDestaqueMock.bairro && <span className="hfc-bairro">{heroDestaqueMock.bairro}</span>}
               </div>
               <Link
                 to="/patrimonios"
@@ -174,13 +183,18 @@ export default function Inicio() {
                 <ChevronRightIcon width={16} height={16} />
               </Link>
             </div>
-            <p className="hfc-resumo">{heroDestaqueMock.resumo}</p>
-            <div className="hfc-thumbs">
-              {heroDestaqueMock.imagens.map((img, i) => (
-                <img key={i} src={img} alt="" />
-              ))}
-              <span className="hfc-extra">+{heroDestaqueMock.extra}</span>
-            </div>
+            <p className="hfc-resumo">
+              {heroDestaqueMock.resumo}
+            </p>
+            {heroImagens.length > 0 && (
+              <div className="hfc-thumbs">
+                {heroImagens.map(img => <ImagemPatrimonio key={img} src={img} alt="" loading="lazy" />)}
+                {imagensAdicionais > 0 && <span className="hfc-extra">
+                  <span aria-hidden="true">+{imagensAdicionais}</span>
+                  <span className="sr-only">Mais {imagensAdicionais} {imagensAdicionais === 1 ? "imagem" : "imagens"}</span>
+                </span>}
+              </div>
+            )}
           </aside>
         </div>
       </section>
@@ -270,6 +284,13 @@ export default function Inicio() {
               <div key={i} className="skeleton-card" />
             ))}
           </div>
+        ) : erro ? (
+          <div className="empty-state" role="alert">
+            <p>{erro}</p>
+            <button type="button" className="btn-outline" onClick={recarregar}>Tentar novamente</button>
+          </div>
+        ) : destaques.length === 0 ? (
+          <p className="empty-state" role="status">Nenhum patrimônio disponível para exibir.</p>
         ) : (
           <div className="destaques-carousel">
             <button
@@ -298,13 +319,8 @@ export default function Inicio() {
                       aria-label={`Explorar ${item.nome}`}
                     >
                       <figure>
-                        {item.imagemPrincipal?.trim() && (
-                          <img
-                            src={item.imagemPrincipal}
-                            alt={item.nome}
-                            loading="lazy"
-                          />
-                        )}
+                        <ImagemPatrimonio src={item.imagemPrincipal} alt={item.nome} loading="lazy" />
+                        <VisitacaoPatrimonio item={item} />
                         <span
                           className={`destaque-badge cat-${item.categoria}`}
                         >
@@ -313,6 +329,7 @@ export default function Inicio() {
                       </figure>
                       <div className="destaque-body">
                         <h3>{item.nome}</h3>
+                        <SituacaoPatrimonio situacao={item.situacao} />
                         <span className="destaque-bairro">
                           <MapPinIcon width={13} height={13} />
                           {item.bairro}

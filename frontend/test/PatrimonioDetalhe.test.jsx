@@ -49,6 +49,18 @@ async function carregado() {
 }
 
 test.each([
+  ["EM_RESTAURACAO", "Em restauração"], ["NECESSITA_RESTAURACAO", "Necessita restauração"],
+  ["EM_RUINAS", "Em ruínas"], ["DEMOLIDO", "Demolido"],
+].flatMap(([situacao, rotulo]) => ["ABERTO", "ACESSO_PARCIAL", "TEMPORARIAMENTE_FECHADO", "SEM_VISITACAO_PUBLICA", "NAO_INFORMADO"]
+  .map(statusVisitacao => ({ situacao, rotulo, statusVisitacao }))))(
+  "ficha: $situacao não determina $statusVisitacao", async ({ situacao, rotulo, statusVisitacao }) => {
+    responder({ ...registro, situacao, statusVisitacao }); abrir(); await carregado();
+    expect(screen.getByText(rotulo).classList.contains("situacao-selo")).toBe(true);
+    expect(Boolean(screen.queryByRole("note", { name: "Visitação" }))).toBe(!["ABERTO", "NAO_INFORMADO"].includes(statusVisitacao));
+  },
+);
+
+test.each([
   ["TEMPORARIAMENTE_FECHADO", "Temporariamente fechado para visitação"],
   ["ACESSO_PARCIAL", "Acesso parcial"],
   ["SEM_VISITACAO_PUBLICA", "Sem visitação pública"],
@@ -160,6 +172,19 @@ test("imagens usam URLs públicas, texto alternativo e crédito", async () => {
   expect(screen.getByRole("img", { name: "Vista da entrada" }).src).toBe("http://localhost:3333/uploads/patrimonios/capa.jpg");
   expect(screen.getByRole("img", { name: "Jardim do parque" }).src).toBe("http://localhost:3333/uploads/patrimonios/jardim.jpg");
   expect(screen.getByText("Acervo municipal")).toBeTruthy();
+});
+
+test("galeria usa fallback neutro para URL inválida ou foto com falha", async () => {
+  responder({ ...registro, imagens: [
+    { id: "invalida", url: "   ", textoAlternativo: "Foto ausente" },
+    { id: "quebrada", url: "/uploads/foto-inexistente.jpg", textoAlternativo: "Foto quebrada" },
+  ] });
+  abrir(); await carregado();
+  expect(screen.getByRole("img", { name: "Imagem indisponível: Foto ausente" }).getAttribute("src"))
+    .toBe("/imagem-indisponivel.svg");
+  fireEvent.error(screen.getByRole("img", { name: "Foto quebrada" }));
+  expect(screen.getByRole("img", { name: "Imagem indisponível: Foto quebrada" }).getAttribute("src"))
+    .toBe("/imagem-indisponivel.svg");
 });
 
 test("referências normalizadas aparecem uma vez com URLs públicas e links seguros", async () => {

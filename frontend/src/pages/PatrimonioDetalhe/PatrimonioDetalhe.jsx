@@ -14,6 +14,8 @@ import PatrimoniosRelacionados from "./PatrimoniosRelacionados";
 import SecoesAcordeao from "./SecoesAcordeao";
 import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
 import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
+import SituacaoPatrimonio from "../../features/patrimonio/SituacaoPatrimonio";
+import ImagemPatrimonio from "../../components/ImagemPatrimonio";
 import { AuthContext } from "../../context/AuthContextInstance.js";
 import { buscarPatrimonioPorId } from "../../services/patrimoniosApi";
 import { buscarPatrimonioAdmin } from "../../services/adminApi";
@@ -233,10 +235,8 @@ function DetalhePorSlug({ slug }) {
                     categoria}
                 </span>
               ))}
-            {item.situacao === "DEMOLIDO" && (
-              <span className="cat-badge situacao-demolido">Demolido</span>
-            )}
             <h1>{item.nome}</h1>
+            <SituacaoPatrimonio situacao={item.situacao} />
             <VisitacaoPatrimonio item={item} aviso />
             <MetadataEditorial item={item} />
             {politica.exibirEndereco && item.bairro && (
@@ -354,7 +354,7 @@ function DetalhePorSlug({ slug }) {
             <div className="detalhe-galeria-grid">
               {imagens.map((imagem, i) => (
                 <figure key={imagem.id ?? i}>
-                  <img
+                  <ImagemPatrimonio
                     src={imagem.url}
                     alt={imagem.textoAlternativo || imagem.titulo || item.nome}
                     loading="lazy"

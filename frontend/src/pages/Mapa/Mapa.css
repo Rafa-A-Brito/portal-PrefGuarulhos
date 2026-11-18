@@ -1,4 +1,32 @@
 .mapa-central, .mapa-detail-body { min-width: 0; }
+.mapa-sidebar-item-text { min-width: 0; }
+.mapa-map-area .mockup-pin-card {
+  min-width: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+.mapa-map-area .mockup-pin-card:focus-visible,
+.mapa-sidebar-item:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: -3px;
+}
+/* Sem mapa geográfico, os blocos sobrepostos ocultavam os estados dos cards. */
+.mapa-map-area:has(.map-mockup-container) .mapa-legenda {
+  position: static;
+  margin-top: 12px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.mapa-map-area:has(.map-mockup-container) .mapa-detail-panel {
+  position: relative;
+  inset: auto;
+  width: min(100%, 360px);
+  max-height: none;
+  margin: 12px 0 0 auto;
+}
 .mapa-map-area .mapa-detail-panel {
   display: flex;
   flex-direction: column;

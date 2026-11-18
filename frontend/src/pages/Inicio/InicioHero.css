@@ -1,0 +1,109 @@
+/* Card compacto da segunda referência; composição do banner vem do global. */
+.inicio-hero .hero-copy {
+  width: 100%;
+  max-width: 560px;
+}
+.inicio-hero .hero-float-card {
+  width: min(264px, 100%);
+  min-width: 0;
+  justify-self: end;
+  padding: 12px 14px;
+  background: #fff;
+  backdrop-filter: blur(6px);
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(23, 19, 49, 0.16);
+}
+.inicio-hero .hfc-head > div {
+  min-width: 0;
+  flex: 1;
+}
+.inicio-hero .hfc-head h3,
+.inicio-hero .hfc-resumo {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.inicio-hero .hfc-head h3 {
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+.inicio-hero .hfc-bairro {
+  color: #2d3340;
+  font-size: 11px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inicio-hero .hfc-resumo {
+  color: #2d3340;
+  font-size: 11.5px;
+  line-height: 1.45;
+  margin: 8px 0 10px;
+}
+.inicio-hero .hfc-head svg {
+  color: var(--blue);
+}
+.inicio-hero .hfc-next {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: var(--navy);
+}
+/* Alvo de 44 px contido no card, sem uma caixa visual grande no cabeçalho. */
+.inicio-hero .hfc-next::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+.inicio-hero .hfc-next svg {
+  color: inherit;
+  margin: 0;
+}
+.inicio-hero .hfc-next:hover {
+  background: rgba(43, 37, 92, 0.1);
+}
+.inicio-hero .hfc-next:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
+}
+.inicio-hero .hfc-thumbs {
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+}
+.inicio-hero .hfc-thumbs img {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+.inicio-hero .hfc-extra {
+  width: auto;
+  min-width: 28px;
+  height: 36px;
+  padding: 0 4px;
+  background: transparent;
+  color: #2d3340;
+}
+@media (max-width: 880px) {
+  /* Abaixo do texto, sem cobrir a faixa de recursos nem expandir o card. */
+  .inicio-hero.hero-v2 {
+    padding-bottom: 64px;
+  }
+}
+.inicio-hero .hfc-extra .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

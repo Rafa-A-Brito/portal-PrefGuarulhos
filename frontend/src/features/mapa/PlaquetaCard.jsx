@@ -5,7 +5,8 @@ import { classificarLocalizacao } from "./politicaLocalizacao";
 import MetadataEditorial from "../../components/MetadataEditorial/MetadataEditorial";
 import FavoritoButton from "../../components/FavoritoButton/FavoritoButton";
 import VisitacaoPatrimonio from "../../components/VisitacaoPatrimonio/VisitacaoPatrimonio";
-import SANATORIO_IMG from "../../assets/patrimonios/sanatorio_padre_bento.jpg";
+import SituacaoPatrimonio from "../patrimonio/SituacaoPatrimonio";
+import ImagemPatrimonio from "../../components/ImagemPatrimonio";
 
 export default function PlaquetaCard({ item }) {
   const meta = CATEGORIA_META[item.categoria];
@@ -17,13 +18,10 @@ export default function PlaquetaCard({ item }) {
       <span className="rivet tl" />
       <span className="rivet tr" />
       <figure>
-        <img
+        <ImagemPatrimonio
           src={item.imagemPrincipal}
           alt={item.nome}
           loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = SANATORIO_IMG;
-          }}
         />
         <span className={`cat-badge cat-${item.categoria}`}>
           {Icon && <Icon className="badge-icon" aria-hidden="true" />}
@@ -34,6 +32,7 @@ export default function PlaquetaCard({ item }) {
       </figure>
       <div className="plaqueta-body">
         <h3>{item.nome}</h3>
+        <SituacaoPatrimonio situacao={item.situacao} />
         <MetadataEditorial item={item} />
         <div className="bairro">
           <MapPinIcon className="inline-icon" aria-hidden="true" />

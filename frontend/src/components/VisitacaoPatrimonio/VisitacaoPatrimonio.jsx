@@ -2,13 +2,13 @@ import { ExclamationTriangleIcon, LockClosedIcon } from "@heroicons/react/24/out
 import { formatarPrevisaoReabertura, restricaoVisitacao } from "../../features/visitacao";
 import "./VisitacaoPatrimonio.css";
 
-export default function VisitacaoPatrimonio({ item, aviso = false }) {
+export default function VisitacaoPatrimonio({ item, aviso = false, emLinha = false }) {
   const restricao = restricaoVisitacao(item.statusVisitacao);
   if (!restricao) return null;
 
   const Icone = item.statusVisitacao === "SEM_VISITACAO_PUBLICA" ? LockClosedIcon : ExclamationTriangleIcon;
   if (!aviso) {
-    return <span className="visitacao-selo"><Icone aria-hidden="true" />{restricao.selo}</span>;
+    return <span className={`visitacao-selo${emLinha ? " visitacao-selo--linha" : ""}`} title={`Visitação: ${restricao.aviso}`}><Icone aria-hidden="true" />{restricao.selo}</span>;
   }
 
   const previsao = formatarPrevisaoReabertura(item.previsaoReabertura);

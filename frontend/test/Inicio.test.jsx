@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import Inicio from "../src/pages/Inicio/Inicio";
+import { heroDestaqueMock } from "../src/features/mocks/destaquesMock";
 import { PatrimoniosContext } from "../src/context/patrimoniosContextInstance";
 
 const itens = [
@@ -21,6 +22,46 @@ function inicio(patrimonios = itens, carregando = false) {
 }
 afterEach(() => vi.restoreAllMocks());
 
+test.each([itens, []].map(patrimonios => ({ patrimonios })))("card flutuante restaura o mock sem depender do catálogo: $patrimonios", ({ patrimonios }) => {
+  const { container } = inicio(patrimonios);
+  const card = container.querySelector(".hero-float-card");
+  expect(within(card).getByText(heroDestaqueMock.nome)).toBeTruthy();
+  expect(within(card).getByText(heroDestaqueMock.bairro)).toBeTruthy();
+  expect(within(card).getByText(heroDestaqueMock.resumo)).toBeTruthy();
+  expect([...card.querySelectorAll("img")].map(img => img.getAttribute("src"))).toEqual(heroDestaqueMock.imagens);
+  expect(card.querySelector(".hfc-extra [aria-hidden]").textContent).toBe("+5");
+  expect(within(card).getByRole("link").getAttribute("href")).toBe("/patrimonios");
+  expect(card.querySelector(".situacao-selo,.visitacao-aviso")).toBeNull();
+});
+
+test("URLs vazias no card fixo são filtradas sem alterar o contador original", () => {
+  const imagens = heroDestaqueMock.imagens;
+  try {
+    heroDestaqueMock.imagens = ["", null, undefined, "  ", ...imagens];
+    const { container } = inicio();
+    expect(container.querySelectorAll(".hfc-thumbs img")).toHaveLength(3);
+    expect(container.querySelector(".hfc-extra [aria-hidden]").textContent).toBe("+5");
+  } finally { heroDestaqueMock.imagens = imagens; }
+});
+
+test("pesquisa continua navegando com o termo digitado", async () => {
+  const user = userEvent.setup(); inicio();
+  await user.type(screen.getByRole("textbox", {name:"Buscar patrimônios no acervo"}), "Casa histórica");
+  await user.click(screen.getByRole("button", {name:/^Buscar/}));
+  expect(screen.getByTestId("local").textContent).toBe("/patrimonios?busca=Casa%20hist%C3%B3rica");
+});
+
+test("filtro de destaques usa categorias da API sem alterar o card fixo", async () => {
+  const user = userEvent.setup();
+  const patrimonios = [...itens, {...itens[0], id:"ambiental", nome:"Parque", categoria:"ambiental"}];
+  render(<MemoryRouter><PatrimoniosContext.Provider value={{patrimonios, categorias:{historico:2,ambiental:1}}}><Inicio /></PatrimoniosContext.Provider></MemoryRouter>);
+  document.querySelector(".destaques-track").scrollTo = vi.fn();
+  await user.selectOptions(screen.getByRole("combobox"), "ambiental");
+  expect(screen.getAllByRole("article")).toHaveLength(1);
+  expect(screen.getByRole("heading", {name:"Parque"})).toBeTruthy();
+  expect(screen.getByText(heroDestaqueMock.nome)).toBeTruthy();
+});
+
 test("destaque recebe foco por Tab e Enter mantém o destino de categoria", async () => {
   const user = userEvent.setup(); inicio();
   const link = screen.getByRole("link", { name: "Explorar Casa histórica" });
@@ -34,7 +75,7 @@ test("destaque recebe foco por Tab e Enter mantém o destino de categoria", asyn
 
 test("Favoritar continua independente e acessível sem navegar ao ativá-lo", async () => {
   const user = userEvent.setup(); inicio();
-  const card = screen.getByRole("heading", { name: "Casa histórica" }).closest("article");
+  const card = screen.getByRole("link", { name: "Explorar Casa histórica" }).closest("article");
   const link = within(card).getByRole("link");
   const favorito = within(card).getByRole("button", { name: "Adicionar Casa histórica aos favoritos" });
   link.focus(); await user.tab();
@@ -49,7 +90,8 @@ test.each(["", "   ", null, undefined])("imagem ausente (%s) não gera img vazia
   const error = vi.spyOn(console, "error");
   inicio([{ ...itens[1], imagemPrincipal }]);
   const card = screen.getByRole("article");
-  expect(card.querySelector("img")).toBeNull();
+  expect(card.querySelector("img").getAttribute("src")).toBe("/imagem-indisponivel.svg");
+  expect(card.querySelector("img").getAttribute("alt")).toBe("Imagem indisponível: Bem sem imagem");
   expect(within(card).getByRole("link", { name: "Explorar Bem sem imagem" })).toBeTruthy();
   expect(within(card).getByText("Centro")).toBeTruthy();
   expect(error).not.toHaveBeenCalled();

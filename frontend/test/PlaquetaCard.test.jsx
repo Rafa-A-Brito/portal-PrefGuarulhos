@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PlaquetaCard from "../src/features/mapa/PlaquetaCard";
@@ -6,6 +6,21 @@ import { PATRIMONIOS_SEM_DESTINO } from "./fixtures/localizacaoPatrimonios";
 
 const bem = { id: "bem", nome: "Patrimônio", categoria: "historico", bairro: "Bairro legado", cep: "99999-999", imagemPrincipal: "/imagem.jpg" };
 function abrir(item) { render(<MemoryRouter><PlaquetaCard item={item} /></MemoryRouter>); }
+
+test.each(["", null, undefined, "   "])("catálogo sem foto (%s) usa fallback neutro sem aviso React", imagemPrincipal => {
+  const erro = vi.spyOn(console, "error");
+  try {
+    abrir({ ...bem, imagemPrincipal });
+    expect(screen.getByRole("img").getAttribute("src")).toBe("/imagem-indisponivel.svg");
+    expect(erro).not.toHaveBeenCalled();
+  } finally { erro.mockRestore(); }
+});
+
+test("foto que falha não é substituída por fotografia de outro patrimônio", () => {
+  abrir(bem);
+  fireEvent.error(screen.getByRole("img"));
+  expect(screen.getByRole("img").getAttribute("src")).toBe("/imagem-indisponivel.svg");
+});
 
 test.each(PATRIMONIOS_SEM_DESTINO)("card $slug não reapresenta bairro/CEP como endereço exclusivo", ({ slug, aviso }) => {
   abrir({ ...bem, id: slug, slug });
