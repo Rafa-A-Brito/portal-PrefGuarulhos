@@ -86,7 +86,7 @@
 
 .admin-sidebar-group--visao {
   --grp-icon: var(--blue);
-  --grp-bg: var(--blue);
+  --grp-bg: #176b9a;
   --grp-fg: #fff;
 }
 
@@ -595,7 +595,7 @@ button.admin-sidebar-sair:hover {
    .btn-solid / .btn-outline são classes globais do site; aqui só mudam
    DENTRO do .admin-shell (maior especificidade, independente da ordem). */
 .admin-shell :is(.btn-solid, .btn-outline) {
-  min-height: 40px;
+  min-height: var(--admin-button-min-height, 40px);
   padding: 9px 16px;
   border-radius: var(--admin-radius-sm);
   font-family: inherit;
@@ -609,7 +609,24 @@ button.admin-sidebar-sair:hover {
 }
 
 .admin-shell .btn-solid {
+  background: #176b9a;
+  border-color: #176b9a;
+  color: #fff;
   box-shadow: 0 1px 2px rgba(43, 37, 92, 0.18);
+}
+
+.admin-shell .btn-outline {
+  color: #176b9a;
+  border-color: #176b9a;
+}
+
+.admin-shell .btn-solid:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--navy);
+  border-color: var(--navy);
+}
+
+.admin-shell .btn-outline:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: #eef0fb;
 }
 
 .admin-shell :is(.btn-solid, .btn-outline):active:not(:disabled) {

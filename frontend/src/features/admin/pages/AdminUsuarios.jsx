@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlusIcon, ShieldCheckIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import { useErroModal } from "../../../hooks/useErroModal";
 import { useAuth } from "../../../hooks/useAuth";
@@ -29,6 +29,19 @@ export default function AdminUsuarios() {
   const [alterandoStatus, setAlterandoStatus] = useState(null);
   const ocupado = salvando || abrindo || alterandoStatus !== null;
   const propriaConta = editando?.id === usuario?.id;
+  const nomeRef = useRef(null);
+  const acionadorRef = useRef(null);
+  const focoPendente = useRef(null);
+
+  useEffect(() => {
+    if (abrindo || !focoPendente.current) return;
+    const pedido = focoPendente.current;
+    focoPendente.current = null;
+    const alvo = pedido.tipo === "formulario" ? nomeRef.current : acionadorRef.current;
+    if (alvo?.isConnected && !alvo.disabled) alvo.focus();
+    // O modal existente memoriza o acionador já reabilitado para devolver o foco.
+    if (pedido.erro) mostrarErro(pedido.erro, { origem: "AdminUsuarios › editar" });
+  }, [aberto, abrindo, editando, mostrarErro]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -75,29 +88,35 @@ export default function AdminUsuarios() {
     setPagina(nova);
   }
 
-  function abrir() {
+  function abrir(event) {
+    acionadorRef.current = event.currentTarget;
+    focoPendente.current = { tipo: "formulario" };
+    nomeRef.current?.focus();
     setEditando(null);
     setFormulario(FORMULARIO_VAZIO);
     setErroFormulario(null);
     setAberto(true);
   }
 
-  async function editar(id) {
+  async function editar(id, acionador) {
+    acionadorRef.current = acionador;
     setAbrindo(true);
     try {
       const atual = await adminApi.buscarUsuario(id);
       setEditando(atual);
       setFormulario({ nome: atual.nome, email: atual.email, role: atual.role });
       setErroFormulario(null);
+      focoPendente.current = { tipo: "formulario" };
       setAberto(true);
     } catch (err) {
-      mostrarErro(err, { origem: "AdminUsuarios › editar" });
+      focoPendente.current = { tipo: "retorno", erro: err };
     } finally {
       setAbrindo(false);
     }
   }
 
   function fechar() {
+    focoPendente.current = { tipo: "retorno" };
     setAberto(false);
     setEditando(null);
     setFormulario(FORMULARIO_VAZIO);
@@ -165,7 +184,7 @@ export default function AdminUsuarios() {
           <fieldset className="admin-usuarios-campos" disabled={ocupado}>
             <div className="admin-form-grid">
               <label>Nome
-                <input required maxLength={100} autoComplete="off" value={formulario.nome}
+                <input ref={nomeRef} required maxLength={100} autoComplete="off" value={formulario.nome}
                   onChange={(e) => setFormulario((f) => ({ ...f, nome: e.target.value }))} />
               </label>
               <label>E-mail
@@ -235,7 +254,7 @@ export default function AdminUsuarios() {
                   </span></td>
                   <td><span className={`admin-badge-perfil admin-usuario-${conta.ativo ? "ativo" : "inativo"}`}>{conta.ativo ? "Ativo" : "Inativo"}</span></td>
                   <td><div className="admin-usuarios-acoes">
-                    <button type="button" className="btn-outline" disabled={ocupado} onClick={() => editar(conta.id)} aria-label={`Editar ${conta.nome}`}>Editar</button>
+                    <button type="button" className="btn-outline" disabled={ocupado} onClick={(event) => editar(conta.id, event.currentTarget)} aria-label={`Editar ${conta.nome}`}>Editar</button>
                     <button type="button" className="btn-outline" disabled={ocupado || conta.id === usuario?.id}
                       title={conta.id === usuario?.id ? "Você não pode desativar a própria conta." : undefined}
                       aria-label={`${conta.ativo ? "Desativar" : "Ativar"} ${conta.nome}`} onClick={() => alterarStatus(conta)}>

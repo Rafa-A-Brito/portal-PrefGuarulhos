@@ -25,7 +25,7 @@
 .pagina small, .modal small { display: block; margin-top: .3rem; color: #505466; font-size: .8rem; }
 .pagina caption, .modal caption { text-align: left; padding: .8rem; color: #505466; font-size: .85rem; }
 .paginacao { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; flex-wrap: wrap; }
-.pagina button, .modal button { min-height: 44px; }
+.pagina, .modal { --admin-button-min-height: 44px; }
 .pagina :focus-visible, .modal :focus-visible { outline: 3px solid #6558a6; outline-offset: 3px; }
 .modal { width: min(960px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; border: 0; border-radius: 1rem; padding: 1.5rem; color: #252638; background: #fff; box-shadow: 0 20px 60px #16132940; }
 .modal::backdrop { background: #15132999; }
