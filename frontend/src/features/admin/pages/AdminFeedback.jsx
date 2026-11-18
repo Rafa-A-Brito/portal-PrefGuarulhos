@@ -73,6 +73,9 @@ export default function AdminFeedback() {
   const l = !carregandoLista && lista.dados, r = !carregandoResumo && resumo.dados;
   const erroAcesso = [lista, resumo].find(e => e && [401, 403].includes(e.erro?.status) && (e.consulta === consulta || (e.filtros === consulta.filtros && e.revisao === consulta.revisao)))?.erro;
   const desativado = l?.disponivel === false || r?.disponivel === false;
+  const erroComum = !carregandoLista && !carregandoResumo && lista.erro && resumo.erro
+    && lista.erro.status === resumo.erro.status && lista.erro.mensagem === resumo.erro.mensagem
+    ? lista.erro : null;
   const atualizar = () => { setSelecionado(null); setConsulta(q => ({ ...q, revisao: q.revisao + 1 })); };
   const antigo = [l, r].some(d => d?.disponivel && agora - Date.parse(d.meta.geradoEm) >= 300000);
   const divergente = l?.disponivel && r?.disponivel && String(l.paginacao.total) !== r.total;
@@ -105,7 +108,7 @@ export default function AdminFeedback() {
         <button type="button" className="btn-outline" onClick={atualizar}>Atualizar dados</button></div>
     </form>
     <p>Recorte aplicado: {dataBr(consulta.filtros.inicio)} a {dataBr(consulta.filtros.fim)} · {TIPOS[consulta.filtros.tipo] || "Todos os tipos"}.</p>
-    {erroAcesso ? <Falha erro={erroAcesso} /> : desativado ? <p role="status">Consulta de feedback desativada. Os dados não estão disponíveis.</p> : <>
+    {erroAcesso ? <Falha erro={erroAcesso} /> : desativado ? <p role="status">Consulta de feedback desativada. Os dados não estão disponíveis.</p> : erroComum ? <Falha erro={erroComum} repetir={atualizar} /> : <>
       {(l?.demonstracao || r?.demonstracao) && <p role="status">Demonstração: dados fictícios em memória, descartados ao reiniciar.</p>}
       {(antigo || divergente) && <p role="status">Dados desatualizados ou consultados em instantes diferentes. Use “Atualizar dados” para consultar novamente.</p>}
       {carregandoResumo ? <p role="status">Carregando resumo…</p> : resumo.erro ? <Falha erro={resumo.erro} repetir={atualizar} /> : r?.disponivel && <>

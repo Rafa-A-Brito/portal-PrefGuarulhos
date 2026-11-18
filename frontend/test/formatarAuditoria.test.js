@@ -22,6 +22,41 @@ describe("datas civis de São Paulo", () => {
   });
 });
 describe("narrativa determinística e valores permitidos", () => {
+  it("apresenta visitação, motivo literal e dia civil sem confundir ator e alvo", () => {
+    const f = formatarAuditoria({ ...eventos[0], action: "PATRIMONIO_UPDATE", entity: "Patrimonio",
+      oldValues: { statusVisitacao: "ABERTO", motivoRestricao: null, previsaoReabertura: null },
+      newValues: { statusVisitacao: "TEMPORARIAMENTE_FECHADO", motivoRestricao: "<b>Reforma</b>", previsaoReabertura: "2027-03-15" } });
+    expect(f.linhas).toEqual([
+      { campo: "Visitação", anterior: "Aberto", novo: "Temporariamente fechado" },
+      { campo: "Motivo da restrição", anterior: "Sem valor", novo: "<b>Reforma</b>" },
+      { campo: "Previsão de reabertura", anterior: "Sem valor", novo: "15/03/2027" },
+    ]);
+    expect(f.aviso).toBeNull(); expect(f.responsavel).toBe("Ana — nome atual");
+    expect(f.alvo.titulo).toBe("Patrimônio");
+  });
+  it.each([
+    ["2024-02-29", "29/02/2024"], ["2027-03-15T00:00:00.000Z", "15/03/2027"],
+    ["2018-11-04", "04/11/2018"], ["2026-02-29", "Data não disponível"],
+    ["2026-13-01", "Data não disponível"], ["2026-04-31", "Data não disponível"],
+    ["inválida", "Data não disponível"], ["2027-03-15T23:00:00-03:00", "Data não disponível"],
+  ])("previsão %s mantém o dia civil ou recusa formato inválido", (data, esperado) => {
+    const f = formatarAuditoria({ ...eventos[0], action: "PATRIMONIO_UPDATE", entity: "Patrimonio", oldValues: {}, newValues: { previsaoReabertura: data } });
+    expect(f.linhas).toEqual([{ campo: "Previsão de reabertura", anterior: "Valor anterior não disponível", novo: esperado }]);
+  });
+  it.each([["NAO_INFORMADO", "Não informado"], ["ACESSO_PARCIAL", "Acesso parcial"], ["SEM_VISITACAO_PUBLICA", "Sem visitação pública"], ["FUTURO", "FUTURO"]])("preserva o estado recebido %s", (status, rotulo) => {
+    const f = formatarAuditoria({ ...eventos[0], action: "PATRIMONIO_UPDATE", entity: "Patrimonio", oldValues: { statusVisitacao: status }, newValues: { statusVisitacao: status } });
+    expect(f.linhas).toEqual([{ campo: "Visitação", anterior: rotulo, novo: rotulo }]);
+    expect(f.aviso).toContain("diferença não está disponível");
+  });
+  it("não inventa visitação ausente e distingue remoção, null e texto vazio", () => {
+    const base = { ...eventos[0], action: "PATRIMONIO_UPDATE", entity: "Patrimonio" };
+    expect(formatarAuditoria({ ...base, oldValues: {}, newValues: {} }).linhas).toEqual([]);
+    expect(formatarAuditoria({ ...base, oldValues: { motivoRestricao: "Motivo" }, newValues: { motivoRestricao: null, previsaoReabertura: "" } }).linhas).toEqual([
+      { campo: "Motivo da restrição", anterior: "Motivo", novo: "Sem valor" },
+      { campo: "Previsão de reabertura", anterior: "Valor anterior não disponível", novo: "Texto vazio" },
+    ]);
+    expect(formatarAuditoria({ ...base, oldValues: { statusVisitacao: null }, newValues: {} }).linhas[0].novo).toBe("Novo valor não disponível");
+  });
   it("distingue ator atual, alvo e troca da própria senha", () => {
     const f = formatarAuditoria(eventos[0]);
     expect(f.frase).toContain("Ana — nome atual alterou usuário “Nome alterado”");

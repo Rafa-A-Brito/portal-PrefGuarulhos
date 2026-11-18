@@ -13,5 +13,5 @@ export const heroDestaqueMock = {
   bairro: "Centro, Guarulhos",
   resumo: "Um marco da história e da saúde pública da cidade.",
   imagens: [FESTA_BONSUCESSO_IMG, CAPELA_BONSUCESSO_IMG, SANATORIO_IMG],
-  extra: 5,
+  extra: 25,
 };

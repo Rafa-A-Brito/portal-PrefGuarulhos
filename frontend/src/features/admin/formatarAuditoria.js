@@ -1,3 +1,5 @@
+import { STATUS_VISITACAO } from "../visitacao";
+
 export const FUSO_AUDITORIA = "America/Sao_Paulo";
 export const RECURSOS_AUDITORIA = {
   User: "Usuários", Patrimonio: "Patrimônios", RegiaoPatrimonio: "Regiões",
@@ -36,7 +38,7 @@ const comuns = ["slug", "status", "publicadoEm", "arquivadoEm"];
 // Lista positiva independente de dados recebidos. Nunca mostrar JSON bruto por fallback.
 const campos = {
   User: ["name", "email", "role", "isActive"], RegiaoPatrimonio: ["nome", "slug", "descricao", "ativo"],
-  Patrimonio: [...comuns, "nome", "regiaoId", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "categoriaId", "categoriasAdicionais", "localizacao"],
+  Patrimonio: [...comuns, "nome", "regiaoId", "numeroExibicao", "ordemExibicao", "descricao", "descricaoResumida", "historia", "importanciaCultural", "situacao", "statusVisitacao", "motivoRestricao", "previsaoReabertura", "categoriaId", "categoriasAdicionais", "localizacao"],
   PatrimonioImagem: ["patrimonioId", "titulo", "textoAlternativo", "credito", "fonte", "ordem", "principal", "url", "principais", "principaisSubstituidas"],
   PatrimonioDocumento: ["patrimonioId", "titulo", "descricao", "url", "tipo", "fonte", "dataDocumento", "mimeType"],
   PatrimonioFato: ["patrimonioId", "rotulo", "valor", "ordem", "itens"],
@@ -49,6 +51,7 @@ const rotulos = {
   name: "Nome", nome: "Nome", email: "E-mail", role: "Perfil", isActive: "Ativo", ativo: "Ativa", slug: "Slug", descricao: "Descrição",
   regiaoId: "Região (ID)", numeroExibicao: "Número de exibição", ordemExibicao: "Ordem de exibição", descricaoResumida: "Resumo",
   historia: "História", importanciaCultural: "Importância cultural", situacao: "Conservação", status: "Publicação", categoriaId: "Categoria principal (ID)",
+  statusVisitacao: "Visitação", motivoRestricao: "Motivo da restrição", previsaoReabertura: "Previsão de reabertura",
   categoriasAdicionais: "Categorias adicionais (IDs)", localizacao: "Localização", publicadoEm: "Publicado em", arquivadoEm: "Arquivado em",
   patrimonioId: "Patrimônio (ID)", patrimonioOrigemId: "Patrimônio de origem (ID)", patrimonioDestinoId: "Patrimônio de destino (ID)",
   titulo: "Título", textoAlternativo: "Texto alternativo", credito: "Crédito", fonte: "Fonte", ordem: "Ordem", principal: "Principal", url: "URL",
@@ -114,9 +117,22 @@ function urlSegura(v, campo) {
     return u.toString();
   } catch { return "Valor não disponível"; }
 }
+function diaCivil(v) {
+  // Aceita o dia civil atual e a serialização UTC à meia-noite de registros antigos.
+  // Valida o calendário sem converter o dia para um instante no fuso local.
+  const partes = /^(\d{4})-(\d{2})-(\d{2})(?:T00:00:00(?:\.000)?Z)?$/.exec(v);
+  if (!partes) return "Data não disponível";
+  const [, ano, mes, dia] = partes;
+  const a = Number(ano), m = Number(mes), d = Number(dia);
+  const bissexto = a % 4 === 0 && (a % 100 !== 0 || a % 400 === 0);
+  const limite = [31, bissexto ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+  return a > 0 && d > 0 && d <= limite ? `${dia}/${mes}/${ano}` : "Data não disponível";
+}
 function valor(v, campo) {
   if (v === null) return "Sem valor";
   if (v === "") return "Texto vazio";
+  if (campo === "previsaoReabertura") return typeof v === "string" ? diaCivil(v) : "Data não disponível";
+  if (campo === "statusVisitacao" && typeof v === "string") return STATUS_VISITACAO.find(s => s.valor === v)?.rotulo ?? v;
   if (typeof v === "boolean") return v ? "Sim" : "Não";
   if (typeof v === "number") return Number.isFinite(v) ? String(v) : "Valor não disponível";
   if (typeof v === "string") return urls.has(campo) ? urlSegura(v, campo) : v;

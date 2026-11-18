@@ -68,6 +68,48 @@ it("falha recuperável usa filtros aplicados e recuperação é explícita", asy
   await user.click(screen.getByRole("button", { name: "Atualizar dados" })); await screen.findByText(/Total:/);
   expect(spy.mock.calls.at(-1)[0].params.tipo).toBeUndefined();
 });
+it("agrupa falhas equivalentes e recupera ambas as consultas com os filtros aplicados", async () => {
+  let indisponivel = false;
+  const spy = adapter(c => indisponivel ? falha(c, 503) : padrao(c));
+  const user = userEvent.setup(); montar(); await screen.findByText(/Total:/);
+  await user.selectOptions(screen.getByLabelText("Tipo de feedback"), "PROBLEMA");
+  indisponivel = true;
+  await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+  await screen.findByRole("alert");
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(1);
+  indisponivel = false;
+  await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
+  await screen.findByText(/Total:/);
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(spy.mock.calls.slice(-2).map(([c]) => c.url).sort()).toEqual(["/admin/feedback", "/admin/feedback/resumo"]);
+  expect(spy.mock.calls.slice(-2).every(([c]) => c.params.tipo === "PROBLEMA")).toBe(true);
+});
+it.each(["/admin/feedback", "/admin/feedback/resumo"])("preserva resultado independente quando somente %s falha", async rota => {
+  adapter(c => c.url === rota ? falha(c, 503) : padrao(c)); montar();
+  await screen.findByRole("alert");
+  if (rota.endsWith("resumo")) await screen.findByRole("region", { name: "Lista de feedbacks" });
+  else await screen.findByText(/Total:/);
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(1);
+});
+it.each([[503, 429], [500, 502]])("mantém erros distintos %s/%s separados mesmo com mensagem genérica igual", async (lista, resumo) => {
+  adapter(c => falha(c, c.url.endsWith("resumo") ? resumo : lista)); montar();
+  await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+  expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(2);
+});
+it("não agrupa falha antiga com resposta pendente de uma nova consulta", async () => {
+  adapter(c => falha(c, 503)); montar(); await screen.findByRole("alert");
+  const pendentes = [];
+  adapter(c => new Promise(resolve => pendentes.push({ c, resolve })));
+  fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+  await waitFor(() => expect(pendentes).toHaveLength(2));
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.getByText("Carregando resumo…")).toBeDefined();
+  expect(screen.getByText("Carregando lista…")).toBeDefined();
+  await act(async () => { for (const p of pendentes) p.resolve(resposta(p.c, p.c.url.endsWith("resumo") ? resumoFeedback(p.c.params) : listaFeedback(p.c.params))); });
+  await screen.findByText(/Total:/); expect(screen.queryByRole("alert")).toBeNull();
+});
 it("cancela leituras antigas e impede respostas atrasadas", async () => {
   const pendentes = []; adapter(c => new Promise(resolve => pendentes.push({ c, resolve }))); montar();
   await waitFor(() => expect(pendentes).toHaveLength(2));
