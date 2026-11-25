@@ -4,7 +4,8 @@
 .filtros-editoriais :is(input, select, button):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
 
 /* ---------- Favoritos na listagem (o coração fica dentro do PlaquetaCard) ---------- */
-.filtros-editoriais .btn-favoritos { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
+.filtros-editoriais .btn-favoritos { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; color: #176b9a; border-color: #176b9a; }
+.filtros-editoriais .btn-favoritos:not([aria-pressed="true"]) .favoritos-contador { color: var(--navy); }
 .filtros-editoriais .btn-favoritos[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
 .favoritos-contador { min-width: 1.4em; padding: 0 .4em; border-radius: 999px; background: rgba(43, 37, 92, .12); font-size: .8rem; font-weight: 700; text-align: center; }
 .filtros-editoriais .btn-favoritos[aria-pressed="true"] .favoritos-contador { background: rgba(255, 255, 255, .22); }

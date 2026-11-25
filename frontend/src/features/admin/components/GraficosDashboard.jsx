@@ -48,8 +48,8 @@ function Painel({ titulo, descricao, children }) {
 function Donut({ titulo, descricao, dados, total }) {
   return <Painel titulo={titulo} descricao={descricao}>
     <div className={styles.donut}>
-      <ChartContainer config={config} aria-label={titulo}>
-        <PieChart accessibilityLayer>
+      <ChartContainer config={config}>
+        <PieChart accessibilityLayer aria-label={titulo}>
           <ChartTooltip content={<ChartTooltipContent />} />
           <Pie data={dados} dataKey="quantidade" nameKey="nome" innerRadius="65%" outerRadius="90%" strokeWidth={3} isAnimationActive={false}>
             {dados.map(item => <Cell key={item.nome} fill={item.fill} />)}
@@ -71,10 +71,10 @@ export default function GraficosDashboard({ dados }) {
   return <div className={styles.charts}>
     <Donut titulo="Situação de conservação" descricao="Classificação cadastrada do bem, em todos os status." dados={conservacao} total={dados.total} />
     <Painel titulo="Distribuição por região" descricao="Regiões editoriais do patrimônio. Bairro não entra nesta distribuição.">
-      {comRegiao > 0 ? <ChartContainer config={config} aria-label="Distribuição por região">
-        <RadarChart data={dados.porRegiao} outerRadius="65%" accessibilityLayer>
+      {comRegiao > 0 ? <ChartContainer config={config}>
+        <RadarChart data={dados.porRegiao} outerRadius="65%" accessibilityLayer aria-label="Distribuição por região">
           <PolarGrid stroke="#dce1eb" /><PolarAngleAxis dataKey="nome" tick={<RotuloRegiao />} />
-          <PolarRadiusAxis allowDecimals={false} domain={[0, Math.max(1, ...dados.porRegiao.map(r => r.quantidade))]} />
+          <PolarRadiusAxis allowDecimals={false} tick={{ fill: "#525d70" }} domain={[0, Math.max(1, ...dados.porRegiao.map(r => r.quantidade))]} />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Radar name="Patrimônios" dataKey="quantidade" fill="var(--color-quantidade)" stroke="var(--color-quantidade)" fillOpacity={0.25} isAnimationActive={false} />
         </RadarChart>
@@ -84,8 +84,8 @@ export default function GraficosDashboard({ dados }) {
       <p className={styles.total}>{formatar(comRegiao)} com região + {formatar(dados.semRegiao)} sem região = {formatar(dados.total)} patrimônios</p>
     </Painel>
     <Painel titulo="Categorias principais" descricao="Cada patrimônio é contado uma única vez nas barras, inclusive os arquivados.">
-      <ChartContainer config={config} className={styles.bars} aria-label="Categorias principais">
-        <BarChart data={dados.porCategoria} layout="vertical" margin={{ left: 0, right: 16 }} accessibilityLayer>
+      <ChartContainer config={config} className={styles.bars}>
+        <BarChart data={dados.porCategoria} layout="vertical" margin={{ left: 0, right: 16 }} accessibilityLayer aria-label="Categorias principais">
           <CartesianGrid horizontal={false} stroke="#e5e8ef" />
           <XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="nome" interval={0} width={100} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
           <ChartTooltip content={<ChartTooltipContent />} cursor={{ fill: "#f0edf8" }} />

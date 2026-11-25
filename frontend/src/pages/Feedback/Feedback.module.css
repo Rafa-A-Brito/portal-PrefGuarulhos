@@ -25,7 +25,7 @@
 .opcoes label:has(input:checked) { border-color: var(--navy); background: #efedf6; }
 .tipos:disabled label { cursor: default; }
 .campo { display: grid; gap: 8px; margin-bottom: 24px; }
-.campo textarea { width: 100%; min-width: 0; min-height: 170px; resize: vertical; border: 1px solid #85818f; border-radius: 8px; padding: 14px; font: inherit; color: var(--ink); background: #fff; line-height: 1.65; }
+.campo textarea { width: 100%; min-width: 0; min-height: 170px; border: 1px solid #85818f; border-radius: 8px; padding: 14px; font: inherit; color: var(--ink); background: #fff; line-height: 1.65; }
 .campo textarea[readonly] { background: var(--paper); }
 .campo textarea[aria-invalid="true"] { border: 2px solid var(--danger); }
 .erro { color: var(--danger); font-weight: 500; font-size: .875rem; }

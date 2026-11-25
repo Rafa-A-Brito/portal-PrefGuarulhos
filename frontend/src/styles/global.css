@@ -123,6 +123,12 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
+/* Apenas o destino temporário de foco após troca de página. */
+[data-foco-pagina]:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 @keyframes gradientDrift {
   0% {
     background-position: 0% 50%;
@@ -418,6 +424,20 @@ input:focus-visible {
   max-width: 560px;
   box-shadow: var(--shadow-plaque);
 }
+/* Indicador interno: contrasta com a superfície clara, sem alterar geometria. */
+.searchbar:focus-within,
+.mapa-search:focus-within,
+.navbar-busca:focus-within {
+  outline: 3px solid var(--navy);
+  outline-offset: -3px;
+}
+
+/* Campos nativos: alturas locais preservadas e texto longo sempre rolável. */
+textarea {
+  resize: none;
+  overflow-y: auto;
+}
+
 .searchbar-icon {
   position: absolute;
   left: 16px;
@@ -437,7 +457,7 @@ input:focus-visible {
 .searchbar button {
   display: inline-flex;
   align-items: center;
-  background: var(--blue);
+  background: #176b9a;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -687,11 +707,11 @@ input:focus-visible {
 }
 
 .missao-item:hover .missao-content h3 {
-  color: #fff;
+  color: var(--ink);
 }
 
 .missao-item:hover .missao-content p {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
 }
 
 /* RESPONSIVO */
@@ -1485,7 +1505,7 @@ input:focus-visible {
 .plaqueta-body .verlink {
   font-size: 12px;
   font-weight: 700;
-  color: var(--blue);
+  color: #176b9a;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -1493,7 +1513,7 @@ input:focus-visible {
   transition: gap 0.15s ease;
 }
 .plaqueta-body .verlink:hover {
-  color: var(--indigo);
+  color: var(--navy);
   gap: 8px;
 }
 
@@ -2800,7 +2820,7 @@ input:focus-visible {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: #14752f;
   background: rgba(28, 161, 65, 0.1);
   padding: 4px 9px;
   border-radius: 999px;
@@ -2879,7 +2899,7 @@ input:focus-visible {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--orange-dark);
+  color: #9a5209;
 }
 .expo-card-body h3 {
   font-size: 15.5px;
@@ -3076,7 +3096,7 @@ input:focus-visible {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: #14752f;
   margin-bottom: 8px;
 }
 
@@ -3141,8 +3161,8 @@ input:focus-visible {
 }
 
 .admin-login-card input:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(62, 163, 220, 0.16);
+  border-color: #176b9a;
+  box-shadow: 0 0 0 3px #176b9a;
 }
 
 .admin-login-card input:disabled {
@@ -3185,7 +3205,7 @@ input:focus-visible {
 }
 
 .admin-login-input-wrap input:focus ~ label {
-  color: var(--blue);
+  color: #176b9a;
 }
 
 .admin-login-input-icon {
@@ -3339,6 +3359,17 @@ input:focus-visible {
 
 .admin-login-submit:disabled {
   cursor: progress;
+}
+
+/* Contraste do Login sem alterar os botões públicos compartilhados. */
+.admin-login-submit:not(:disabled) {
+  background: #176b9a;
+  border-color: #176b9a;
+}
+
+.admin-login-submit:hover:not(:disabled) {
+  background: var(--navy);
+  border-color: var(--navy);
 }
 
 .admin-login-submit.is-success,
@@ -3607,7 +3638,6 @@ input:focus-visible {
 
 .contato-field textarea {
   min-height: 150px;
-  resize: none;
 }
 
 .contato-field input:focus,
@@ -3864,7 +3894,7 @@ input:focus-visible {
 }
 
 .noticia-link:hover {
-  color: var(--indigo);
+  color: var(--navy);
 }
 
 .noticia-meta {
@@ -3887,7 +3917,7 @@ input:focus-visible {
   margin-top: auto;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--blue);
+  color: #176b9a;
 }
 
 .noticias-side {
@@ -4550,8 +4580,25 @@ input:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: flex;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  background: transparent;
+  color: inherit;
   justify-content: flex-end;
+}
+
+.detalhes-painel-wrap[open] {
+  display: flex;
+}
+
+.detalhes-painel-wrap::backdrop {
+  background: transparent;
 }
 
 .detalhes-painel-fundo {
@@ -4639,7 +4686,7 @@ input:focus-visible {
   }
 
   .detalhes-atalho,
-  .detalhes-painel-wrap {
+  .detalhes-painel-wrap[open] {
     display: none;
   }
 }

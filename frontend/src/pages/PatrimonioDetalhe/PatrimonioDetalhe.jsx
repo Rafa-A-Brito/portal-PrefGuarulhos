@@ -24,6 +24,7 @@ import EditarPatrimonioModal from "../../features/admin/components/EditarPatrimo
 import { formatarEndereco } from "../../features/mapa/endereco";
 import { criarUrlRota } from "../../features/mapa/rota";
 import { classificarLocalizacao } from "../../features/mapa/politicaLocalizacao";
+import { formatarTituloPagina } from "../../utils/tituloPagina";
 import "./PatrimonioDetalhe.css";
 import "./PatrimonioDetalheEdicao.css";
 
@@ -113,6 +114,13 @@ function DetalhePorSlug({ slug }) {
     (estado.carregando
       ? patrimonios.find((p) => String(p.id) === String(slug))
       : null);
+
+  useEffect(() => {
+    const titulo = estado.carregando ? "Carregando patrimônio"
+      : estado.erro ? "Não foi possível carregar o patrimônio"
+      : item?.nome || "Patrimônio não encontrado";
+    document.title = formatarTituloPagina(titulo);
+  }, [estado.carregando, estado.erro, item?.nome]);
 
   const verNoMapa = () => {
     if (item) setSelecionado(item);

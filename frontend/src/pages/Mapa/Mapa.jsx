@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   MagnifyingGlassIcon,
@@ -38,6 +38,18 @@ export default function Mapa() {
     [patrimonios, filtro, busca],
   );
 
+  const [resumoResultados, setResumoResultados] = useState("");
+  useEffect(() => {
+    if (carregando || erro) return;
+    // A lista continua imediata; apenas o resumo aguarda a última interação.
+    const timer = setTimeout(() => {
+      setResumoResultados(filtrados.length === 0
+        ? "Nenhum patrimônio encontrado"
+        : `${filtrados.length} ${filtrados.length === 1 ? "patrimônio encontrado" : "patrimônios encontrados"}`);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [busca, filtro, filtrados.length, carregando, erro]);
+
   const politica = classificarLocalizacao(selecionado);
   const rotaUrl = criarUrlRota(selecionado);
   const endereco = politica.exibirEndereco ? formatarEndereco(selecionado) : [];
@@ -59,10 +71,10 @@ export default function Mapa() {
       <div className="mapa-shell">
         {/* ===== SIDEBAR ===== */}
         <aside className="mapa-sidebar">
-          <div className="mapa-sidebar-count">
+          <div className="mapa-sidebar-count" role="status" aria-atomic="true">
             {carregando
               ? "Carregando…"
-              : `${filtrados.length} ${filtrados.length === 1 ? "patrimônio encontrado" : "patrimônios encontrados"}`}
+              : erro ? "" : resumoResultados || "\u00a0"}
           </div>
           <div className="mapa-sidebar-list">
             {carregando ? (

@@ -1355,7 +1355,6 @@ export default function PatrimonioEditor({
               <textarea
                 id="patrimonio-resumo"
                 rows={4}
-                style={{ resize: "none" }}
                 maxLength={LIMITE_RESUMO}
                 placeholder="Escreva um resumo curto do patrimônio."
                 value={formulario.descricaoResumida}
@@ -1571,7 +1570,6 @@ export default function PatrimonioEditor({
               História (opcional)
               <textarea
                 rows={5}
-                style={{ resize: "vertical" }}
                 value={formulario.historia}
                 onChange={(e) => atualizar("historia", e.target.value)}
               />
@@ -1581,7 +1579,6 @@ export default function PatrimonioEditor({
               Importância cultural (opcional)
               <textarea
                 rows={4}
-                style={{ resize: "vertical" }}
                 value={formulario.importanciaCultural}
                 onChange={(e) =>
                   atualizar("importanciaCultural", e.target.value)

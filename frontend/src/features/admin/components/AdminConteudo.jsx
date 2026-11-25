@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   PencilIcon,
   TrashIcon,
@@ -73,6 +73,27 @@ export default function AdminConteudo({ tipo, api }) {
   const [sucesso, setSucesso] = useState("");
   const [filtro, setFiltro] = useState("");
   const [busca, setBusca] = useState("");
+  const primeiroCampoRef = useRef(null);
+  const acionadorRef = useRef(null);
+  const buscaRef = useRef(null);
+  const novoRef = useRef(null);
+  const salvarRef = useRef(null);
+  const focoPendente = useRef(null);
+
+  // Consome o pedido depois da montagem e da reabilitação dos controles.
+  // O modal de erro memoriza então um destino válido para seu próprio retorno.
+  useEffect(() => {
+    if (ocupado || !focoPendente.current) return;
+    const pedido = focoPendente.current;
+    focoPendente.current = null;
+    const destinos = pedido.tipo === "formulario"
+      ? [primeiroCampoRef.current]
+      : pedido.tipo === "salvar"
+        ? [salvarRef.current, primeiroCampoRef.current]
+        : [acionadorRef.current, buscaRef.current, novoRef.current];
+    destinos.find((elemento) => elemento?.isConnected && !elemento.matches(":disabled"))?.focus();
+    if (pedido.erro) mostrarErro(pedido.erro, { origem: titulo });
+  }, [ocupado, editando, formKey, mostrarErro, titulo]);
 
   const carregar = useCallback(async () => {
     try {
@@ -114,7 +135,9 @@ export default function AdminConteudo({ tipo, api }) {
 
   const alterar = (nome, valor) =>
     setForm((anterior) => ({ ...anterior, [nome]: valor }));
-  function abrir(item) {
+  function abrir(item, acionador) {
+    if (acionador) acionadorRef.current = acionador;
+    focoPendente.current = { tipo: "formulario" };
     setFormKey((key) => key + 1);
     setForm(formularioInicial(item));
     setEditando(item?.id || "novo");
@@ -123,12 +146,19 @@ export default function AdminConteudo({ tipo, api }) {
     setErroForm("");
     setSucesso("");
   }
-  async function editar(id) {
+  function fechar() {
+    focoPendente.current = { tipo: "retorno" };
+    setEditando(null);
+    setArquivo(null);
+    setPreview("");
+  }
+  async function editar(id, acionador) {
+    acionadorRef.current = acionador;
     setOcupado(true);
     try {
       abrir(await api.detalhe(id));
     } catch (error) {
-      mostrarErro(error, { origem: titulo });
+      focoPendente.current = { tipo: "retorno", erro: error };
     } finally {
       setOcupado(false);
     }
@@ -195,14 +225,12 @@ export default function AdminConteudo({ tipo, api }) {
     try {
       if (editando === "novo") await api.criar(dados, arquivo);
       else await api.atualizar(editando, dados, arquivo);
-      setEditando(null);
-      setArquivo(null);
-      setPreview("");
+      fechar();
       setSucesso("Conteúdo salvo.");
       await carregar();
     } catch (error) {
       setErroForm(extrairMensagemDeErro(error));
-      mostrarErro(error, { origem: titulo });
+      focoPendente.current = { tipo: "salvar", erro: error };
     } finally {
       setOcupado(false);
     }
@@ -245,10 +273,11 @@ export default function AdminConteudo({ tipo, api }) {
           <p>Cadastre, revise e publique o conteúdo do portal.</p>
         </div>
         <button
+          ref={novoRef}
           className="btn-solid"
           type="button"
           disabled={ocupado}
-          onClick={() => abrir()}
+          onClick={(event) => abrir(undefined, event.currentTarget)}
         >
           Novo conteúdo
         </button>
@@ -263,6 +292,7 @@ export default function AdminConteudo({ tipo, api }) {
                 <label>
                   Tipo
                   <select
+                    ref={primeiroCampoRef}
                     value={form.tipo}
                     onChange={(e) => alterar("tipo", e.target.value)}
                   >
@@ -293,6 +323,7 @@ export default function AdminConteudo({ tipo, api }) {
                       />
                     ) : (
                       <input
+                        ref={!novidade && nome === "titulo" ? primeiroCampoRef : undefined}
                         type={tipoCampo}
                         required={obrigatorio}
                         maxLength={max}
@@ -413,18 +444,14 @@ export default function AdminConteudo({ tipo, api }) {
             </p>
           )}
           <div className="admin-form-acoes">
-            <button className="btn-solid" disabled={ocupado}>
+            <button ref={salvarRef} className="btn-solid" disabled={ocupado}>
               {ocupado ? "Salvando…" : "Salvar"}
             </button>
             <button
               className="btn-outline"
               type="button"
               disabled={ocupado}
-              onClick={() => {
-                setEditando(null);
-                setArquivo(null);
-                setPreview("");
-              }}
+              onClick={fechar}
             >
               Cancelar
             </button>
@@ -434,7 +461,7 @@ export default function AdminConteudo({ tipo, api }) {
       <div className="admin-form admin-form-grid">
         <label>
           Buscar título
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <input ref={buscaRef} value={busca} onChange={(e) => setBusca(e.target.value)} />
         </label>
         <label>
           Status
@@ -488,7 +515,7 @@ export default function AdminConteudo({ tipo, api }) {
                           disabled={ocupado}
                           title="Editar"
                           aria-label={`Editar ${item.titulo}`}
-                          onClick={() => editar(item.id)}
+                          onClick={(event) => editar(item.id, event.currentTarget)}
                         >
                           <PencilIcon width={18} />
                         </button>

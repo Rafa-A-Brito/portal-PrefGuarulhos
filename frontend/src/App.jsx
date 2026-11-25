@@ -18,6 +18,7 @@ import { PatrimoniosProvider } from "./context/PatrimoniosContext";
 import { AuthProvider } from "./context/AuthContext";
 import { ErroModalProvider } from "./context/ErroModalContext";
 import { useAuth } from "./hooks/useAuth";
+import { useOrientacaoPagina } from "./hooks/useOrientacaoPagina";
 
 import RotaProtegida from "./features/admin/components/RotaProtegida";
 import AdminLayout from "./features/admin/components/AdminLayout";
@@ -129,6 +130,10 @@ function AppRoutes() {
   const concluirTransicao = useCallback(() => setTransicaoVista(true), []);
 
   const emTransicao = location.pathname === "/admin" && !transicaoVista;
+  useOrientacaoPagina(
+    (location.pathname.startsWith("/admin") && verificandoSessao) ||
+    (emTransicao && autenticado),
+  );
 
   // Sem sessão (e já verificado), não há o que "validar": deixa a
   // RotaProtegida mandar a pessoa para o login em vez de mostrar a transição.

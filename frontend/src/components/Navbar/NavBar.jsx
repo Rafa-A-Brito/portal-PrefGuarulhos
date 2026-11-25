@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -14,6 +14,21 @@ export default function Navbar() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [termoBusca, setTermoBusca] = useState("");
+  const botaoBusca = useRef(null);
+  const devolverFoco = useRef(false);
+
+  useEffect(() => {
+    if (!buscaAberta && devolverFoco.current) {
+      devolverFoco.current = false;
+      botaoBusca.current?.focus();
+    }
+  }, [buscaAberta]);
+
+  const fecharBusca = () => {
+    devolverFoco.current = true;
+    setBuscaAberta(false);
+    setTermoBusca("");
+  };
 
   const linkClass = ({ isActive }) => (isActive ? "active" : "");
   const fechar = () => setMenuAberto(false);
@@ -31,8 +46,7 @@ export default function Navbar() {
         ? `/patrimonios?busca=${encodeURIComponent(termo)}`
         : "/patrimonios",
     );
-    setBuscaAberta(false);
-    setTermoBusca("");
+    fecharBusca();
   };
 
   const itensNav = (
@@ -88,10 +102,7 @@ export default function Navbar() {
               type="button"
               className="navbar-busca-fechar"
               aria-label="Fechar busca"
-              onClick={() => {
-                setBuscaAberta(false);
-                setTermoBusca("");
-              }}
+              onClick={fecharBusca}
             >
               <XMarkIcon width={15} height={15} />
             </button>
@@ -100,6 +111,7 @@ export default function Navbar() {
           <button
             type="button"
             className="navbar-search-btn"
+            ref={botaoBusca}
             aria-label="Buscar"
             onClick={() => setBuscaAberta(true)}
           >

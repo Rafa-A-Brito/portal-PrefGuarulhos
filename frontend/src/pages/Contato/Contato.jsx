@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   InformationCircleIcon,
   XMarkIcon,
@@ -9,6 +9,8 @@ import {
 
 import { FormularioFeedback } from "../Feedback/Feedback";
 import { feedbackAtivo } from "../../utils/feedbackPublico";
+import { faixaLivre } from "./faixaLivre";
+import "./Contato.css";
 
 /**
  * CONSTANTES DE CONTATO
@@ -25,20 +27,103 @@ const EMAIL_PATRIMONIO = "patrimonio.cultural@guarulhos.sp.gov.br";
 
 export default function Contato() {
   const [infoAberta, setInfoAberta] = useState(false);
+  const acionadorRef = useRef(null);
+  const fecharRef = useRef(null);
+  const devolverFoco = useRef(false);
+  const paginaRef = useRef(null);
+  const painelRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const pagina = paginaRef.current;
+    const fab = acionadorRef.current;
+    const painel = painelRef.current;
+    let frame;
+    let referenciaFoco = null;
+    const limparPosicao = (elemento, completo = false) => {
+      for (const propriedade of completo ? ["top", "bottom", "max-height"] : ["top", "bottom"]) {
+        elemento?.style.removeProperty(propriedade);
+      }
+    };
+    const atualizar = () => {
+      limparPosicao(fab);
+      limparPosicao(painel);
+      const margem = 8;
+      const inicio = Math.max(margem, (document.querySelector(".navbar")?.getBoundingClientRect().bottom ?? 0) + margem);
+      const fim = window.innerHeight - margem;
+      const foco = document.activeElement;
+      const focoExterno = foco?.matches("a, button, input, select, textarea, [tabindex]") &&
+        !fab.contains(foco) && !painel?.contains(foco) ? foco : null;
+      // Mantém a posição ao entrar na superfície: mover o botão entre
+      // pointerdown e click poderia impedir seu acionamento.
+      if (focoExterno) referenciaFoco = focoExterno.closest("label") ?? focoExterno;
+      if (!referenciaFoco?.isConnected) referenciaFoco = null;
+      const posicionar = (elemento, obstaculos, limitarAltura = false) => {
+        const caixa = elemento.getBoundingClientRect();
+        if (!caixa.height) return; // Sem geometria durante montagem/ambientes sem layout.
+        const estilo = getComputedStyle(elemento);
+        const altura = limitarAltura
+          ? Math.max(caixa.height, elemento.scrollHeight + parseFloat(estilo.borderTopWidth) + parseFloat(estilo.borderBottomWidth))
+          : caixa.height;
+        const bloqueios = obstaculos.filter(Boolean).map(e => e.getBoundingClientRect())
+          .filter(r => r.width && r.height && r.left < caixa.right + margem && r.right > caixa.left - margem)
+          .map(r => [r.top - margem, r.bottom + margem]);
+        const faixa = faixaLivre(inicio, fim, altura, caixa.bottom - altura, bloqueios);
+        if (!faixa) return;
+        elemento.style.top = `${faixa.top}px`;
+        elemento.style.bottom = "auto";
+        if (limitarAltura) elemento.style.maxHeight = `${faixa.maxHeight}px`;
+      };
+      posicionar(fab, [...pagina.querySelectorAll("textarea"), referenciaFoco]);
+      if (painel) posicionar(painel, [fab, referenciaFoco], true);
+    };
+    const agendar = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(atualizar);
+    };
+    atualizar();
+    window.addEventListener("scroll", agendar, true);
+    window.addEventListener("resize", agendar);
+    document.addEventListener("focusin", agendar);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(agendar);
+    observer?.observe(pagina);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", agendar, true);
+      window.removeEventListener("resize", agendar);
+      document.removeEventListener("focusin", agendar);
+      observer?.disconnect();
+      limparPosicao(fab, true);
+      limparPosicao(painel, true);
+    };
+  }, [infoAberta]);
+
+  function fecharInformacoes() {
+    devolverFoco.current = true;
+    setInfoAberta(false);
+  }
 
   // Fecha o card de informações com Esc. O listener só existe enquanto o
   // card está aberto (dependência: infoAberta) e é removido no cleanup.
   useEffect(() => {
-    if (!infoAberta) return;
+    if (!infoAberta) {
+      if (devolverFoco.current) {
+        devolverFoco.current = false;
+        if (acionadorRef.current?.isConnected) {
+          acionadorRef.current.focus({ preventScroll: true });
+        }
+      }
+      return;
+    }
+    fecharRef.current?.focus({ preventScroll: true });
     const aoTeclar = (e) => {
-      if (e.key === "Escape") setInfoAberta(false);
+      if (e.key === "Escape") fecharInformacoes();
     };
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [infoAberta]);
 
   return (
-    <div>
+    <div ref={paginaRef} className="contato-pagina">
       <div className="page-hero">
         <h1>Fale conosco</h1>
         <p>
@@ -158,6 +243,7 @@ export default function Contato() {
       {/* ===== Informações institucionais (card flutuante) ===== */}
       {infoAberta && (
         <aside
+          ref={painelRef}
           id="contato-info"
           className="contato-pop"
           role="dialog"
@@ -166,10 +252,11 @@ export default function Contato() {
           <div className="contato-pop-head">
             <h3>Informações institucionais</h3>
             <button
+              ref={fecharRef}
               type="button"
               className="contato-pop-close"
               aria-label="Fechar informações"
-              onClick={() => setInfoAberta(false)}
+              onClick={fecharInformacoes}
             >
               <XMarkIcon width={18} height={18} />
             </button>
@@ -201,12 +288,13 @@ export default function Contato() {
       )}
 
       <button
+        ref={acionadorRef}
         type="button"
         className="contato-fab"
         aria-label="Informações institucionais"
         aria-expanded={infoAberta}
         aria-controls="contato-info"
-        onClick={() => setInfoAberta((aberta) => !aberta)}
+        onClick={() => infoAberta ? fecharInformacoes() : setInfoAberta(true)}
       >
         <InformationCircleIcon width={26} height={26} />
       </button>

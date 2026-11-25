@@ -258,6 +258,9 @@ export default function ConhecaMaisDetalhes() {
   const [ativo, setAtivo] = useState("");
   const [painelAberto, setPainelAberto] = useState(false);
   const [mostrarAtalho, setMostrarAtalho] = useState(false);
+  const painelRef = useRef(null);
+  const fecharRef = useRef(null);
+  const atalhoRef = useRef(null);
   // Enquanto a página rola após um clique no índice, o observador espera,
   // para o destaque não "piscar" pelos itens do meio do caminho.
   const travadoAte = useRef(0);
@@ -310,27 +313,50 @@ export default function ConhecaMaisDetalhes() {
     return () => window.removeEventListener("scroll", aoRolar);
   }, []);
 
-  // Painel aberto: Esc fecha, a página de trás não rola, e ele fecha sozinho
-  // se a janela crescer até o layout de desktop (dependência: [painelAberto]).
+  // O diálogo nativo torna o fundo inerte, como nos diálogos administrativos.
+  // Ao voltar ao desktop, o índice fixo substitui o acionador móvel.
   useEffect(() => {
     if (!painelAberto) return;
-    const aoTeclar = (e) => {
-      if (e.key === "Escape") setPainelAberto(false);
-    };
+    const painel = painelRef.current;
+    const acionador = atalhoRef.current;
     const desktop = window.matchMedia("(min-width: 1100px)");
     const aoMudar = (e) => {
       if (e.matches) setPainelAberto(false);
     };
     const overflowAntes = document.body.style.overflow;
+    painel.showModal();
+    fecharRef.current?.focus({ preventScroll: true });
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", aoTeclar);
     desktop.addEventListener("change", aoMudar);
     return () => {
+      painel.close();
       document.body.style.overflow = overflowAntes;
-      window.removeEventListener("keydown", aoTeclar);
       desktop.removeEventListener("change", aoMudar);
+      if (acionador?.isConnected) {
+        const destino = desktop.matches
+          ? document.querySelector('.detalhes-rail [aria-current="location"]') ??
+            document.querySelector('.detalhes-rail a[href]')
+          : acionador;
+        destino?.focus({ preventScroll: true });
+      }
     };
   }, [painelAberto]);
+
+  const manterFoco = (event) => {
+    if (event.key !== "Tab") return;
+    const controles = painelRef.current.querySelectorAll(
+      '.detalhes-painel button:not(:disabled), .detalhes-painel a[href]',
+    );
+    const primeiro = controles[0];
+    const ultimo = controles[controles.length - 1];
+    if (event.shiftKey && document.activeElement === primeiro) {
+      event.preventDefault();
+      ultimo?.focus();
+    } else if (!event.shiftKey && document.activeElement === ultimo) {
+      event.preventDefault();
+      primeiro?.focus();
+    }
+  };
 
   const escolher = useCallback((id) => {
     travadoAte.current = Date.now() + 1000;
@@ -478,6 +504,7 @@ export default function ConhecaMaisDetalhes() {
         aria-label={`Abrir índice da página. Você está em: ${itemAtivo.titulo}`}
         aria-expanded={painelAberto}
         aria-controls="detalhes-painel"
+        ref={atalhoRef}
         onClick={() => setPainelAberto(true)}
       >
         <IconeAtivo width={22} height={22} aria-hidden="true" />
@@ -485,25 +512,31 @@ export default function ConhecaMaisDetalhes() {
       </button>
 
       {painelAberto && (
-        <div className="detalhes-painel-wrap">
+        <dialog
+          id="detalhes-painel"
+          className="detalhes-painel-wrap"
+          ref={painelRef}
+          aria-label="Nesta página"
+          onKeyDown={manterFoco}
+          onCancel={(event) => {
+            event.preventDefault();
+            setPainelAberto(false);
+          }}
+        >
           <button
             type="button"
             className="detalhes-painel-fundo"
-            aria-label="Fechar índice"
+            tabIndex={-1}
+            aria-hidden="true"
             onClick={() => setPainelAberto(false)}
           />
-          <aside
-            id="detalhes-painel"
-            className="detalhes-painel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Nesta página"
-          >
+          <aside className="detalhes-painel">
             <div className="detalhes-painel-topo">
               <p>Nesta página</p>
               <button
                 type="button"
                 className="detalhes-painel-fechar"
+                ref={fecharRef}
                 aria-label="Fechar índice"
                 onClick={() => setPainelAberto(false)}
               >
@@ -516,7 +549,7 @@ export default function ConhecaMaisDetalhes() {
               grupos={gruposIndice}
             />
           </aside>
-        </div>
+        </dialog>
       )}
     </div>
   );

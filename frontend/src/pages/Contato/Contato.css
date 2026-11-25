@@ -1,0 +1,7 @@
+/* Somente o painel institucional: preserva o conteúdo quando a faixa livre
+   da viewport é menor que sua altura natural, inclusive no zoom de página. */
+.contato-pagina .contato-pop {
+  box-sizing: border-box;
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+}

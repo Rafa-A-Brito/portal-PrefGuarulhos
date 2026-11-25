@@ -11,7 +11,6 @@
 .admin-ligacoes fieldset { min-width: 0; margin-top: 1.25rem; border: 1px solid #c7c5d5; border-radius: 8px; padding: 1rem; }
 .admin-ligacoes legend { font-weight: 700; }
 .admin-ligacoes input:not([type=radio]), .admin-ligacoes textarea { min-width: 0; width: 100%; box-sizing: border-box; }
-.admin-ligacoes textarea { resize: vertical; }
 .admin-ligacoes .admin-ligacoes-opcao { flex-direction: row; align-items: center; gap: .75rem; padding: .6rem 0; }
 .admin-ligacoes-opcao input { width: 20px; height: 20px; flex-shrink: 0; }
 .admin-ligacoes-opcao span { min-width: 0; overflow-wrap: anywhere; }
