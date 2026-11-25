@@ -6,6 +6,8 @@
 .chart { height: 280px; width: 100%; min-width: 0; font-size: 12px; }
 .chart :global(.recharts-cartesian-axis-tick text), .chart :global(.recharts-polar-angle-axis-tick text) { fill: #525d70; }
 .chart :global(.recharts-surface):focus-visible { outline: 2px solid var(--navy, #2b255c); outline-offset: -2px; border-radius: 4px; }
+.chart :global(.recharts-tooltip-wrapper) { transition: none !important; pointer-events: none; }
+.chart :global(.recharts-sector), .chart :global(.recharts-rectangle), .chart :global(.recharts-radar-polygon) { transition: none; transform: none; outline: none; }
 .tooltip { background: #fff; border: 1px solid #dce1eb; border-radius: 8px; box-shadow: 0 4px 16px #18234420; padding: 10px 14px; color: #202638; font-size: 12px; max-width: 250px; }
 .tooltip > div { display: flex; justify-content: space-between; gap: 18px; margin-top: 4px; }
 @media (max-width: 480px) { .header { padding: 16px 14px 0; } .content { padding: 12px 14px 16px; } }

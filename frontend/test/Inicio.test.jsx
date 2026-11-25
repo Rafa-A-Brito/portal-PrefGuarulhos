@@ -29,7 +29,7 @@ test.each([itens, []].map(patrimonios => ({ patrimonios })))("card flutuante res
   expect(within(card).getByText(heroDestaqueMock.bairro)).toBeTruthy();
   expect(within(card).getByText(heroDestaqueMock.resumo)).toBeTruthy();
   expect([...card.querySelectorAll("img")].map(img => img.getAttribute("src"))).toEqual(heroDestaqueMock.imagens);
-  expect(card.querySelector(".hfc-extra [aria-hidden]").textContent).toBe("+5");
+  expect(card.querySelector(".hfc-extra [aria-hidden]").textContent).toBe(`+${heroDestaqueMock.extra}`);
   expect(within(card).getByRole("link").getAttribute("href")).toBe("/patrimonios");
   expect(card.querySelector(".situacao-selo,.visitacao-aviso")).toBeNull();
 });
@@ -40,7 +40,7 @@ test("URLs vazias no card fixo são filtradas sem alterar o contador original", 
     heroDestaqueMock.imagens = ["", null, undefined, "  ", ...imagens];
     const { container } = inicio();
     expect(container.querySelectorAll(".hfc-thumbs img")).toHaveLength(3);
-    expect(container.querySelector(".hfc-extra [aria-hidden]").textContent).toBe("+5");
+    expect(container.querySelector(".hfc-extra [aria-hidden]").textContent).toBe(`+${heroDestaqueMock.extra}`);
   } finally { heroDestaqueMock.imagens = imagens; }
 });
 

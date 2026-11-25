@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -29,8 +29,9 @@ export default function Mapa() {
     selecionado,
     setSelecionado,
   } = usePatrimoniosContext();
-  const [busca, setBusca] = useState("");
-  const [filtro, setFiltro] = useState("todos");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const busca = searchParams.get("busca") || "";
+  const filtro = searchParams.get("categoria") || "todos";
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
   const filtrados = useMemo(
@@ -55,9 +56,23 @@ export default function Mapa() {
   const endereco = politica.exibirEndereco ? formatarEndereco(selecionado) : [];
 
   const handleFiltro = (novo) => {
-    setFiltro(novo);
+    setSearchParams(atuais => {
+      const params = new URLSearchParams(atuais);
+      if (novo === "todos") params.delete("categoria");
+      else params.set("categoria", novo);
+      return params;
+    });
     setFiltrosAbertos(false);
   };
+
+  function handleBusca(valor) {
+    setSearchParams(atuais => {
+      const params = new URLSearchParams(atuais);
+      if (valor) params.set("busca", valor);
+      else params.delete("busca");
+      return params;
+    }, { replace: true });
+  }
 
   return (
     <div>
@@ -126,8 +141,9 @@ export default function Mapa() {
             <div className="mapa-search">
               <MagnifyingGlassIcon width={16} height={16} />
               <input
+                aria-label="Pesquisar patrimônios no mapa por nome, bairro ou CEP"
                 value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                onChange={(e) => handleBusca(e.target.value)}
                 placeholder="Pesquisar por nome, bairro ou CEP..."
               />
             </div>

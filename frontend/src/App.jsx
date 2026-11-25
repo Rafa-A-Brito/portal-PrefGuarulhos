@@ -13,6 +13,7 @@ import ConhecaMais from "./pages/ConhecaMais/ConhecaMais";
 import PatrimonioDetalhe from "./pages/PatrimonioDetalhe/PatrimonioDetalhe";
 import Contato from "./pages/Contato/Contato";
 import Feedback from "./pages/Feedback/Feedback";
+import NaoEncontrada from "./pages/NaoEncontrada/NaoEncontrada";
 
 import { PatrimoniosProvider } from "./context/PatrimoniosContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -132,7 +133,7 @@ function AppRoutes() {
   const emTransicao = location.pathname === "/admin" && !transicaoVista;
   useOrientacaoPagina(
     (location.pathname.startsWith("/admin") && verificandoSessao) ||
-    (emTransicao && autenticado),
+      (emTransicao && autenticado),
   );
 
   // Sem sessão (e já verificado), não há o que "validar": deixa a
@@ -178,6 +179,7 @@ function AppRoutes() {
                   />
                   <Route path="/contato" element={<Contato />} />
                   <Route path="/feedback" element={<Feedback />} />
+                  <Route path="*" element={<NaoEncontrada />} />
                 </Routes>
               </div>
             </main>

@@ -43,13 +43,14 @@ export default function Patrimonios() {
     return () => abort.abort();
   }, [tentativaRegioes]);
 
-  const [busca, setBusca] = useState(searchParams.get("busca") || "");
+  const busca = searchParams.get("busca") || "";
 
   const { patrimonios, carregando, erro, recarregar, setSelecionado } =
     usePatrimoniosContext();
 
-  // Estado para controlar a página atual da paginação
-  const [paginaAtual, setPaginaAtual] = useState(1);
+  // A URL é a fonte de verdade, inclusive ao voltar/avançar sem desmontar.
+  const paginaUrl = Number(searchParams.get("pagina"));
+  const paginaAtual = Number.isSafeInteger(paginaUrl) && paginaUrl > 0 ? paginaUrl : 1;
 
   useEffect(() => {
     return () => setSelecionado(null);
@@ -91,7 +92,12 @@ export default function Patrimonios() {
   const exibidos = filtrados.slice(indiceInicio, indiceFim);
 
   const irParaPagina = (pagina) => {
-    setPaginaAtual(pagina);
+    setSearchParams(atuais => {
+      const params = new URLSearchParams(atuais);
+      if (pagina > 1) params.set("pagina", String(pagina));
+      else params.delete("pagina");
+      return params;
+    });
 
     window.scrollTo({
       top: 300,
@@ -100,9 +106,9 @@ export default function Patrimonios() {
   };
 
   const handleFiltro = (novo) => {
-    setPaginaAtual(1);
-
-    setSearchParams((params) => {
+    setSearchParams((atuais) => {
+      const params = new URLSearchParams(atuais);
+      params.delete("pagina");
       if (novo === "todos") {
         params.delete("categoria");
       } else {
@@ -114,9 +120,9 @@ export default function Patrimonios() {
   };
 
   const handleBusca = (valor) => {
-    setBusca(valor);
-
-    setSearchParams((params) => {
+    setSearchParams((atuais) => {
+      const params = new URLSearchParams(atuais);
+      params.delete("pagina");
       if (valor) {
         params.set("busca", valor);
       } else {
@@ -124,17 +130,15 @@ export default function Patrimonios() {
       }
 
       return params;
-    });
+    }, { replace: true });
   };
 
   function filtrarEditorial(campo, valor) {
-    setPaginaAtual(1);
-    setSearchParams(params => { if (valor) params.set(campo, valor); else params.delete(campo); return params; });
+    setSearchParams(atuais => { const params = new URLSearchParams(atuais); params.delete("pagina"); if (valor) params.set(campo, valor); else params.delete(campo); return params; });
   }
 
   function alternarSomenteFavoritos() {
-    setPaginaAtual(1);
-    setSearchParams(params => { if (somenteFavoritos) params.delete("favoritos"); else params.set("favoritos", "1"); return params; });
+    setSearchParams(atuais => { const params = new URLSearchParams(atuais); params.delete("pagina"); if (somenteFavoritos) params.delete("favoritos"); else params.set("favoritos", "1"); return params; });
   }
 
   return (
@@ -161,6 +165,7 @@ export default function Patrimonios() {
           <MagnifyingGlassIcon width={16} height={16} />
 
           <input
+            aria-label="Buscar patrimônios por nome, bairro, endereço ou CEP"
             value={busca}
             onChange={(e) => handleBusca(e.target.value)}
             placeholder="Buscar por nome, bairro, endereço ou CEP..."
@@ -202,7 +207,7 @@ export default function Patrimonios() {
             <span className="favoritos-contador">{totalFavoritosNoCatalogo}</span>
           </button>
           {regiao && <button type="button" className="btn-outline" onClick={() => {
-            setPaginaAtual(1); setSearchParams(params => { params.delete("regiao"); return params; });
+            filtrarEditorial("regiao", "");
           }}>Limpar filtros editoriais</button>}
         </div>
         {erroRegioes && <p role="status">Filtro regional indisponível. <button type="button" onClick={() => setTentativaRegioes(v => v + 1)}>Tentar carregar regiões</button></p>}

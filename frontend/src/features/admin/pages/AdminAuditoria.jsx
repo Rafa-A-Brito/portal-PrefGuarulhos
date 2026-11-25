@@ -140,7 +140,7 @@ export default function AdminAuditoria() {
   }
   return <div className={styles.pagina}>
     <header className="admin-page-head"><h1>Histórico de alterações</h1>
-      <p>Consulte as mudanças administrativas registradas. Datas e horários em America/Sao_Paulo.</p>
+      <p>Consulte as mudanças feitas na área administrativa. Datas e horários no horário de Brasília.</p>
     </header>
     <form className={`admin-form ${styles.filtros}`} aria-label="Filtros do histórico" onSubmit={aplicar}>
       <div className={styles.grade}>
@@ -166,24 +166,27 @@ export default function AdminAuditoria() {
           </select></label>
           <p className={styles.nota}>{pessoas.itens.length === 0 ? "Nenhum responsável encontrado." : `Até 20 opções por busca; ${pessoas.paginacao.total} resultados. Refine o nome se necessário.`}</p>
         </>}
-        <label>Responsável (UUID, opcional)<input value={form.userId} maxLength={36} autoComplete="off" onChange={e => alterar("userId", e.target.value)} /></label>
       </fieldset>
-      <details><summary>Filtro avançado de registro</summary>
-        <label>ID do registro alvo (UUID)<input value={form.entityId} maxLength={36} autoComplete="off" onChange={e => alterar("entityId", e.target.value)} /></label>
+      <details><summary>Filtros avançados</summary>
+        <p className={styles.nota}>Use apenas se você já tiver os códigos de identificação (UUID) do responsável ou do registro.</p>
+        <div className={styles.grade}>
+          <label>Código do responsável (UUID)<input value={form.userId} maxLength={36} autoComplete="off" onChange={e => alterar("userId", e.target.value)} /></label>
+          <label>Código do registro alvo (UUID)<input value={form.entityId} maxLength={36} autoComplete="off" onChange={e => alterar("entityId", e.target.value)} /></label>
+        </div>
       </details>
       {erroFiltro && <p role="alert">{erroFiltro}</p>}
       <div className="admin-form-acoes"><button className="btn-solid" type="submit">Aplicar filtros</button>
         <button className="btn-outline" type="button" onClick={limpar}>Limpar filtros</button></div>
     </form>
-    <p className={styles.nota}>Responsáveis são identificados pelo cadastro atual. A seção indica o recurso alterado, não a página acessada.
-      O histórico abrange as operações instrumentadas, sem reconstrução retroativa.</p>
+    <p className={styles.nota}>Os responsáveis aparecem conforme o cadastro atual. A seção indica o que foi alterado, não a página visitada.
+      O histórico inclui apenas as operações registradas pelo sistema, sem reconstruir alterações antigas.</p>
     {carregando ? <p role="status">Carregando histórico…</p> : resultado.erro
       ? <Falha erro={resultado.erro} repetir={() => setConsulta(q => ({ ...q, revisao: q.revisao + 1 }))} />
       : <>
         <p role="status">{data.paginacao.total} alterações registradas{Object.keys(consulta.filtros).length ? " nos filtros aplicados" : ""}.</p>
         {data.itens.length === 0 ? <p className="empty-state">{Object.keys(consulta.filtros).length ? "Nenhuma alteração encontrada para estes filtros." : "Nenhuma alteração registrada."}</p>
           : <div className={styles.rolagem} tabIndex={0} role="region" aria-label="Lista de alterações">
-            <table className={`admin-table ${styles.lista}`}><caption>Alterações em ordem fornecida pelo servidor, mais recentes primeiro</caption>
+            <table className={`admin-table ${styles.lista}`}><caption>Alterações listadas das mais recentes para as mais antigas</caption>
               <thead><tr><th scope="col">Responsável</th><th scope="col">Data e hora</th><th scope="col">Ação</th><th scope="col">Seção/recurso</th><th scope="col">Registro alvo</th><th scope="col">Detalhes</th></tr></thead>
               <tbody>{data.itens.map(e => <tr key={e.id}>
                 <td>{responsavelAuditoria(e)}{e.user?.email && <small>{e.user.email}</small>}</td>

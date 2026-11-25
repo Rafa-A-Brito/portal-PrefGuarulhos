@@ -232,6 +232,17 @@ export default function AdminPatrimonios() {
       ) : erro ? (
         <p className="empty-state">{erro}</p>
       ) : (
+        <div
+          className="admin-patrimonios-tabela"
+          role="region"
+          aria-label="Lista de patrimônios"
+          tabIndex={0}
+          onFocusCapture={(evento) => {
+            if (evento.target.matches("button")) {
+              evento.target.scrollIntoView({ block: "nearest", inline: "nearest" });
+            }
+          }}
+        >
         <table className="admin-table admin-table--cards">
           <thead>
             <tr>
@@ -311,6 +322,7 @@ export default function AdminPatrimonios() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

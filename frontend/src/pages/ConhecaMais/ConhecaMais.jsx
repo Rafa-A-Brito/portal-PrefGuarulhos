@@ -56,6 +56,15 @@ function NoticiaImagem({ noticia }) {
   );
 }
 
+// Rola até a seção e leva o foco ao título, para teclado e leitor de tela.
+function irPara(e, id) {
+  const alvo = document.getElementById(id);
+  if (!alvo) return;
+  e.preventDefault();
+  alvo.scrollIntoView();
+  alvo.querySelector("h2, h3")?.focus({ preventScroll: true });
+}
+
 function NoticiaTag({ children }) {
   return (
     <span className="novidade-tag">
@@ -99,83 +108,59 @@ export default function ConhecaMais() {
   const eventosRestantes = todosEventos.length - eventos.length;
   const [destaque, segundo, ...demais] = noticias;
 
+  // Contagens no topo só aparecem com dados reais já carregados da API.
+  const pronto = (estado) =>
+    !estado.carregando &&
+    !estado.erro &&
+    !estado.itens.some((i) => i.demonstracao);
+  const atalhos = [
+    {
+      id: "novidades",
+      rotulo: "Notícias",
+      qtd: pronto(novidades) ? noticias.length : null,
+    },
+    {
+      id: "agenda",
+      rotulo: "Eventos",
+      qtd: pronto(novidades) ? todosEventos.length : null,
+    },
+    {
+      id: "exposicoes",
+      rotulo: "Exposições",
+      qtd: pronto(exposicoesEstado) ? exposicoes.length : null,
+    },
+  ];
+
   return (
-    <div>
-      <div className="page-hero">
-        <h1>Conheça mais sobre o projeto</h1>
+    <div className="conheca-mais">
+      <div className="page-hero cm-hero">
+        <span className="cm-eyebrow">Cultura em Guarulhos</span>
+        <h1>Notícias, eventos e exposições de Guarulhos</h1>
         <p>
-          Um mapeamento colaborativo da memória histórica e cultural de
-          Guarulhos, feito para aproximar a população da própria história.
+          Acompanhe as novidades, a agenda de eventos, as exposições e os
+          artistas que movimentam a vida cultural da cidade.
         </p>
+        <nav aria-label="Nesta página">
+          <ul className="cm-atalhos">
+            {atalhos.map((a) => (
+              <li key={a.id}>
+                <a href={`#${a.id}`} onClick={(e) => irPara(e, a.id)}>
+                  {a.rotulo}
+                  {a.qtd !== null && <strong>{a.qtd}</strong>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
-      <section className="sobre" style={{ marginTop: 0 }}>
-        <div className="sobre-inner">
-          <div className="sobre-layout">
-            <div className="sobre-intro">
-              <h2>Nossa missão</h2>
-              <p>
-                Cada praça, igreja e casarão de Guarulhos guarda uma história.
-                Este portal existe para que ela seja conhecida, cuidada e
-                passada adiante.
-              </p>
-            </div>
-
-            <div className="sobre-missoes">
-              <div className="missao-item">
-                <div className="missao-icon">
-                  <AcademicCapIcon width={24} height={24} />
-                </div>
-
-                <div className="missao-content">
-                  <h3>Educar</h3>
-                  <p>
-                    Transformar a história da cidade em algo que dá vontade de
-                    aprender, para estudantes, professores e qualquer pessoa
-                    curiosa.
-                  </p>
-                </div>
-              </div>
-
-              <div className="missao-item">
-                <div className="missao-icon">
-                  <SparklesIcon width={24} height={24} />
-                </div>
-
-                <div className="missao-content">
-                  <h3>Preservar</h3>
-                  <p>
-                    Reunir fotos, documentos e curiosidades de cada bem tombado
-                    num só lugar, para que nada se perca com o tempo.
-                  </p>
-                </div>
-              </div>
-
-              <div className="missao-item">
-                <div className="missao-icon">
-                  <UsersIcon width={24} height={24} />
-                </div>
-
-                <div className="missao-content">
-                  <h3>Conectar</h3>
-                  <p>
-                    Aproximar moradores e visitantes dos lugares que fazem
-                    Guarulhos ser Guarulhos, e dar um bom motivo para
-                    conhecê-los de perto.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ===== Novidades ===== */}
-      <section className="sobre">
+      <section id="novidades" className="sobre">
         <div className="sobre-inner">
           <div className="section-head">
             <div>
-              <h2>Novidades</h2>
+              <span className="cm-eyebrow">Notícias e agenda</span>
+              <h2 tabIndex={-1}>Novidades</h2>
               <p className="sub">
                 Notícias recentes e a agenda de eventos nos patrimônios e nas
                 comunidades de Guarulhos.
@@ -226,8 +211,12 @@ export default function ConhecaMais() {
               </div>
             </div>
 
-            <aside className="noticias-side" aria-label="Agenda de eventos">
-              <h3>Agenda de eventos</h3>
+            <aside
+              id="agenda"
+              className="noticias-side"
+              aria-label="Agenda de eventos"
+            >
+              <h3 tabIndex={-1}>Agenda de eventos</h3>
               <ul>
                 {eventos.map((e) => (
                   <li key={e.id}>
@@ -262,11 +251,12 @@ export default function ConhecaMais() {
       </section>
 
       {/* ===== Exposições e artistas em destaque ===== */}
-      <section className="sobre">
+      <section id="exposicoes" className="sobre cm-expo">
         <div className="sobre-inner">
           <div className="section-head">
             <div>
-              <h2>Exposições e artistas em destaque</h2>
+              <span className="cm-eyebrow">Exposições e artistas</span>
+              <h2 tabIndex={-1}>Exposições e artistas em destaque</h2>
               <p className="sub">
                 Mostras em cartaz e artistas locais apoiados pela política
                 cultural do município.
@@ -275,7 +265,9 @@ export default function ConhecaMais() {
           </div>
 
           <EstadoConteudo estado={exposicoesEstado} nome="exposições" />
-          <div className="expo-grid">
+          <div
+            className={`expo-grid${exposicoes.length === 1 ? " cm-expo-grid--unica" : exposicoes.length === 2 ? " cm-expo-grid--dupla" : ""}`}
+          >
             {exposicoes.map((e) => (
               <article key={e.id} className="expo-card">
                 <figure>
@@ -358,6 +350,53 @@ export default function ConhecaMais() {
               Abrir o mapa
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ===== Nossa missão: seção secundária, compacta ===== */}
+      <section className="sobre cm-missao" aria-labelledby="cm-missao-titulo">
+        <div className="sobre-inner">
+          <div className="cm-missao-intro">
+            <span className="cm-eyebrow">Conheça mais sobre o projeto</span>
+            <h2 id="cm-missao-titulo">Nossa missão</h2>
+            <p>
+              Um mapeamento colaborativo da memória histórica e cultural de
+              Guarulhos, feito para aproximar a população da própria história.
+            </p>
+            <p>
+              Cada praça, igreja e casarão de Guarulhos guarda uma história.
+              Este portal existe para que ela seja conhecida, cuidada e passada
+              adiante.
+            </p>
+          </div>
+
+          <ul className="cm-pilares">
+            <li className="cm-pilar cm-pilar--azul">
+              <AcademicCapIcon width={24} height={24} aria-hidden="true" />
+              <h3>Educar</h3>
+              <p>
+                Transformar a história da cidade em algo que dá vontade de
+                aprender, para estudantes, professores e qualquer pessoa
+                curiosa.
+              </p>
+            </li>
+            <li className="cm-pilar cm-pilar--verde">
+              <SparklesIcon width={24} height={24} aria-hidden="true" />
+              <h3>Preservar</h3>
+              <p>
+                Reunir fotos, documentos e curiosidades de cada bem tombado num
+                só lugar, para que nada se perca com o tempo.
+              </p>
+            </li>
+            <li className="cm-pilar cm-pilar--laranja">
+              <UsersIcon width={24} height={24} aria-hidden="true" />
+              <h3>Conectar</h3>
+              <p>
+                Aproximar moradores e visitantes dos lugares que fazem Guarulhos
+                ser Guarulhos, e dar um bom motivo para conhecê-los de perto.
+              </p>
+            </li>
+          </ul>
         </div>
       </section>
     </div>

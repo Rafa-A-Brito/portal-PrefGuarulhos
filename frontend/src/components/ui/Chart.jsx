@@ -24,7 +24,8 @@ export function ChartContainer({ config, children, className = "", ...props }) {
 }
 
 export function ChartTooltip(props) {
-  return <Tooltip {...props} />;
+  return <Tooltip isAnimationActive={false} animationDuration={0} offset={16}
+    allowEscapeViewBox={{ x: false, y: false }} wrapperStyle={{ zIndex: 10, pointerEvents: "none" }} {...props} />;
 }
 
 export function ChartTooltipContent({ active, payload, label }) {
@@ -35,7 +36,8 @@ export function ChartTooltipContent({ active, payload, label }) {
       {label != null && <strong>{label}</strong>}
       {payload.filter(item => item.type !== "none").map((item, index) => (
         <div key={`${item.dataKey}-${index}`}>
-          <span>{item.payload?.nome ?? config?.[item.dataKey]?.label ?? item.name}</span>
+          <span>{label != null && item.payload?.nome === label
+            ? (config?.[item.dataKey]?.label ?? item.name) : (item.payload?.nome ?? config?.[item.dataKey]?.label ?? item.name)}</span>
           <strong>{Number(item.value).toLocaleString("pt-BR")}</strong>
         </div>
       ))}

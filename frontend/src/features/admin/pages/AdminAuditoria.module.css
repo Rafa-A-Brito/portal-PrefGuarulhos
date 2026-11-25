@@ -18,8 +18,9 @@
 .lista th:first-child { width: 20%; }
 .lista th:nth-child(2) { width: 16%; }
 .lista td { vertical-align: top; }
-.lista th:last-child { width: 110px; }
-.lista button { white-space: nowrap; padding-inline: .6rem; }
+.lista th:last-child { width: 10rem; }
+.lista td:last-child { overflow: visible; padding-right: 1.25rem; }
+.pagina .lista button { white-space: nowrap; padding-inline: .8rem; max-width: 100%; }
 .lista td, .metadados dd { overflow-wrap: anywhere; }
 .identificador { font-size: .75rem; line-height: 1.5; }
 .pagina small, .modal small { display: block; margin-top: .3rem; color: #505466; font-size: .8rem; }

@@ -44,10 +44,40 @@ it("falha de abertura mantém o modal de erro e restaura seu acionador ao fechar
   const { user, editar } = await montar();
   await user.click(editar);
   await screen.findByRole("alertdialog");
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar" }));
+  // O nó é montado antes do efeito passivo que encaminha o foco ao modal.
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar" })));
   await user.keyboard("{Escape}");
   expect(document.activeElement).toBe(editar);
   expect(screen.queryByLabelText("Nome")).toBeNull();
+});
+it("rejeição controlada reabilita o acionador antes do foco do modal e limpa o listener", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  let rejeitar;
+  api.buscarUsuario.mockReturnValue(new Promise((_, reject) => { rejeitar = reject; }));
+  const { user, editar } = await montar();
+  const focos = [];
+  const focoNativo = HTMLElement.prototype.focus;
+  const espiao = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (...args) {
+    focos.push(this);
+    return focoNativo.apply(this, args);
+  });
+  try {
+    await user.click(editar);
+    expect(editar.disabled).toBe(true);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    focos.length = 0;
+    await act(async () => rejeitar(new Error("Falha controlada")));
+    const fechar = screen.getByRole("button", { name: "Fechar" });
+    expect(editar.disabled).toBe(false);
+    expect(focos.indexOf(editar)).toBeGreaterThanOrEqual(0);
+    expect(focos.indexOf(fechar)).toBeGreaterThan(focos.indexOf(editar));
+    expect(document.activeElement).toBe(fechar);
+    await user.keyboard("{Escape}");
+    expect(document.activeElement).toBe(editar);
+    await user.click(screen.getByRole("button", { name: /Novo usuário/ }));
+    await user.keyboard("{Escape}");
+    expect(document.activeElement).toBe(screen.getByLabelText("Nome"));
+  } finally { espiao.mockRestore(); }
 });
 it("não tenta restaurar foco em acionador removido pelo filtro", async () => {
   const { user, editar } = await montar();

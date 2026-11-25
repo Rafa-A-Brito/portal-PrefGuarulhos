@@ -389,6 +389,27 @@ button.admin-sidebar-sair:hover {
 
 /* ---------- Tabela ---------- */
 
+.admin-patrimonios-tabela {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-patrimonios-tabela:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 2px;
+}
+
+@media (min-width: 721px) {
+  .admin-patrimonios-tabela {
+    border-radius: var(--admin-radius-md);
+    box-shadow: var(--admin-shadow-soft);
+  }
+}
+
+.admin-patrimonios-tabela button {
+  scroll-margin: 6px;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: separate; /* com "collapse" o border-radius da tabela não vale */

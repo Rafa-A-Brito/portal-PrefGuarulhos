@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useRef, useState } from "react";
 import { PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../../../components/ui/Chart";
@@ -14,6 +14,11 @@ const publicacoes = {
   PUBLICADO: ["Publicado", "#3f69a6"], RASCUNHO: ["Rascunho", "#af7016"], ARQUIVADO: ["Arquivado", "#697386"],
 };
 const config = { quantidade: { label: "Patrimônios", color: "#6554a4" } };
+const configCategorias = { quantidade: { label: "Principal", color: "#6554a4" }, quantidadeSecundaria: { label: "Secundária", color: "#3f69a6" } };
+const abasCategoria = [
+  { chave: "quantidade", nome: "Principais", descricao: "Cada patrimônio é contado uma única vez nas barras, inclusive os arquivados." },
+  { chave: "quantidadeSecundaria", nome: "Secundárias", descricao: "Vínculos secundários complementam a classificação e não são somados ao total de patrimônios." },
+];
 const formatar = valor => valor.toLocaleString("pt-BR");
 
 function RotuloRegiao({ x, y, payload }) {
@@ -50,7 +55,7 @@ function Donut({ titulo, descricao, dados, total }) {
     <div className={styles.donut}>
       <ChartContainer config={config}>
         <PieChart accessibilityLayer aria-label={titulo}>
-          <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartTooltip content={<ChartTooltipContent />} position={{ y: 0 }} />
           <Pie data={dados} dataKey="quantidade" nameKey="nome" innerRadius="65%" outerRadius="90%" strokeWidth={3} isAnimationActive={false}>
             {dados.map(item => <Cell key={item.nome} fill={item.fill} />)}
           </Pie>
@@ -60,6 +65,46 @@ function Donut({ titulo, descricao, dados, total }) {
     </div>
     <Legenda dados={dados} titulo={titulo} />
     <p className={styles.total}>Total representado: {formatar(total)}</p>
+  </Painel>;
+}
+
+function Categorias({ dados }) {
+  const id = useId();
+  const [aba, setAba] = useState(0);
+  const botoes = useRef([]);
+  const atual = abasCategoria[aba];
+  function teclado(e) {
+    const ir = { ArrowRight: aba + 1, ArrowLeft: aba - 1, Home: 0, End: abasCategoria.length - 1 }[e.key];
+    if (ir === undefined) return;
+    e.preventDefault();
+    const novo = (ir + abasCategoria.length) % abasCategoria.length;
+    setAba(novo); botoes.current[novo]?.focus();
+  }
+  return <Painel titulo="Categorias" descricao="Classificação dos patrimônios em categorias principais e secundárias.">
+    <div className={styles.abas} role="tablist" aria-label="Tipo de categoria" onKeyDown={teclado}>
+      {abasCategoria.map((item, i) => <button key={item.chave} type="button" role="tab" id={`${id}-aba-${i}`}
+        ref={el => { botoes.current[i] = el; }} aria-selected={aba === i} aria-controls={`${id}-painel`}
+        tabIndex={aba === i ? 0 : -1} className={styles.aba} onClick={() => setAba(i)}>{item.nome}</button>)}
+    </div>
+    <div id={`${id}-painel`} role="tabpanel" aria-labelledby={`${id}-aba-${aba}`}>
+      <p className={styles.abaDescricao}>{atual.descricao}</p>
+      <ChartContainer config={configCategorias} className={styles.bars}>
+        <BarChart data={dados.porCategoria} layout="vertical" margin={{ left: 0, right: 16 }} accessibilityLayer aria-label={`Categorias ${atual.nome.toLowerCase()}`}>
+          <CartesianGrid horizontal={false} stroke="#e5e8ef" />
+          <XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="nome" interval={0} width={100} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+          <ChartTooltip content={<ChartTooltipContent />} cursor={{ fill: "#f0edf8" }} />
+          <Bar dataKey={atual.chave} name={atual.nome === "Principais" ? "Principal" : "Secundária"} fill={`var(--color-${atual.chave})`} radius={[0, 5, 5, 0]} isAnimationActive={false} />
+        </BarChart>
+      </ChartContainer>
+    </div>
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>
+        <caption>Quantidades por categoria — principal e secundária</caption>
+        <thead><tr><th scope="col">Categoria</th><th scope="col">Principal</th><th scope="col">Secundária</th></tr></thead>
+        <tbody>{dados.porCategoria.map(item => <tr key={item.id}><th scope="row">{item.nome}</th><td>{item.quantidade}</td><td>{item.quantidadeSecundaria}</td></tr>)}</tbody>
+      </table>
+    </div>
+    <p className={styles.total}>Total de patrimônios: {formatar(dados.total)}. Vínculos secundários não são somados ao total.</p>
   </Painel>;
 }
 
@@ -74,8 +119,8 @@ export default function GraficosDashboard({ dados }) {
       {comRegiao > 0 ? <ChartContainer config={config}>
         <RadarChart data={dados.porRegiao} outerRadius="65%" accessibilityLayer aria-label="Distribuição por região">
           <PolarGrid stroke="#dce1eb" /><PolarAngleAxis dataKey="nome" tick={<RotuloRegiao />} />
-          <PolarRadiusAxis allowDecimals={false} tick={{ fill: "#525d70" }} domain={[0, Math.max(1, ...dados.porRegiao.map(r => r.quantidade))]} />
-          <ChartTooltip content={<ChartTooltipContent />} />
+          <PolarRadiusAxis angle={90} axisLine={false} tickCount={4} allowDecimals={false} tick={{ fill: "#525d70", fontSize: 10 }} domain={[0, Math.max(1, ...dados.porRegiao.map(r => r.quantidade))]} />
+          <ChartTooltip content={<ChartTooltipContent />} position={{ x: 0, y: 0 }} />
           <Radar name="Patrimônios" dataKey="quantidade" fill="var(--color-quantidade)" stroke="var(--color-quantidade)" fillOpacity={0.25} isAnimationActive={false} />
         </RadarChart>
       </ChartContainer> : <p className={styles.empty}>Nenhum patrimônio com região atribuída.</p>}
@@ -83,24 +128,7 @@ export default function GraficosDashboard({ dados }) {
       <p className={styles.regionNote}><strong>{formatar(dados.semRegiao)} sem região atribuída</strong><span>Contados no acervo, fora dos eixos do radar.</span></p>
       <p className={styles.total}>{formatar(comRegiao)} com região + {formatar(dados.semRegiao)} sem região = {formatar(dados.total)} patrimônios</p>
     </Painel>
-    <Painel titulo="Categorias principais" descricao="Cada patrimônio é contado uma única vez nas barras, inclusive os arquivados.">
-      <ChartContainer config={config} className={styles.bars}>
-        <BarChart data={dados.porCategoria} layout="vertical" margin={{ left: 0, right: 16 }} accessibilityLayer aria-label="Categorias principais">
-          <CartesianGrid horizontal={false} stroke="#e5e8ef" />
-          <XAxis type="number" allowDecimals={false} /><YAxis type="category" dataKey="nome" interval={0} width={100} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-          <ChartTooltip content={<ChartTooltipContent />} cursor={{ fill: "#f0edf8" }} />
-          <Bar dataKey="quantidade" name="Principal" fill="var(--color-quantidade)" radius={[0, 5, 5, 0]} isAnimationActive={false} />
-        </BarChart>
-      </ChartContainer>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <caption>Quantidades por categoria — principal e secundária</caption>
-          <thead><tr><th scope="col">Categoria</th><th scope="col">Principal</th><th scope="col">Secundária</th></tr></thead>
-          <tbody>{dados.porCategoria.map(item => <tr key={item.id}><th scope="row">{item.nome}</th><td>{item.quantidade}</td><td>{item.quantidadeSecundaria}</td></tr>)}</tbody>
-        </table>
-      </div>
-      <p className={styles.total}>Total de patrimônios: {formatar(dados.total)}. Vínculos secundários não são somados ao total.</p>
-    </Painel>
+    <Categorias dados={dados} />
     <Donut titulo="Status de publicação" descricao="Visibilidade editorial, independente da conservação." dados={status} total={dados.total} />
   </div>;
 }
