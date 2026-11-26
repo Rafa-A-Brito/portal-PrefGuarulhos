@@ -94,11 +94,18 @@ it("troca página usando total do servidor e aplica filtros voltando à primeira
   fireEvent.change(screen.getByLabelText("Data final"), { target: { value: "2018-11-04" } });
   await user.selectOptions(screen.getByLabelText("Tipo de ação"), "REGIAO_UPDATE");
   await user.selectOptions(screen.getByLabelText("Seção/recurso"), "RegiaoPatrimonio");
-  fireEvent.change(screen.getByLabelText("Responsável (UUID, opcional)"), { target: { value: id(1) } });
-  fireEvent.change(screen.getByLabelText("ID do registro alvo (UUID)"), { target: { value: id(3) } });
+  const avancados = screen.getByText("Filtros avançados");
+  expect(avancados.closest("details").open).toBe(false);
+  await user.click(avancados);
+  expect(avancados.closest("details").open).toBe(true);
+  await user.type(screen.getByRole("textbox", { name: "Código do responsável (UUID)" }), id(1));
+  await user.type(screen.getByRole("textbox", { name: "Código do registro alvo (UUID)" }), id(3));
   await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
   await waitFor(() => expect(spy.mock.calls.at(-1)[0].params).toEqual({ pagina: 1, limite: 20,
     inicio: "2018-11-04T03:00:00.000Z", fim: "2018-11-05T01:59:59.999Z", action: "REGIAO_UPDATE", entity: "RegiaoPatrimonio", userId: id(1), entityId: id(3) }));
+  await screen.findByText("Página 1 de 3 · 41 alterações");
+  expect(screen.getByRole("status").textContent).toBe("41 alterações registradas nos filtros aplicados.");
+  expect(screen.getByRole("button", { name: "Anterior" }).disabled).toBe(true);
 });
 
 it("busca nome/e-mail em admins e envia somente UUID à auditoria", async () => {

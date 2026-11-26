@@ -13,6 +13,7 @@ import { usePatrimoniosContext } from "../../hooks/usePatrimoniosContext";
 import { listarExposicoes, listarNovidades } from "../../services/conteudoApi";
 import { useConteudoPublico } from "../../hooks/useConteudoPublico";
 import EstadoConteudo from "../../components/EstadoConteudo";
+import ImagemPatrimonio from "../../components/ImagemPatrimonio";
 
 const ROTA_DETALHES = "/conheca-mais/detalhes";
 const EMAIL_CULTURA = "cultura@guarulhos.sp.gov.br";
@@ -271,7 +272,7 @@ export default function ConhecaMais() {
             {exposicoes.map((e) => (
               <article key={e.id} className="expo-card">
                 <figure>
-                  <img src={e.imagem} alt={e.titulo} loading="lazy" />
+                  <ImagemPatrimonio src={e.imagem} alt={e.titulo} loading="lazy" />
                 </figure>
                 <div className="expo-card-body">
                   <span className="periodo">{e.periodo}</span>
