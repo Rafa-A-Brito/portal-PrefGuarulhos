@@ -1,17 +1,50 @@
 .pagina { min-width: 0; color: var(--ink); }
-.filtros { padding: 1rem; box-shadow: none; }
+.pagina .filtros { padding: 1.25rem 1.5rem; box-shadow: none; }
 .pagina :global(.btn-outline), .modal :global(.btn-outline) { color: #2b255c; border-color: #2b255c; }
 .pagina :global(.btn-solid), .modal :global(.btn-solid) { color: #fff; background: #2b255c; border-color: #2b255c; }
 .pagina *, .modal * { box-sizing: border-box; }
 .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .filtros label { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
-.filtros input, .filtros select { width: 100%; min-width: 0; min-height: 44px; }
-.filtros details { margin-block: 1rem; }
-.filtros summary { cursor: pointer; padding-block: .7rem; }
-.responsavel { border: 1px solid #d4d5dd; border-radius: .6rem; margin: 1rem 0; padding: 1rem; min-width: 0; }
-.responsavel legend { padding-inline: .4rem; font-weight: 600; }
-.busca { display: flex; align-items: end; gap: .75rem; margin-bottom: .75rem; }
-.busca label { flex: 1; }
+.filtros input:not([type="radio"]), .filtros select { width: 100%; min-width: 0; min-height: 44px; }
+
+/* Formulário em blocos: responsável à esquerda; período e tipo à direita */
+.conteudo { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 1.5rem 2rem; align-items: start; }
+.colunaLateral { display: grid; gap: 1.25rem; min-width: 0; padding-left: 2rem; border-left: 1px solid var(--line); }
+.bloco { border: 0; margin: 0; padding: 0; min-width: 0; }
+.bloco legend { padding: 0; margin-bottom: .6rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* Busca do responsável */
+.busca { display: flex; align-items: flex-end; gap: .75rem; }
+.campoBusca { flex: 1; }
+.entradaBusca { position: relative; display: block; }
+.entradaBusca svg { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--ink-soft); pointer-events: none; }
+.pagina .filtros .entradaBusca input { padding-left: 2.5rem; }
+.busca button { white-space: nowrap; }
+
+/* Quem está selecionado */
+.escolhido { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; padding: .7rem .85rem; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--navy); border-radius: .6rem; }
+.escolhido > svg { flex: none; color: var(--navy); }
+.escolhidoTexto { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; font-size: .85rem; color: var(--ink-soft); line-height: 1.45; }
+.escolhidoTexto > span:first-child { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.escolhidoTexto strong { font-size: .95rem; color: var(--ink); }
+.escolhido button { flex: none; }
+
+/* Resultados da busca: lista de opções em vez de um menu escondido */
+.resultados { margin-top: .75rem; }
+.opcoes { display: grid; gap: .4rem; max-height: 12.5rem; overflow-y: auto; padding: 3px; }
+.filtros .opcao { flex-direction: row; align-items: center; gap: .75rem; padding: .6rem .8rem; background: #fff; border: 1px solid var(--line); border-radius: .6rem; font-size: .9rem; font-weight: 400; color: var(--ink); cursor: pointer; }
+.filtros .opcao:hover { border-color: var(--blue); }
+.filtros .opcaoAtiva { border-color: var(--navy); background: var(--paper); }
+.filtros .opcao input { flex: none; width: 1.15rem; height: 1.15rem; min-height: 0; margin: 0; accent-color: var(--navy); }
+.pessoa { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6rem; min-width: 0; overflow-wrap: anywhere; }
+.pessoa strong { font-size: .92rem; color: var(--ink); }
+.pessoa span { font-size: .82rem; color: var(--ink-soft); }
+
+/* Filtros avançados e ações */
+.avancados { margin-top: 1.25rem; border-top: 1px solid var(--line); }
+.avancados summary { cursor: pointer; padding-block: .8rem; font-size: .9rem; font-weight: 600; color: var(--navy); }
+.selo { margin-left: .6rem; padding: .1rem .55rem; border-radius: 999px; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; }
+.acoes { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .nota { font-size: .88rem; color: #505466; line-height: 1.6; }
 .rolagem { max-width: 100%; overflow-x: auto; border: 1px solid #e0e1e8; border-radius: .6rem; }
 .lista { min-width: 900px; table-layout: fixed; width: 100%; border: 0; box-shadow: none; }
@@ -45,9 +78,19 @@
 .comparacao th:first-child { width: 25%; }
 .comparacao td { white-space: pre-wrap; overflow-wrap: anywhere; vertical-align: top; }
 .comparacao th { overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .conteudo { grid-template-columns: minmax(0, 1fr); }
+  .colunaLateral { padding: 1.25rem 0 0; border-left: 0; border-top: 1px solid var(--line); }
+}
 @media (max-width: 600px) {
-  .grade, .metadados { grid-template-columns: 1fr; }
+  .metadados { grid-template-columns: 1fr; }
+  .pagina .filtros { padding: 1rem; }
   .busca, .cabecalhoModal { flex-direction: column; align-items: stretch; }
+  .escolhido { flex-wrap: wrap; }
+  .acoes > button { flex: 1 1 100%; }
   .modal { padding: 1rem; }
   .paginacao { justify-content: center; }
+}
+@media (max-width: 420px) {
+  .grade { grid-template-columns: 1fr; }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MagnifyingGlassIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { buscarAuditoria, erroAuditoria, listarAuditoria } from "../../../services/auditoriaApi";
 import { listarUsuarios } from "../../../services/adminApi";
 import { ACOES_AUDITORIA, RECURSOS_AUDITORIA, acaoAuditoria, dataHoraAuditoria, filtrosAuditoria,
@@ -102,6 +103,7 @@ export default function AdminAuditoria() {
   const [pessoas, setPessoas] = useState(null);
   const [buscando, setBuscando] = useState(false);
   const [erroBusca, setErroBusca] = useState(null);
+  const [escolhida, setEscolhida] = useState(null);
   const buscaAtual = useRef(null);
   useEffect(() => () => buscaAtual.current?.abort(), []);
   useEffect(() => {
@@ -134,48 +136,91 @@ export default function AdminAuditoria() {
     } catch (e) { if (!c.signal.aborted) setErroBusca(erroAuditoria(e)); }
     finally { if (!c.signal.aborted) setBuscando(false); }
   }
+  function escolher(pessoa) { alterar("userId", pessoa.id); setEscolhida(pessoa); }
+  function removerResponsavel() { alterar("userId", ""); setEscolhida(null); }
   function limpar() {
-    buscaAtual.current?.abort(); setBuscando(false); setPessoas(null); setErroBusca(null); setBusca("");
+    buscaAtual.current?.abort(); setBuscando(false); setPessoas(null); setErroBusca(null); setBusca(""); setEscolhida(null);
     setForm(VAZIO); setErroFiltro(""); setConsulta({ filtros: {}, pagina: 1, revisao: 0 });
   }
+  // Quem está selecionado: uma pessoa escolhida na busca ou um código digitado nos filtros avançados.
+  const pessoaEscolhida = escolhida && escolhida.id === form.userId ? escolhida : null;
+  const codigoManual = form.userId.trim() !== "" && !pessoaEscolhida;
+  const avancadoEmUso = codigoManual || form.entityId.trim() !== "";
+  const total = pessoas?.paginacao.total ?? 0;
   return <div className={styles.pagina}>
     <header className="admin-page-head"><h1>Histórico de alterações</h1>
       <p>Consulte as mudanças feitas na área administrativa. Datas e horários no horário de Brasília.</p>
     </header>
     <form className={`admin-form ${styles.filtros}`} aria-label="Filtros do histórico" onSubmit={aplicar}>
-      <div className={styles.grade}>
-        <label>Data inicial<input type="date" value={form.inicio} onChange={e => alterar("inicio", e.target.value)} /></label>
-        <label>Data final<input type="date" value={form.fim} onChange={e => alterar("fim", e.target.value)} /></label>
-        <label>Tipo de ação<select value={form.action} onChange={e => alterar("action", e.target.value)}>
-          <option value="">Todas as ações</option>{Object.entries(ACOES_AUDITORIA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select></label>
-        <label>Seção/recurso<select value={form.entity} onChange={e => alterar("entity", e.target.value)}>
-          <option value="">Todos os recursos</option>{Object.entries(RECURSOS_AUDITORIA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select></label>
-      </div>
-      <fieldset className={styles.responsavel}><legend>Responsável pela ação</legend>
-        <div className={styles.busca}>
-          <label>Buscar responsável por nome ou e-mail<input type="search" maxLength={254} value={busca} onChange={e => setBusca(e.target.value)} /></label>
-          <button type="button" className="btn-outline" onClick={buscarPessoas}>Buscar responsável</button>
+      <div className={styles.conteudo}>
+        <fieldset className={styles.bloco}><legend>Responsável pela ação</legend>
+          <div className={styles.busca}>
+            <label className={styles.campoBusca}><span>Buscar responsável por nome ou e-mail</span>
+              <span className={styles.entradaBusca}>
+                <MagnifyingGlassIcon width={18} height={18} aria-hidden="true" />
+                <input type="search" maxLength={254} value={busca} placeholder="Nome ou e-mail" aria-describedby="dica-busca"
+                  onChange={e => setBusca(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); buscarPessoas(); } }} />
+              </span></label>
+            <button type="button" className="btn-outline" onClick={buscarPessoas}>Buscar responsável</button>
+          </div>
+          <p id="dica-busca" className={styles.nota} hidden={Boolean(pessoas)}>Deixe em branco e busque para ver os primeiros responsáveis cadastrados.</p>
+          <div aria-live="polite">
+            {(pessoaEscolhida || codigoManual) && <div className={styles.escolhido}>
+              <UserCircleIcon width={28} height={28} aria-hidden="true" />
+              <div className={styles.escolhidoTexto}>
+                <span>Responsável selecionado</span>
+                <strong>{pessoaEscolhida ? pessoaEscolhida.nome : "Informado por código (UUID) nos filtros avançados"}</strong>
+                {pessoaEscolhida && <span>{pessoaEscolhida.email}</span>}
+                <span>Clique em Aplicar filtros para ver as alterações feitas por esta pessoa.</span>
+              </div>
+              <button type="button" className="btn-outline" onClick={removerResponsavel} aria-label="Remover responsável selecionado">Remover</button>
+            </div>}
+          </div>
+          {buscando && <p role="status">Buscando responsáveis…</p>}
+          {erroBusca && <Falha erro={erroBusca} repetir={buscarPessoas} />}
+          {pessoas && <div className={styles.resultados}>
+            <p role="status" className={styles.nota}>{pessoas.itens.length === 0
+              ? "Nenhum responsável encontrado. Confira o nome ou o e-mail."
+              : total > pessoas.itens.length
+                ? `Mostrando ${pessoas.itens.length} de ${total} responsáveis. Digite mais do nome ou o e-mail completo para refinar.`
+                : `${total} ${total === 1 ? "responsável encontrado" : "responsáveis encontrados"}. Escolha um:`}</p>
+            {pessoas.itens.length > 0 && <div className={styles.opcoes} role="radiogroup" aria-label="Resultados da busca de responsáveis">
+              {pessoas.itens.map(p => <label key={p.id} className={`${styles.opcao} ${form.userId === p.id ? styles.opcaoAtiva : ""}`}>
+                <input type="radio" name="responsavel-resultado" checked={form.userId === p.id} onChange={() => escolher(p)} />
+                <span className={styles.pessoa}><strong>{p.nome}</strong><span>{p.email}</span></span>
+              </label>)}
+            </div>}
+          </div>}
+        </fieldset>
+        <div className={styles.colunaLateral}>
+          <fieldset className={styles.bloco}><legend>Período</legend>
+            <div className={styles.grade}>
+              <label>Data inicial<input type="date" value={form.inicio} onChange={e => alterar("inicio", e.target.value)} /></label>
+              <label>Data final<input type="date" value={form.fim} onChange={e => alterar("fim", e.target.value)} /></label>
+            </div>
+          </fieldset>
+          <fieldset className={styles.bloco}><legend>O que foi alterado</legend>
+            <div className={styles.grade}>
+              <label>Tipo de ação<select value={form.action} onChange={e => alterar("action", e.target.value)}>
+                <option value="">Todas as ações</option>{Object.entries(ACOES_AUDITORIA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select></label>
+              <label>Seção/recurso<select value={form.entity} onChange={e => alterar("entity", e.target.value)}>
+                <option value="">Todos os recursos</option>{Object.entries(RECURSOS_AUDITORIA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select></label>
+            </div>
+          </fieldset>
         </div>
-        {buscando && <p role="status">Buscando responsáveis…</p>}
-        {erroBusca && <Falha erro={erroBusca} repetir={buscarPessoas} />}
-        {pessoas && <>
-          <label>Selecionar responsável<select value={pessoas.itens.some(p => p.id === form.userId) ? form.userId : ""} onChange={e => alterar("userId", e.target.value)}>
-            <option value="">Selecionar ou limpar responsável</option>{pessoas.itens.map(p => <option key={p.id} value={p.id}>{p.nome} · {p.email}</option>)}
-          </select></label>
-          <p className={styles.nota}>{pessoas.itens.length === 0 ? "Nenhum responsável encontrado." : `Até 20 opções por busca; ${pessoas.paginacao.total} resultados. Refine o nome se necessário.`}</p>
-        </>}
-      </fieldset>
-      <details><summary>Filtros avançados</summary>
-        <p className={styles.nota}>Use apenas se você já tiver os códigos de identificação (UUID) do responsável ou do registro.</p>
+      </div>
+      <details className={styles.avancados}><summary>Filtros avançados{avancadoEmUso && <span className={styles.selo}>em uso</span>}</summary>
+        <p id="dica-avancados" className={styles.nota}>Use apenas se você já tiver os códigos de identificação (UUID) do responsável ou do registro.</p>
         <div className={styles.grade}>
-          <label>Código do responsável (UUID)<input value={form.userId} maxLength={36} autoComplete="off" onChange={e => alterar("userId", e.target.value)} /></label>
-          <label>Código do registro alvo (UUID)<input value={form.entityId} maxLength={36} autoComplete="off" onChange={e => alterar("entityId", e.target.value)} /></label>
+          <label>Código do responsável (UUID)<input value={form.userId} maxLength={36} autoComplete="off" aria-describedby="dica-avancados" onChange={e => alterar("userId", e.target.value)} /></label>
+          <label>Código do registro alvo (UUID)<input value={form.entityId} maxLength={36} autoComplete="off" aria-describedby="dica-avancados" onChange={e => alterar("entityId", e.target.value)} /></label>
         </div>
       </details>
-      {erroFiltro && <p role="alert">{erroFiltro}</p>}
-      <div className="admin-form-acoes"><button className="btn-solid" type="submit">Aplicar filtros</button>
+      {erroFiltro && <p role="alert" className="admin-form-erro">{erroFiltro}</p>}
+      <div className={styles.acoes}><button className="btn-solid" type="submit">Aplicar filtros</button>
         <button className="btn-outline" type="button" onClick={limpar}>Limpar filtros</button></div>
     </form>
     <p className={styles.nota}>Os responsáveis aparecem conforme o cadastro atual. A seção indica o que foi alterado, não a página visitada.

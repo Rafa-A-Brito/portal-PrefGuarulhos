@@ -113,9 +113,11 @@ it("busca nome/e-mail em admins e envia somente UUID à auditoria", async () => 
   await screen.findByText("4 alterações registradas.");
   await user.type(screen.getByLabelText("Buscar responsável por nome ou e-mail"), "ana");
   await user.click(screen.getByRole("button", { name: "Buscar responsável" }));
-  await screen.findByRole("option", { name: "Ana — nome atual · ana@example.test" });
+  const resultados = await screen.findByRole("radiogroup", { name: "Resultados da busca de responsáveis" });
+  const responsavel = within(resultados).getByRole("radio", { name: /^Ana — nome atual\s*ana@example\.test$/ });
   expect(spy.mock.calls.at(-1)[0].params).toEqual({ busca: "ana", pagina: 1, limite: 20 });
-  await user.selectOptions(screen.getByLabelText("Selecionar responsável"), id(1));
+  await user.click(responsavel);
+  expect(responsavel.checked).toBe(true);
   await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
   await waitFor(() => expect(spy.mock.calls.at(-1)[0].params).toEqual({ userId: id(1), pagina: 1, limite: 20 }));
 });

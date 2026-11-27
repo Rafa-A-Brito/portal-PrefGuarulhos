@@ -1,4 +1,8 @@
 .pagina { min-width: 0; color: #252638; }
+.secaoDashboard { margin-top: 2rem; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line, #e0e1e8); border-radius: var(--admin-radius-lg, 16px); background: #fff; overflow-wrap: anywhere; }
+.secaoDashboard > header { margin-bottom: 1.25rem; }
+.secaoDashboard > header h2 { margin-top: 0; }
+.linkFeedback { display: inline-block; padding-block: .65rem; color: #2b255c; text-decoration: underline; text-underline-offset: 3px; }
 .pagina p, .modal p { margin-block: .6rem; }
 .pagina h2 { margin-block: 1.25rem .6rem; }
 .serie h3 { margin-block: .75rem; }

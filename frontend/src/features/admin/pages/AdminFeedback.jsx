@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { listarFeedback, resumirFeedback, detalharFeedback, erroFeedbackAdmin } from "../../../services/feedbackApi";
 import { dataBr, dataHoraFeedback, filtrosFeedback, periodoFeedback, quantidadeFeedback, TIPOS } from "../feedbackDashboard";
 import FeedbackDashboard from "../components/FeedbackDashboard";
+import FiltrosFeedback from "../components/FiltrosFeedback";
 import styles from "./AdminFeedback.module.css";
 
 function Falha({ erro, repetir }) {
@@ -90,23 +91,8 @@ export default function AdminFeedback() {
   }
   return <div className={styles.pagina}>
     <header className="admin-page-head"><h1>Feedback do portal</h1><p>Consulte contribuições ainda retidas. Datas no formato brasileiro, no fuso America/Sao_Paulo.</p></header>
-    <form className={`admin-form ${styles.filtros}`} aria-label="Filtros de feedback" onSubmit={aplicar} noValidate>
-      <div className={styles.grade}>
-        {[['inicio', 'Data inicial'], ['fim', 'Data final']].map(([chave, rotulo]) => <label key={chave}>{rotulo}
-          <input ref={chave === "inicio" ? filtroRef : undefined} value={form[chave]} onChange={e => setForm(f => ({ ...f, [chave]: e.target.value }))}
-            type="text" inputMode="numeric" placeholder="dd/mm/aaaa" maxLength={10} required aria-describedby="feedback-datas-ajuda" aria-invalid={Boolean(erroFiltro)} />
-        </label>)}
-        <label>Tipo de feedback<select value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}>
-          <option value="">Todos os tipos</option>{Object.entries(TIPOS).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}</select></label>
-        <label>Granularidade<select value={form.granularidade} onChange={e => setForm(f => ({ ...f, granularidade: e.target.value }))}>
-          <option value="dia">Diária</option><option value="mes">Mensal</option></select></label>
-      </div>
-      <p id="feedback-datas-ajuda" className={styles.nota}>Use dd/mm/aaaa. Datas inclusivas, até 366 dias, sem futuro. Padrão: últimos 30 dias civis, incluindo hoje.</p>
-      {erroFiltro && <p role="alert">{erroFiltro}</p>}
-      <div className={styles.acoes}><button type="submit" className="btn-solid">Aplicar filtros</button>
-        <button type="button" className="btn-outline" onClick={limpar}>Limpar filtros</button>
-        <button type="button" className="btn-outline" onClick={atualizar}>Atualizar dados</button></div>
-    </form>
+    <FiltrosFeedback form={form} setForm={setForm} erro={erroFiltro} inputRef={filtroRef}
+      aplicar={aplicar} limpar={limpar} atualizar={atualizar} />
     <p>Recorte aplicado: {dataBr(consulta.filtros.inicio)} a {dataBr(consulta.filtros.fim)} · {TIPOS[consulta.filtros.tipo] || "Todos os tipos"}.</p>
     {erroAcesso ? <Falha erro={erroAcesso} /> : desativado ? <p role="status">Consulta de feedback desativada. Os dados não estão disponíveis.</p> : erroComum ? <Falha erro={erroComum} repetir={atualizar} /> : <>
       {(l?.demonstracao || r?.demonstracao) && <p role="status">Demonstração: dados fictícios em memória, descartados ao reiniciar.</p>}

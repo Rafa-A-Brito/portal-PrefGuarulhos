@@ -20,7 +20,8 @@ beforeEach(() => {
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 560, height: 280, top: 0, left: 0, bottom: 280, right: 560 });
   api.defaults.adapter = async config => {
     calls.push(config);
-    return { config, data: { success: true, data: fixture }, status: 200, statusText: "OK", headers: {} };
+    const data = config.url === "/admin/feedback/resumo" ? { disponivel: false, motivo: "DESATIVADA" } : fixture;
+    return { config, data: { success: true, data }, status: 200, statusText: "OK", headers: {} };
   };
 });
 afterEach(() => { api.defaults.adapter = originalAdapter; vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -28,9 +29,9 @@ const montar = () => render(<MemoryRouter><AdminDashboard /></MemoryRouter>);
 
 test("consulta endpoint agregado e renderiza quatro gráficos reais com totais dinâmicos", async () => {
   const { container } = montar();
-  expect(screen.getByRole("status").textContent).toMatch(/Carregando dados/);
+  expect(screen.getByText("Carregando dados do acervo…")).toBeTruthy();
   await screen.findByRole("heading", { name: "Situação de conservação" });
-  expect(calls.map(c => [c.method, c.url])).toEqual([["get", "/admin/dashboard"]]);
+  expect(calls.map(c => [c.method, c.url]).sort()).toEqual([["get", "/admin/dashboard"], ["get", "/admin/feedback/resumo"]]);
   await waitFor(() => expect(container.querySelectorAll("svg.recharts-surface").length).toBe(4));
   expect(screen.getByText("8 registros · todos os status")).toBeTruthy();
   const conservacao = screen.getByRole("region", { name: "Situação de conservação" });
@@ -58,7 +59,7 @@ test("consulta endpoint agregado e renderiza quatro gráficos reais com totais d
 
 test("erro oferece nova tentativa sem apresentar zeros inventados", async () => {
   const adapter = api.defaults.adapter;
-  api.defaults.adapter = async () => { throw new Error("offline"); };
+  api.defaults.adapter = async config => { if (config.url === "/admin/feedback/resumo") return adapter(config); throw new Error("offline"); };
   montar();
   expect((await screen.findByRole("alert")).textContent).toMatch(/servidor/);
   expect(screen.queryByRole("heading", { name: "Nenhum patrimônio cadastrado" })).toBeNull();
