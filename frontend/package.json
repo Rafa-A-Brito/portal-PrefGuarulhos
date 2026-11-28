@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:feedback": "node ../backend/scripts/feedback_local.cjs frontend",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

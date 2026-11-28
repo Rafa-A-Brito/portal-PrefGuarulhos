@@ -4,7 +4,7 @@ import globals from "globals";
 export default [
     { ignores: ["node_modules/**", "uploads/**", "src/uploads/**", "src/uploads_backup/**"] },
     js.configs.recommended,
-    { files: ["**/*.js"], languageOptions: { globals: globals.node }, rules: {
+    { files: ["**/*.js", "**/*.cjs"], languageOptions: { globals: globals.node }, rules: {
         "no-unused-vars": ["error", { args: "none", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_", ignoreRestSiblings: true }],
     } },
     // Estes blocos legados relatam separadamente falha original e de limpeza;

@@ -28,13 +28,13 @@ beforeEach(() => {
   Object.defineProperty(HTMLDialogElement.prototype, "close", { configurable: true, value() { this.removeAttribute("open"); } });
 });
 afterEach(() => {
-  cleanup(); api.defaults.adapter = original; vi.restoreAllMocks(); window.history.replaceState({}, "", "/");
+  cleanup(); api.defaults.adapter = original; vi.useRealTimers(); vi.restoreAllMocks(); window.history.replaceState({}, "", "/");
   if (modalOriginal) Object.defineProperty(HTMLDialogElement.prototype, "showModal", modalOriginal); else delete HTMLDialogElement.prototype.showModal;
   if (fecharOriginal) Object.defineProperty(HTMLDialogElement.prototype, "close", fecharOriginal); else delete HTMLDialogElement.prototype.close;
 });
 it("duas consultas independentes, datas BR e detalhes somente sob demanda com texto seguro e foco", async () => {
   const spy = api.defaults.adapter, user = userEvent.setup(); montar();
-  await screen.findByText("Total:", { exact: false });
+  await screen.findByRole("region", { name: "Feedbacks retidos no período" });
   expect(spy).toHaveBeenCalledTimes(2); expect(screen.getByLabelText("Data inicial").value).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   const botao = screen.getAllByRole("button", { name: /Detalhes de Elogio/ })[0]; await user.click(botao);
   const modal = screen.getByRole("dialog"); await within(modal).findByText(/<img src=x/);
@@ -53,25 +53,25 @@ it("paginação não repete resumo; filtros voltam à página 1 e atualizam ambo
 });
 it.each([401, 403, 503, 429, 400])("trata %s sem fabricar total nem ecoar corpo", async status => {
   adapter(c => falha(c, status)); montar(); await screen.findAllByRole("alert");
-  expect(screen.queryByText(/Total:/)).toBeNull(); expect(screen.queryByText(/SEGREDO_NAO_EXIBIR/)).toBeNull();
+  expect(screen.queryByRole("region", { name: "Feedbacks retidos no período" })).toBeNull(); expect(screen.queryByText(/SEGREDO_NAO_EXIBIR/)).toBeNull();
 });
 it("desativado e vazio são distintos, sem depender da flag pública", async () => {
   vi.stubEnv("VITE_FEEDBACK_ATIVO", "false");
   adapter(c => Promise.resolve(resposta(c, { disponivel: false, motivo: "DESATIVADA" }))); const view = montar();
-  await screen.findByText(/Consulta de feedback desativada/); expect(screen.queryByText(/Total:/)).toBeNull(); view.unmount();
+  await screen.findByText(/Consulta de feedback desativada/); expect(screen.queryByRole("region", { name: "Feedbacks retidos no período" })).toBeNull(); view.unmount();
   adapter(c => Promise.resolve(resposta(c, c.url.endsWith("resumo") ? resumoFeedback(c.params, "0") : listaFeedback(c.params, 0)))); montar();
   await screen.findByText(/Nenhum feedback retido/); expect(screen.queryByText("Gráfico carregado")).toBeNull(); vi.unstubAllEnvs();
 });
 it("falha recuperável usa filtros aplicados e recuperação é explícita", async () => {
   let indisponivel = true; const spy = adapter(c => indisponivel ? falha(c, 503) : padrao(c)), user = userEvent.setup(); montar();
   await screen.findAllByRole("alert"); await user.selectOptions(screen.getByLabelText("Tipo de feedback"), "PROBLEMA"); indisponivel = false;
-  await user.click(screen.getByRole("button", { name: "Atualizar dados" })); await screen.findByText(/Total:/);
+  await user.click(screen.getByRole("button", { name: "Atualizar dados" })); await screen.findByRole("region", { name: "Feedbacks retidos no período" });
   expect(spy.mock.calls.at(-1)[0].params.tipo).toBeUndefined();
 });
 it("agrupa falhas equivalentes e recupera ambas as consultas com os filtros aplicados", async () => {
   let indisponivel = false;
   const spy = adapter(c => indisponivel ? falha(c, 503) : padrao(c));
-  const user = userEvent.setup(); montar(); await screen.findByText(/Total:/);
+  const user = userEvent.setup(); montar(); await screen.findByRole("region", { name: "Feedbacks retidos no período" });
   await user.selectOptions(screen.getByLabelText("Tipo de feedback"), "PROBLEMA");
   indisponivel = true;
   await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
@@ -80,7 +80,7 @@ it("agrupa falhas equivalentes e recupera ambas as consultas com os filtros apli
   expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(1);
   indisponivel = false;
   await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
-  await screen.findByText(/Total:/);
+  await screen.findByRole("region", { name: "Feedbacks retidos no período" });
   expect(screen.queryByRole("alert")).toBeNull();
   expect(spy.mock.calls.slice(-2).map(([c]) => c.url).sort()).toEqual(["/admin/feedback", "/admin/feedback/resumo"]);
   expect(spy.mock.calls.slice(-2).every(([c]) => c.params.tipo === "PROBLEMA")).toBe(true);
@@ -89,7 +89,7 @@ it.each(["/admin/feedback", "/admin/feedback/resumo"])("preserva resultado indep
   adapter(c => c.url === rota ? falha(c, 503) : padrao(c)); montar();
   await screen.findByRole("alert");
   if (rota.endsWith("resumo")) await screen.findByRole("region", { name: "Lista de feedbacks" });
-  else await screen.findByText(/Total:/);
+  else await screen.findByRole("region", { name: "Feedbacks retidos no período" });
   expect(screen.getAllByRole("alert")).toHaveLength(1);
   expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(1);
 });
@@ -108,7 +108,7 @@ it("não agrupa falha antiga com resposta pendente de uma nova consulta", async 
   expect(screen.getByText("Carregando resumo…")).toBeDefined();
   expect(screen.getByText("Carregando lista…")).toBeDefined();
   await act(async () => { for (const p of pendentes) p.resolve(resposta(p.c, p.c.url.endsWith("resumo") ? resumoFeedback(p.c.params) : listaFeedback(p.c.params))); });
-  await screen.findByText(/Total:/); expect(screen.queryByRole("alert")).toBeNull();
+  await screen.findByRole("region", { name: "Feedbacks retidos no período" }); expect(screen.queryByRole("alert")).toBeNull();
 });
 it("cancela leituras antigas e impede respostas atrasadas", async () => {
   const pendentes = []; adapter(c => new Promise(resolve => pendentes.push({ c, resolve }))); montar();
@@ -127,7 +127,7 @@ it.each([404, 503])("detalhe %s pode ser fechado e não mostra comentário", asy
   await user.click(screen.getByRole("button", { name: "Fechar detalhes" })); expect(screen.queryByRole("dialog")).toBeNull();
 });
 it("filtros inválidos não consultam a API e focalizam data", async () => {
-  const spy = api.defaults.adapter; montar(); await screen.findByText(/Total:/);
+  const spy = api.defaults.adapter; montar(); await screen.findByRole("region", { name: "Feedbacks retidos no período" });
   fireEvent.change(screen.getByLabelText("Data inicial"), { target: { value: "31/02/2026" } }); fireEvent.submit(screen.getByRole("form"));
   expect(screen.getByRole("alert").textContent).toContain("data válida"); expect(spy).toHaveBeenCalledTimes(2); expect(document.activeElement).toBe(screen.getByLabelText("Data inicial"));
 });
@@ -146,4 +146,29 @@ it.each(["ADMIN", "EDITOR", null])("rota e menu exigem ADMIN: %s", async role =>
     await screen.findByText(role ? /não tem permissão para acessar essa área/ : "Entrar no painel");
     expect(screen.queryByRole("link", { name: "Feedback do portal" })).toBeNull(); expect(spy.mock.calls.some(([c]) => c.url.startsWith("/admin/feedback"))).toBe(false);
   }
+});
+
+// Cobertura de filtros detalhados transferida da visão geral compacta.
+it("aplica período/tipo/mês, atualiza filtros aplicados e limpa para os 30 dias iniciais", async () => {
+  vi.setSystemTime(new Date("2026-11-26T15:02:00Z"));
+  const user = userEvent.setup(), spy = api.defaults.adapter; montar(); await screen.findByRole("region", { name: "Feedbacks retidos no período" });
+  fireEvent.change(screen.getByLabelText("Data inicial"), { target: { value: "01/11/2026" } });
+  await user.selectOptions(screen.getByLabelText("Tipo de feedback"), "PROBLEMA");
+  await user.selectOptions(screen.getByLabelText("Granularidade"), "mes");
+  await user.click(screen.getByRole("button", { name: "Aplicar filtros" })); await screen.findByRole("row", { name: "Problema 3" });
+  expect(spy.mock.calls.at(-1)[0].params).toEqual({ inicio: "2026-11-01", fim: "2026-11-26", tipo: "PROBLEMA", granularidade: "mes" });
+  await user.selectOptions(screen.getByLabelText("Tipo de feedback"), "ELOGIO");
+  await user.click(screen.getByRole("button", { name: "Atualizar dados" })); await screen.findByRole("row", { name: "Problema 3" });
+  expect(spy.mock.calls.at(-1)[0].params.tipo).toBe("PROBLEMA");
+  await user.click(screen.getByRole("button", { name: "Limpar filtros" })); await screen.findByRole("row", { name: "Elogio 3" });
+  expect(spy.mock.calls.at(-1)[0].params).toEqual({ inicio: "2026-10-28", fim: "2026-11-26", granularidade: "dia" });
+});
+it.each([["31/02/2026", "26/11/2026"], ["01/01/2025", "26/11/2026"], ["26/11/2026", "27/11/2026"]])("rejeita período %s–%s, associa erro acessível e foca campo sem consultar", async (inicio, fim) => {
+  vi.setSystemTime(new Date("2026-11-26T15:02:00Z"));
+  const spy = api.defaults.adapter; montar(); await screen.findByRole("region", { name: "Feedbacks retidos no período" });
+  fireEvent.change(screen.getByLabelText("Data inicial"), { target: { value: inicio } });
+  fireEvent.change(screen.getByLabelText("Data final"), { target: { value: fim } });
+  fireEvent.submit(screen.getByRole("form"));
+  const erro = screen.getByRole("alert"), input = screen.getByLabelText("Data inicial");
+  expect(input.getAttribute("aria-describedby").split(" ")).toContain(erro.id); expect(document.activeElement).toBe(input); expect(spy).toHaveBeenCalledTimes(2);
 });

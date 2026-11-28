@@ -1,8 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { HandThumbUpIcon, LightBulbIcon, ExclamationTriangleIcon, ShieldCheckIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, ExclamationCircleIcon, ExclamationTriangleIcon as AtencaoIcon, ClockIcon } from "@heroicons/react/24/solid";
 import { criarEnvioFeedback, enviarFeedback } from "../../services/feedbackPublicoApi";
 import { feedbackAtivo, TIPOS_FEEDBACK, prepararFeedback, contarComentario, envioExpirou } from "../../utils/feedbackPublico";
 import styles from "./Feedback.module.css";
+
+const ICONES_TIPO = { ELOGIO: HandThumbUpIcon, SUGESTAO: LightBulbIcon, PROBLEMA: ExclamationTriangleIcon };
+const DICAS_COMENTARIO = {
+  ELOGIO: "O que funcionou bem para você?",
+  SUGESTAO: "O que poderíamos melhorar ou incluir?",
+  PROBLEMA: "O que não funcionou? Em qual página aconteceu?",
+};
+// Ícone de apoio visual da mensagem de status; a informação continua no texto.
+const ESTADOS_ERRO = ["validacao", "rejeitado", "conflito", "aviso"];
+const ESTADOS_ATENCAO = ["incerto", "limite", "servico", "expirado", "desativado"];
+function IconeStatus({ estado }) {
+  const Icone = estado === "recebido" ? CheckCircleIcon : estado === "enviando" ? ClockIcon
+    : ESTADOS_ERRO.includes(estado) ? ExclamationCircleIcon : ESTADOS_ATENCAO.includes(estado) ? AtencaoIcon : null;
+  return Icone ? <Icone className={styles.iconeStatus} width={24} height={24} aria-hidden="true" /> : null;
+}
 
 function falhaPublica(error) {
   if (error.codigo === "AVISO_DESATUALIZADO") return { estado: "aviso", texto: "O aviso de privacidade mudou. O conteúdo foi preservado. Aguarde o aviso atualizado nesta página e revise-o antes de um novo envio." };
@@ -50,6 +67,8 @@ export function FormularioFeedback() {
   const restante = Math.max(0, Math.ceil((esperarAte - agora) / 1000));
   const podeReenviar = pendente && !expirado && ["incerto", "limite", "servico"].includes(resultado.estado);
   const contador = contarComentario(mensagem);
+  const nivelContador = contador > 2000 ? "excedido" : contador >= 1800 ? "alto" : "normal";
+  const textoStatus = expirado ? falhaPublica({ codigo: "ENVIO_EXPIRADO" }).texto : resultado.texto;
 
   async function transmitir(envio) {
     if (ocupado.current || Date.now() < esperarAte || !feedbackAtivo()) return;
@@ -108,12 +127,17 @@ export function FormularioFeedback() {
         <legend>Tipo de feedback <span>(obrigatório)</span></legend>
         <p id="feedback-tipo-ajuda" className={styles.ajuda}>Escolha a opção que melhor descreve seu comentário.</p>
         <div className={styles.opcoes}>
-          {TIPOS_FEEDBACK.map((t, i) => <label key={t.valor}>
-            <input ref={i === 0 ? tipoRef : undefined} type="radio" name="tipoFeedback" value={t.valor}
-              checked={tipo === t.valor} onChange={() => setTipo(t.valor)} required aria-invalid={Boolean(erros.tipo)}
-              aria-describedby={erros.tipo ? "feedback-tipo-erro" : undefined} />
-            {t.rotulo}
-          </label>)}
+          {TIPOS_FEEDBACK.map((t, i) => {
+            const Icone = ICONES_TIPO[t.valor];
+            return <label key={t.valor} data-tipo={t.valor}>
+              <input ref={i === 0 ? tipoRef : undefined} type="radio" name="tipoFeedback" value={t.valor}
+                checked={tipo === t.valor} onChange={() => setTipo(t.valor)} required aria-invalid={Boolean(erros.tipo)}
+                aria-describedby={erros.tipo ? "feedback-tipo-erro" : undefined} />
+              <span className={styles.icone} aria-hidden="true"><Icone width={22} height={22} /></span>
+              <span className={styles.rotuloTipo}>{t.rotulo}</span>
+              <span className={styles.marca} aria-hidden="true" />
+            </label>;
+          })}
         </div>
         {erros.tipo && <p id="feedback-tipo-erro" className={styles.erro}>{erros.tipo}</p>}
       </fieldset>
@@ -122,20 +146,26 @@ export function FormularioFeedback() {
         <p id="feedback-mensagem-ajuda" className={styles.ajuda}>Não inclua senhas, documentos, dados sensíveis ou informações de outras pessoas.</p>
         <textarea ref={mensagemRef} id="feedback-mensagem" name="comentarioFeedback" rows={7} value={mensagem}
           onChange={e => setMensagem(e.target.value)} readOnly={Boolean(pendente)} required
+          placeholder={DICAS_COMENTARIO[tipo] ?? "Escreva aqui o seu comentário"}
           aria-invalid={Boolean(erros.mensagem)} aria-describedby={`feedback-mensagem-ajuda feedback-contador${erros.mensagem ? " feedback-mensagem-erro" : ""}`} />
-        <p id="feedback-contador" className={contador > 2000 ? styles.erro : styles.ajuda}>{contador.toLocaleString("pt-BR")} / 2.000 caracteres após a normalização.</p>
+        <div className={styles.contagem}>
+          <p id="feedback-contador" className={contador > 2000 ? styles.erro : styles.ajuda}>{contador.toLocaleString("pt-BR")} / 2.000 caracteres após a normalização.</p>
+          <span className={styles.barra} data-nivel={nivelContador} aria-hidden="true"><span style={{ width: `${Math.min(100, contador / 20)}%` }} /></span>
+        </div>
         {erros.mensagem && <p id="feedback-mensagem-erro" className={styles.erro}>{erros.mensagem}</p>}
       </div>
       <aside className={styles.aviso} aria-labelledby="feedback-aviso-titulo">
-        <h3 id="feedback-aviso-titulo">Privacidade — aviso provisório</h3>
+        <div className={styles.avisoTopo}><ShieldCheckIcon width={22} height={22} aria-hidden="true" />
+          <h3 id="feedback-aviso-titulo">Privacidade — aviso provisório</h3></div>
         <p>Texto para desenvolvimento, ainda sem aprovação institucional. O comentário é destinado à equipe administradora para melhorar o portal; não há promessa de resposta individual.</p>
         <p>A política técnica provisória prevê 180 dias para o comentário e 24 horas para a confirmação do envio. O texto pode conter dados pessoais; não há garantia de anonimato absoluto.</p>
-        <p>Versão do aviso: feedback-v1.</p>
+        <p className={styles.versao}>Versão do aviso: feedback-v1.</p>
       </aside>
-      {avisoMudou && <p className={styles.erro}>Novos envios estão bloqueados nesta página até que o aviso atualizado esteja disponível. Seu comentário permanece somente nesta aba.</p>}
-      {!pendente && <button className={styles.primario} type="submit" disabled={enviando || avisoMudou || restante > 0}>Enviar feedback</button>}
-      <div className={styles.status} role="status" aria-live="polite" aria-atomic="true" tabIndex={-1} ref={statusRef}>
-        {expirado ? falhaPublica({ codigo: "ENVIO_EXPIRADO" }).texto : resultado.texto}
+      {avisoMudou && <p className={`${styles.erro} ${styles.bloqueio}`}>Novos envios estão bloqueados nesta página até que o aviso atualizado esteja disponível. Seu comentário permanece somente nesta aba.</p>}
+      {!pendente && <div className={styles.acaoEnvio}><button className={styles.primario} type="submit" disabled={enviando || avisoMudou || restante > 0}>
+        <PaperAirplaneIcon width={18} height={18} aria-hidden="true" />Enviar feedback</button></div>}
+      <div className={styles.status} data-estado={expirado ? "expirado" : resultado.estado} role="status" aria-live="polite" aria-atomic="true" tabIndex={-1} ref={statusRef}>
+        {textoStatus && <IconeStatus estado={expirado ? "expirado" : resultado.estado} />}{textoStatus}
       </div>
       {restante > 0 && <p className={styles.ajuda}>Aguarde pelo menos {restante} segundos antes de outra tentativa. A disponibilidade não é garantida.</p>}
       {pendente && <div className={styles.pendente}>

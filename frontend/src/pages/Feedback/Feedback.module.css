@@ -14,45 +14,109 @@
 .cartao h2 { font-size: 1.25rem; color: var(--navy); margin-bottom: 10px; }
 .cartao p + p { margin-top: 10px; }
 .pagina a { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
-.finalidade { padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
-.tipos { padding: 0; border: 0; margin: 0 0 24px; min-width: 0; }
-.tipos legend, .campo > label { font-size: 1rem; font-weight: 600; }
-.tipos legend span, .campo > label span { font-size: .875rem; font-weight: 400; }
-.ajuda { color: var(--ink-soft); font-size: .875rem; }
-.opcoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-.opcoes label { display: flex; align-items: center; gap: 10px; border: 1px solid #85818f; border-radius: 8px; padding: 10px 14px; min-height: 44px; cursor: pointer; }
-.opcoes input { accent-color: var(--navy); width: 18px; height: 18px; flex-shrink: 0; margin: 0; }
-.opcoes label:has(input:checked) { border-color: var(--navy); background: #efedf6; }
-.tipos:disabled label { cursor: default; }
-.campo { display: grid; gap: 8px; margin-bottom: 24px; }
-.campo textarea { width: 100%; min-width: 0; min-height: 170px; border: 1px solid #85818f; border-radius: 8px; padding: 14px; font: inherit; color: var(--ink); background: #fff; line-height: 1.65; }
-.campo textarea[readonly] { background: var(--paper); }
-.campo textarea[aria-invalid="true"] { border: 2px solid var(--danger); }
-.erro { color: var(--danger); font-weight: 500; font-size: .875rem; }
-.aviso { background: var(--paper); border-left: 3px solid var(--navy); padding: 18px; margin: 0 0 24px; font-size: .875rem; }
-.aviso h3, .decisao h3 { font-size: 1rem; margin-bottom: 8px; }
-.primario, .secundario { display: inline-block; min-height: 44px; max-width: 100%; border-radius: 8px; padding: 12px 18px; font: inherit; font-weight: 600; cursor: pointer; white-space: normal; line-height: 1.5; }
-.primario { background: var(--navy); color: #fff; border: 2px solid var(--navy); }
-.primario:hover:not(:disabled) { background: var(--navy-soft); }
-.secundario { background: #fff; color: var(--navy); border: 1px solid #85818f; margin-top: 12px; }
-.primario:disabled { background: #e2e5ea; color: #4b455c; border-color: #85818f; cursor: not-allowed; }
-.pagina :is(a, button, input, textarea):focus-visible, .status:focus, .decisao h3:focus { outline: 3px solid var(--navy); outline-offset: 4px; }
-.status:not(:empty) { margin-top: 20px; padding: 14px; border: 1px solid var(--line); border-left: 4px solid var(--navy); background: var(--paper); }
-.pendente { margin-top: 18px; }
-.pendente > button { display: block; }
-.decisao { padding: 16px; margin-top: 16px; border: 1px solid #85818f; border-radius: 8px; }
-.decisao button { display: block; }
-.integrado { max-width: 780px; margin-inline: auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.65; }
-.integrado .finalidade { padding: 0; border: 0; margin-bottom: 1rem; }
-.integrado .finalidade h2 { font-size: 1.1rem; }
-.integrado :global(.contato-form) { max-width: none; margin: 0; gap: 0; }
-.integrado .tipos, .integrado .campo, .integrado .aviso { margin-bottom: 1.25rem; }
-.integrado .campo textarea { box-sizing: border-box; }
+/* ===== Formulário de avaliação (Contato) ===== */
+.integrado {
+  --fb-elogio: #237568; --fb-sugestao: #3f69a6; --fb-problema: #af7016;
+  max-width: 780px; margin-inline: 0; min-width: 0; overflow-wrap: anywhere; line-height: 1.65;
+}
 .integrado a { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 .integrado :is(a, button, input, textarea):focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+.integrado :global(.contato-form) { max-width: none; margin: 0; gap: 0; padding: clamp(18px, 3.5vw, 32px); }
+
+.finalidade { padding: 0; border: 0; margin-bottom: 1.25rem; }
+.finalidade h2 { font-size: 1.1rem; color: var(--navy); margin: 0 0 .4rem; }
+.finalidade p { margin: .3rem 0; color: var(--ink-soft); font-size: .9rem; }
+
+/* Tipo: três cartões selecionáveis (o radio nativo cobre o cartão inteiro) */
+.tipos { padding: 0; border: 0; margin: 0 0 1.5rem; min-width: 0; }
+.tipos legend, .campo > label { font-size: 1rem; font-weight: 600; color: var(--navy); }
+.tipos legend span, .campo > label span { font-size: .875rem; font-weight: 400; color: var(--ink-soft); }
+.ajuda { color: var(--ink-soft); font-size: .875rem; margin: .25rem 0 0; }
+.opcoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.opcoes label { --cor-tipo: var(--navy); --tinta: rgba(43, 37, 92, .08); position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  min-height: 44px; padding: 14px 16px; border: 1px solid #85818f; border-radius: 12px; background: #fff; cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease; }
+.opcoes label[data-tipo="ELOGIO"] { --cor-tipo: var(--fb-elogio); --tinta: rgba(35, 117, 104, .12); }
+.opcoes label[data-tipo="SUGESTAO"] { --cor-tipo: var(--fb-sugestao); --tinta: rgba(63, 105, 166, .12); }
+.opcoes label[data-tipo="PROBLEMA"] { --cor-tipo: var(--fb-problema); --tinta: rgba(175, 112, 22, .14); }
+.opcoes label:hover { border-color: var(--cor-tipo); }
+.opcoes input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--tinta); color: var(--cor-tipo); }
+.rotuloTipo { font-weight: 600; color: var(--ink); line-height: 1.3; }
+.marca { position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; border: 2px solid #85818f; border-radius: 50%; background: #fff; }
+.opcoes input:checked ~ .marca { border-color: var(--cor-tipo); background: var(--cor-tipo); box-shadow: inset 0 0 0 3px #fff; }
+.opcoes label:has(input:checked) { border-color: var(--cor-tipo); box-shadow: inset 0 0 0 1px var(--cor-tipo); background: var(--tinta); }
+.opcoes label:has(input:focus-visible) { outline: 3px solid var(--navy); outline-offset: 3px; }
+.tipos:disabled label, .tipos:disabled input { cursor: default; }
+.tipos:disabled label:not(:has(input:checked)) { opacity: .6; }
+
+/* Comentário e contador */
+.campo { display: grid; gap: 8px; margin-bottom: 1.5rem; }
+.campo textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 160px; border: 1px solid #85818f; border-radius: 10px; padding: 14px;
+  font: inherit; color: var(--ink); background: #fff; line-height: 1.65; resize: vertical; }
+.campo textarea::placeholder { color: var(--ink-soft); opacity: 1; }
+.campo textarea[readonly] { background: var(--paper); }
+.campo textarea[aria-invalid="true"] { border: 2px solid var(--danger); }
+.contagem { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.contagem p { margin: 0; font-variant-numeric: tabular-nums; }
+.barra { flex: 1 1 80px; min-width: 80px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.barra > span { display: block; height: 100%; background: var(--navy); transition: width .15s ease; }
+.barra[data-nivel="alto"] > span { background: var(--fb-problema); }
+.barra[data-nivel="excedido"] > span { background: var(--danger); }
+.erro { color: var(--danger); font-weight: 500; font-size: .875rem; }
+.bloqueio { margin: 0 0 1rem; padding: 12px 14px; border: 1px solid var(--danger); border-radius: 10px; background: rgba(179, 38, 30, .06); }
+
+/* Aviso de privacidade */
+.aviso { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 1.25rem; font-size: .8125rem; color: var(--ink-soft); }
+.avisoTopo { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: var(--navy); }
+.aviso h3, .decisao h3 { font-size: .9375rem; margin: 0; color: var(--navy); }
+.aviso p { margin: .35rem 0; }
+.versao { font-size: .75rem; }
+
+/* Botões */
+.acaoEnvio { display: flex; justify-content: flex-end; }
+.primario, .secundario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; max-width: 100%; border-radius: 10px;
+  padding: 12px 20px; font: inherit; font-weight: 600; cursor: pointer; white-space: normal; line-height: 1.4; }
+.primario { background: var(--navy); color: #fff; border: 2px solid var(--navy); }
+.primario:hover:not(:disabled) { background: var(--navy-soft); border-color: var(--navy-soft); }
+.secundario { background: #fff; color: var(--navy); border: 1px solid #85818f; }
+.secundario:hover { border-color: var(--navy); }
+.primario:disabled { background: #e2e5ea; color: #4b455c; border-color: #85818f; cursor: not-allowed; }
+
+/* Mensagens de estado (sucesso, erro, atenção) */
+.status:focus, .decisao h3:focus { outline: 3px solid var(--navy); outline-offset: 4px; }
+.status:not(:empty) { position: relative; margin-top: 1.25rem; padding: 14px 16px 14px 52px; border: 1px solid var(--line); border-left: 4px solid var(--navy);
+  border-radius: 10px; background: var(--paper); color: var(--ink); font-size: .9375rem; line-height: 1.55; }
+.iconeStatus { position: absolute; left: 16px; top: 14px; color: var(--navy); }
+.status[data-estado="recebido"] { border-left-color: var(--fb-elogio); background: rgba(35, 117, 104, .08); }
+.status[data-estado="recebido"] .iconeStatus { color: var(--fb-elogio); }
+.status:is([data-estado="validacao"], [data-estado="rejeitado"], [data-estado="conflito"], [data-estado="aviso"]) { border-left-color: var(--danger); background: rgba(179, 38, 30, .06); }
+.status:is([data-estado="validacao"], [data-estado="rejeitado"], [data-estado="conflito"], [data-estado="aviso"]) .iconeStatus { color: var(--danger); }
+.status:is([data-estado="incerto"], [data-estado="limite"], [data-estado="servico"], [data-estado="expirado"], [data-estado="desativado"]) { border-left-color: var(--fb-problema); background: rgba(175, 112, 22, .08); }
+.status:is([data-estado="incerto"], [data-estado="limite"], [data-estado="servico"], [data-estado="expirado"], [data-estado="desativado"]) .iconeStatus { color: var(--fb-problema); }
+
+/* Tentativa pendente: reenviar, editar ou abandonar */
+.pendente { margin-top: 1.25rem; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; display: flex; flex-wrap: wrap; gap: 12px; }
+.pendente > p { flex: 1 1 100%; margin: 0; font-size: .875rem; color: var(--ink-soft); }
+.decisao { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; margin: 0; border: 1px solid var(--fb-problema); border-left-width: 4px; border-radius: 10px; background: rgba(175, 112, 22, .08); }
+.decisao h3, .decisao p { flex: 1 1 100%; margin: 0; }
+.decisao p { font-size: .875rem; color: var(--ink); }
+
+@media (max-width: 560px) {
+  .opcoes { grid-template-columns: minmax(0, 1fr); }
+  .opcoes label { flex-direction: row; align-items: center; padding-right: 48px; }
+  .marca { top: 50%; transform: translateY(-50%); }
+  .acaoEnvio .primario, .pendente .primario, .pendente .secundario, .decisao .secundario { width: 100%; }
+}
 @media (max-width: 480px) {
   .pagina { padding: 24px 12px 40px; }
   .cartao { padding: 18px 14px; }
-  .opcoes { flex-direction: column; }
-  .primario, .secundario { width: 100%; }
+}
+@media (forced-colors: active) {
+  .opcoes label:has(input:checked) { outline: 2px solid Highlight; }
+  .marca { border-color: CanvasText; }
+  .opcoes input:checked ~ .marca { background: Highlight; border-color: Highlight; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opcoes label, .barra > span { transition: none; }
 }

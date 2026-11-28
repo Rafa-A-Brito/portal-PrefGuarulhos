@@ -5,3 +5,37 @@
   max-height: calc(100dvh - 96px);
   overflow-y: auto;
 }
+
+/* Feedback indisponível: aviso compacto, sem aparência de formulário */
+.contato-pagina .contato-indisponivel {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 780px;
+  padding: 18px 20px;
+  background: var(--paper);
+  box-shadow: none;
+}
+
+.contato-pagina .contato-indisponivel > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--navy);
+}
+
+.contato-pagina .contato-indisponivel h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  color: var(--navy);
+}
+
+.contato-pagina .contato-indisponivel p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+@media (forced-colors: active) {
+  .contato-pagina .page-hero { background: Canvas; color: CanvasText; }
+  .contato-pagina .page-hero h1, .contato-pagina .page-hero p { color: CanvasText; }
+}

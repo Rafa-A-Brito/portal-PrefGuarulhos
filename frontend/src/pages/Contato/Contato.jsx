@@ -146,10 +146,13 @@ export default function Contato() {
             </div>
           </div>
 
-          {feedbackAtivo() ? <FormularioFeedback /> : <div className="contato-form" role="status">
-            <h3>Feedback indisponível</h3>
-            <p>O formulário de avaliação ainda não está disponível. Nenhuma mensagem foi enviada.</p>
-            <p>Utilize os canais de contato abaixo para outros assuntos.</p>
+          {feedbackAtivo() ? <FormularioFeedback /> : <div className="contato-form contato-indisponivel" role="status">
+            <InformationCircleIcon width={28} height={28} aria-hidden="true" />
+            <div>
+              <h3>Feedback indisponível</h3>
+              <p>O formulário de avaliação ainda não está disponível. Nenhuma mensagem foi enviada.</p>
+              <p>Utilize os canais de contato abaixo para outros assuntos.</p>
+            </div>
           </div>}
         </div>
       </section>

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { listarFeedback, resumirFeedback, detalharFeedback, erroFeedbackAdmin } from "../../../services/feedbackApi";
 import { dataBr, dataHoraFeedback, filtrosFeedback, periodoFeedback, quantidadeFeedback, TIPOS } from "../feedbackDashboard";
 import FeedbackDashboard from "../components/FeedbackDashboard";
 import FiltrosFeedback from "../components/FiltrosFeedback";
 import styles from "./AdminFeedback.module.css";
 
+const TipoChip = ({ tipo }) => <span className={styles.chip} data-tipo={tipo}><i aria-hidden="true" />{TIPOS[tipo]}</span>;
 function Falha({ erro, repetir }) {
-  return <div role="alert"><p>{erro.mensagem}</p>{![401, 403, 404].includes(erro.status) &&
+  return <div role="alert" className={`${styles.estado} ${styles.estadoErro}`}><p>{erro.mensagem}</p>{![401, 403, 404].includes(erro.status) &&
     <button className="btn-outline" type="button" onClick={repetir}>Tentar novamente</button>}</div>;
 }
 function Detalhe({ id, fechar }) {
@@ -34,12 +36,12 @@ function Detalhe({ id, fechar }) {
     onCancel={e => { e.preventDefault(); fechar(); }}>
     <div className={styles.cabecalhoModal}><h2 id="feedback-detalhe-titulo" tabIndex={-1} ref={titulo}>Detalhes do feedback</h2>
       <button className="btn-outline" type="button" onClick={fechar}>Fechar detalhes</button></div>
-    {carregando ? <p role="status">Carregando detalhe…</p> : resultado.erro ? <Falha erro={resultado.erro} repetir={() => setRevisao(v => v + 1)} />
-      : !resultado.dados.disponivel ? <p role="status">Consulta de feedback desativada.</p> : <>
-        {resultado.dados.demonstracao && <p>Demonstração: dados fictícios em memória, descartados ao reiniciar.</p>}
-        <dl><dt>Data e hora · America/Sao_Paulo</dt><dd><time dateTime={r.createdAt}>{dataHoraFeedback(r.createdAt)}</time></dd>
-          <dt>Tipo</dt><dd>{TIPOS[r.tipo]}</dd></dl>
-        <h3>Comentário</h3><div className={styles.mensagem} tabIndex={0} role="region" aria-label="Comentário completo">{r.mensagem}</div>
+    {carregando ? <p role="status" className={styles.estado}>Carregando detalhe…</p> : resultado.erro ? <Falha erro={resultado.erro} repetir={() => setRevisao(v => v + 1)} />
+      : !resultado.dados.disponivel ? <p role="status" className={styles.estado}>Consulta de feedback desativada.</p> : <>
+        {resultado.dados.demonstracao && <p className={styles.estado}>Demonstração: dados fictícios em memória, descartados ao reiniciar.</p>}
+        <dl className={styles.metadados}><div><dt>Data e hora · America/Sao_Paulo</dt><dd><time dateTime={r.createdAt}>{dataHoraFeedback(r.createdAt)}</time></dd></div>
+          <div><dt>Tipo</dt><dd><TipoChip tipo={r.tipo} /></dd></div></dl>
+        <h3>Comentário</h3><div className={styles.mensagem} data-tipo={r.tipo} tabIndex={0} role="region" aria-label="Comentário completo">{r.mensagem}</div>
       </>}
   </dialog>;
 }
@@ -93,20 +95,20 @@ export default function AdminFeedback() {
     <header className="admin-page-head"><h1>Feedback do portal</h1><p>Consulte contribuições ainda retidas. Datas no formato brasileiro, no fuso America/Sao_Paulo.</p></header>
     <FiltrosFeedback form={form} setForm={setForm} erro={erroFiltro} inputRef={filtroRef}
       aplicar={aplicar} limpar={limpar} atualizar={atualizar} />
-    <p>Recorte aplicado: {dataBr(consulta.filtros.inicio)} a {dataBr(consulta.filtros.fim)} · {TIPOS[consulta.filtros.tipo] || "Todos os tipos"}.</p>
-    {erroAcesso ? <Falha erro={erroAcesso} /> : desativado ? <p role="status">Consulta de feedback desativada. Os dados não estão disponíveis.</p> : erroComum ? <Falha erro={erroComum} repetir={atualizar} /> : <>
-      {(l?.demonstracao || r?.demonstracao) && <p role="status">Demonstração: dados fictícios em memória, descartados ao reiniciar.</p>}
-      {(antigo || divergente) && <p role="status">Dados desatualizados ou consultados em instantes diferentes. Use “Atualizar dados” para consultar novamente.</p>}
-      {carregandoResumo ? <p role="status">Carregando resumo…</p> : resumo.erro ? <Falha erro={resumo.erro} repetir={atualizar} /> : r?.disponivel && <>
-        <FeedbackDashboard dados={r} /><p className={styles.nota}>Resumo consultado em {dataHoraFeedback(r.meta.geradoEm)}.</p>
+    <p className={styles.recorte}>Recorte aplicado: {dataBr(consulta.filtros.inicio)} a {dataBr(consulta.filtros.fim)} · {TIPOS[consulta.filtros.tipo] || "Todos os tipos"}.</p>
+    {erroAcesso ? <Falha erro={erroAcesso} /> : desativado ? <p role="status" className={styles.estado}><InformationCircleIcon width={22} height={22} aria-hidden="true" />Consulta de feedback desativada. Os dados não estão disponíveis.</p> : erroComum ? <Falha erro={erroComum} repetir={atualizar} /> : <>
+      {(l?.demonstracao || r?.demonstracao) && <p role="status" className={styles.estado}>Demonstração: dados fictícios em memória, descartados ao reiniciar.</p>}
+      {(antigo || divergente) && <p role="status" className={styles.estado}>Dados desatualizados ou consultados em instantes diferentes. Use “Atualizar dados” para consultar novamente.</p>}
+      {carregandoResumo ? <p role="status" className={styles.estado}>Carregando resumo…</p> : resumo.erro ? <Falha erro={resumo.erro} repetir={atualizar} /> : r?.disponivel && <>
+        <div className={styles.painel}><FeedbackDashboard dados={r} /><p className={styles.nota}>Resumo consultado em {dataHoraFeedback(r.meta.geradoEm)}.</p></div>
       </>}
-      <section aria-labelledby="feedback-lista"><h2 id="feedback-lista">Contribuições</h2>
-        {carregandoLista ? <p role="status">Carregando lista…</p> : lista.erro ? <Falha erro={lista.erro} repetir={atualizar} /> : l?.disponivel && <>
+      <section aria-labelledby="feedback-lista" className={styles.painel}><h2 id="feedback-lista">Contribuições</h2>
+        {carregandoLista ? <p role="status" className={styles.estado}>Carregando lista…</p> : lista.erro ? <Falha erro={lista.erro} repetir={atualizar} /> : l?.disponivel && <>
           <p className={styles.nota}>Lista consultada em {dataHoraFeedback(l.meta.geradoEm)}. Lista e resumo são consultas independentes; podem refletir novos envios ou expiração entre as leituras.</p>
-          {l.itens.length === 0 ? <p>Nenhum registro nesta página do recorte.</p> : <div className={styles.rolagem} tabIndex={0} role="region" aria-label="Lista de feedbacks">
+          {l.itens.length === 0 ? <p className={styles.estado}>Nenhum registro nesta página do recorte.</p> : <div className={`${styles.rolagem} ${styles.rolagemLista}`} tabIndex={0} role="region" aria-label="Lista de feedbacks">
             <table className={`admin-table ${styles.lista}`}><caption>Mais recentes primeiro, na ordem fornecida pelo servidor</caption>
               <thead><tr><th scope="col">Data e hora</th><th scope="col">Tipo</th><th scope="col">Detalhes</th></tr></thead>
-              <tbody>{l.itens.map(i => <tr key={i.id}><td><time dateTime={i.createdAt}>{dataHoraFeedback(i.createdAt)}</time></td><td>{TIPOS[i.tipo]}</td>
+              <tbody>{l.itens.map(i => <tr key={i.id}><td><time dateTime={i.createdAt}>{dataHoraFeedback(i.createdAt)}</time></td><td><TipoChip tipo={i.tipo} /></td>
                 <td><button type="button" className="btn-outline" aria-label={`Detalhes de ${TIPOS[i.tipo]} em ${dataHoraFeedback(i.createdAt)}`} onClick={() => setSelecionado(i.id)}>Detalhes</button></td></tr>)}</tbody>
             </table></div>}
           {l.paginacao.totalPaginas > 0 && <nav className={styles.paginacao} aria-label="Paginação de feedback">

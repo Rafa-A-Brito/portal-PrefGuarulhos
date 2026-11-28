@@ -80,6 +80,7 @@ test.each(["Elogio", "Sugestão", "Problema de uso"])("envio explícito %s confi
   abrir(); preencher(tipo); expect(fetchMock).not.toHaveBeenCalled(); enviar();
   expect(status()).toBe("Enviando feedback…"); expect(screen.getByRole("textbox").value).not.toBe("");
   expect(screen.getByRole("textbox").readOnly).toBe(true);
+  expect(screen.getAllByRole("radio").every(r => r.matches(":disabled"))).toBe(true);
   await act(async () => resolver(sucesso()));
   expect(status()).toContain("Feedback recebido."); expect(screen.getByRole("textbox").value).toBe("");
   expect(screen.getAllByRole("radio").every(r => !r.checked)).toBe(true); expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -169,4 +170,15 @@ test("desmontagem cancela espera sem envio extra ou persistência de rascunho", 
   const fetchMock = vi.fn().mockImplementation(() => new Promise(() => {})); vi.stubGlobal("fetch", fetchMock);
   const r = abrir(); preencher(); enviar(); r.unmount();
   await act(async () => {}); expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true); expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+test("cartões mantêm nomes nativos e sugestões de comentário sem gerar envio", async () => {
+  const user = userEvent.setup(), fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock); abrir();
+  const opcoes = [["Elogio", "O que funcionou bem para você?"], ["Sugestão", "O que poderíamos melhorar ou incluir?"], ["Problema de uso", "O que não funcionou? Em qual página aconteceu?"]];
+  for (const [nome, dica] of opcoes) {
+    await user.click(screen.getByText(nome, { selector: "span" }));
+    expect(screen.getByRole("radio", { name: nome }).checked).toBe(true);
+    expect(screen.getByRole("textbox").getAttribute("placeholder")).toBe(dica);
+  }
+  expect(screen.getAllByRole("radio")).toHaveLength(3);expect(fetchMock).not.toHaveBeenCalled();
 });

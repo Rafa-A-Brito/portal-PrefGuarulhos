@@ -16,6 +16,11 @@
     "main": "src/server.js",
     "scripts": {
         "dev": "nodemon src/server.js",
+        "dev:feedback": "node scripts/feedback_local.cjs api",
+        "feedback:banco": "node scripts/feedback_local.cjs banco",
+        "feedback:conferir": "node scripts/feedback_local.cjs conferir",
+        "feedback:backup": "node scripts/feedback_local.cjs backup",
+        "feedback:parar": "node scripts/feedback_local.cjs parar",
         "start": "node src/server.js",
         "test": "node scripts/run-suite.js",
         "test:mock": "node --test test/mockData.test.js",
